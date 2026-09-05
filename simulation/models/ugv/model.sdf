@@ -1,0 +1,426 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <model name="ugv_4wd">
+    <static>false</static>
+
+    <!-- Base Link (Chassis) -->
+    <link name="base_link">
+      <pose>0 0 0.125 0 0 0</pose>
+      <inertial>
+        <mass>25.0</mass>
+        <inertia>
+          <ixx>0.505</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.963</iyy>
+          <iyz>0.0</iyz>
+          <izz>1.302</izz>
+        </inertia>
+      </inertial>
+      <collision name="chassis_collision">
+        <geometry>
+          <box>
+            <size>0.65 0.45 0.20</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="chassis_visual">
+        <geometry>
+          <box>
+            <size>0.65 0.45 0.20</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.3 0.25 1.0</ambient>
+          <diffuse>0.3 0.5 0.4 1.0</diffuse>
+          <specular>0.1 0.1 0.1 1.0</specular>
+        </material>
+      </visual>
+    </link>
+
+    <!-- Front Left Wheel -->
+    <link name="wheel_fl_link">
+      <pose>0.20 0.24 0.125 -1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.0088</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0088</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0156</izz>
+        </inertia>
+      </inertial>
+      <collision name="wheel_fl_collision">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="wheel_fl_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1.0</ambient>
+          <diffuse>0.15 0.15 0.15 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="wheel_fl_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>wheel_fl_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Front Right Wheel -->
+    <link name="wheel_fr_link">
+      <pose>0.20 -0.24 0.125 -1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.0088</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0088</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0156</izz>
+        </inertia>
+      </inertial>
+      <collision name="wheel_fr_collision">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="wheel_fr_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1.0</ambient>
+          <diffuse>0.15 0.15 0.15 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="wheel_fr_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>wheel_fr_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Rear Left Wheel -->
+    <link name="wheel_rl_link">
+      <pose>-0.20 0.24 0.125 -1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.0088</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0088</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0156</izz>
+        </inertia>
+      </inertial>
+      <collision name="wheel_rl_collision">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="wheel_rl_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1.0</ambient>
+          <diffuse>0.15 0.15 0.15 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="wheel_rl_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>wheel_rl_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Rear Right Wheel -->
+    <link name="wheel_rr_link">
+      <pose>-0.20 -0.24 0.125 -1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.0088</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0088</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0156</izz>
+        </inertia>
+      </inertial>
+      <collision name="wheel_rr_collision">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="wheel_rr_visual">
+        <geometry>
+          <cylinder>
+            <radius>0.125</radius>
+            <length>0.08</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1.0</ambient>
+          <diffuse>0.15 0.15 0.15 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="wheel_rr_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>wheel_rr_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- Camera Link & Optical Frame -->
+    <link name="camera_link">
+      <pose>0.15 0.0 0.525 0 0.261799 0</pose> <!-- pitch = 15 deg (0.2618 rad) -->
+      <inertial>
+        <mass>0.25</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0001</iyy>
+          <iyz>0</iyz>
+          <izz>0.0001</izz>
+        </inertia>
+      </inertial>
+      <visual name="camera_visual">
+        <geometry>
+          <box>
+            <size>0.05 0.12 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1.0</ambient>
+          <diffuse>0.2 0.2 0.8 1.0</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="camera_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_link</child>
+    </joint>
+
+    <link name="camera_optical">
+      <pose>0.15 0.0 0.525 -1.57079632679 0 -1.57079632679</pose>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>1e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-6</iyy>
+          <iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+      <sensor name="rgb_camera" type="camera">
+        <always_on>true</always_on>
+        <update_rate>30.0</update_rate>
+        <camera>
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.10</near>
+            <far>50.0</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.005</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </link>
+    <joint name="camera_optical_joint" type="fixed">
+      <parent>camera_link</parent>
+      <child>camera_optical</child>
+    </joint>
+
+    <!-- IMU Link -->
+    <link name="imu_link">
+      <pose>0.0 0.0 0.275 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>1e-5</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1e-5</iyy>
+          <iyz>0</iyz>
+          <izz>1e-5</izz>
+        </inertia>
+      </inertial>
+      <sensor name="imu_sensor" type="imu">
+        <always_on>true</always_on>
+        <update_rate>200.0</update_rate>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00087</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00087</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00087</stddev>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00392</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00392</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00392</stddev>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </link>
+    <joint name="imu_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>imu_link</child>
+    </joint>
+
+    <!-- Plugins for Gazebo Sim -->
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>wheel_fl_joint</left_joint>
+      <left_joint>wheel_rl_joint</left_joint>
+      <right_joint>wheel_fr_joint</right_joint>
+      <right_joint>wheel_rr_joint</right_joint>
+      <wheel_separation>0.48</wheel_separation>
+      <wheel_radius>0.125</wheel_radius>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <topic>/model/ugv_4wd/cmd_vel</topic>
+      <odom_topic>/model/ugv_4wd/odometry</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/world/outdoor_terrain/model/ugv_4wd/joint_state</topic>
+      <joint_name>wheel_fl_joint</joint_name>
+      <joint_name>wheel_fr_joint</joint_name>
+      <joint_name>wheel_rl_joint</joint_name>
+      <joint_name>wheel_rr_joint</joint_name>
+    </plugin>
+
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+  </model>
+</sdf>

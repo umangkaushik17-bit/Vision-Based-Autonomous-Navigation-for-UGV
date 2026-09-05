@@ -56,8 +56,8 @@ logs/
 *.log
 runs/
 wandb/
-outputs/
-models/
+/outputs/
+/models/
 scratch/
 references/
 frame.jpg
