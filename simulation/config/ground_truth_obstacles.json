@@ -1,0 +1,77 @@
+{
+  "world_name": "outdoor_terrain",
+  "coordinate_frame": "odom",
+  "obstacles": [
+    {
+      "id": "obs_rock_large",
+      "name": "Granite Boulder",
+      "type": "rock",
+      "position": [3.5, 0.5, 0.3],
+      "dimensions": [1.2, 1.2, 0.6],
+      "bounding_radius_m": 0.60,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.90
+    },
+    {
+      "id": "obs_tree_pine",
+      "name": "Pine Tree Trunk",
+      "type": "vegetation",
+      "position": [5.0, -1.5, 0.0],
+      "dimensions": [0.5, 0.5, 3.0],
+      "bounding_radius_m": 0.35,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.85
+    },
+    {
+      "id": "haz_water_puddle",
+      "name": "Muddy Water Pool",
+      "type": "water",
+      "position": [4.0, -0.8, -0.05],
+      "dimensions": [1.5, 1.5, 0.1],
+      "bounding_radius_m": 0.75,
+      "traversable": false,
+      "ground_truth_class": "hazard",
+      "expected_cost": 0.85,
+      "expected_hazard": 0.80
+    },
+    {
+      "id": "haz_ditch_trench",
+      "name": "Erosion Ditch",
+      "type": "ditch",
+      "position": [7.0, 1.0, -0.2],
+      "dimensions": [1.2, 2.5, 0.4],
+      "bounding_radius_m": 1.30,
+      "traversable": false,
+      "ground_truth_class": "critical_hazard",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.95
+    },
+    {
+      "id": "geo_slope_ramp",
+      "name": "Gravel Slope",
+      "type": "slope",
+      "position": [10.0, 0.0, 0.8],
+      "dimensions": [4.0, 3.0, 1.2],
+      "bounding_radius_m": 2.50,
+      "slope_deg": 12.0,
+      "traversable": true,
+      "ground_truth_class": "moderate_hazard",
+      "expected_cost": 0.45,
+      "expected_hazard": 0.35
+    }
+  ],
+  "safe_regions": [
+    {
+      "id": "safe_start_zone",
+      "bounds_x": [-2.0, 2.0],
+      "bounds_y": [-2.0, 2.0],
+      "ground_truth_class": "safe_flat",
+      "expected_cost": 0.05,
+      "expected_hazard": 0.0
+    }
+  ]
+}

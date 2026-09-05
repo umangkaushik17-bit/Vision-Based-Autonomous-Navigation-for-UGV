@@ -1,0 +1,98 @@
+# Hazard Policy Configuration for SIH26126 Autonomous UGV
+#
+# Maps detected objects and terrain anomalies to navigation risk levels
+# and defines perception fusion safety behavior.
+
+risk_tiers:
+  CRITICAL:
+    cost: 1.00          # Lethal traversal penalty / trigger emergency stop
+    speed_factor: 0.00  # Immediate halt
+    description: "Immediate collision or rollover hazard"
+
+  HIGH:
+    cost: 0.85          # Severe traversal penalty
+    speed_factor: 0.25  # Severe speed reduction
+    description: "Impassable terrain or high mobility risk"
+
+  MEDIUM:
+    cost: 0.50          # Moderate caution penalty
+    speed_factor: 0.60  # Moderate speed reduction
+    description: "Negotiable terrain requiring caution"
+
+  LOW:
+    cost: 0.15          # Minor surface resistance
+    speed_factor: 0.90  # Nominal cruising
+    description: "Compliant vegetation or minor texture variation"
+
+  UNKNOWN:
+    cost: 0.50          # Exploration uncertainty penalty
+    speed_factor: 0.50  # Slow down when perception is ambiguous
+    description: "Disagreement between models or insufficient sensory confidence"
+
+hazard_classification_rules:
+  # Living agents
+  person:
+    hazard_type: "PERSON"
+    risk_level: "CRITICAL"
+  animal:
+    hazard_type: "ANIMAL"
+    risk_level: "HIGH"
+
+  # Vehicles
+  vehicle:
+    hazard_type: "VEHICLE"
+    risk_level: "CRITICAL"
+
+  # Critical Terrain Hazards (Phase 3 failure cases)
+  water:
+    hazard_type: "WATER"
+    risk_level: "CRITICAL"
+  water_reflection:
+    hazard_type: "WATER"
+    risk_level: "CRITICAL"
+  ditch:
+    hazard_type: "DITCH"
+    risk_level: "CRITICAL"
+  ditch_or_pothole:
+    hazard_type: "DITCH"
+    risk_level: "CRITICAL"
+
+  # Discrete Terrain Obstacles
+  large_rock:
+    hazard_type: "ROCK"
+    risk_level: "HIGH"
+  low_dark_obstacle:
+    hazard_type: "ROCK"
+    risk_level: "HIGH"
+  tree:
+    hazard_type: "TREE"
+    risk_level: "HIGH"
+  step:
+    hazard_type: "STEP"
+    risk_level: "HIGH"
+  curb:
+    hazard_type: "CURB"
+    risk_level: "MEDIUM"
+
+  # Compliant Terrain
+  vegetation:
+    hazard_type: "VEGETATION"
+    risk_level: "LOW"
+
+  # Default for unmapped obstacles
+  unknown_hazard:
+    hazard_type: "UNKNOWN_HAZARD"
+    risk_level: "HIGH"
+
+fusion_policy:
+  # Weight balancing between Model A (SAM-TP) and Model B (RUGD) when both agree
+  weight_model_a: 0.50
+  weight_model_b: 0.50
+
+  # Disagreement handling: if |mask_a - mask_b| > disagreement_threshold
+  disagreement_threshold: 0.40
+  treat_disagreement_as_unknown: true
+
+  # Obstacle override: if obstacle detected with risk >= HIGH, force traversability to 0.0
+  obstacle_override_enabled: true
+  min_obstacle_confidence: 0.40

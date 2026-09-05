@@ -1,0 +1,122 @@
+# ROS2 Quality of Service (QoS) Profiles Specification
+
+qos_profiles:
+  # Sensor Data streams (high-bandwidth image feeds)
+  sensor_data:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 5
+    expected_frequency_hz: 10.0
+
+  # Static transforms and coordinate metadata
+  transient_local:
+    reliability: "reliable"
+    durability: "transient_local"
+    history: "keep_last"
+    depth: 1
+    expected_frequency_hz: 1.0
+
+  # Canonical State QoS (reliable state updates)
+  reliable_state:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 10.0
+
+  # Canonical Command QoS (low-latency single latest command)
+  reliable_cmd:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 1
+    expected_frequency_hz: 10.0
+
+  # Safety-critical status and world terrain map state
+  state_and_map:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 10.0
+
+  # High-level mission and diagnostics
+  diagnostics:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 20
+    expected_frequency_hz: 5.0
+
+  # Dynamic Obstacle Detections (high-rate perception stream)
+  dynamic_detections:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 10.0
+
+  # Tracked Obstacle State (filtered multi-frame tracks)
+  tracked_obstacles:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 10.0
+
+  # Predicted Trajectories (temporal motion extrapolations)
+  predictions:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 5
+    expected_frequency_hz: 10.0
+
+  # Dynamic Occupancy Grid Slices
+  dynamic_occupancy:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 5
+    expected_frequency_hz: 5.0
+
+  # Behavioral State Machine Decisions (PROCEED, AVOID, WAIT, STOP)
+  behavioral_decision:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 10.0
+
+  # Event-Driven Replan Events
+  replan_event:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 10
+    expected_frequency_hz: 1.0
+
+  # Velocity Commands (/cmd_vel - low-latency single latest command)
+  cmd_vel:
+    reliability: "reliable"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 1
+    expected_frequency_hz: 10.0
+
+  # Dynamic Local Trajectory (/planning/dynamic_trajectory)
+  dynamic_trajectory:
+    reliability: "best_effort"
+    durability: "volatile"
+    history: "keep_last"
+    depth: 1
+    expected_frequency_hz: 10.0
+
+  # Global Path (/planning/global_path)
+  global_path:
+    reliability: "reliable"
+    durability: "transient_local"
+    history: "keep_last"
+    depth: 1
+    expected_frequency_hz: 1.0

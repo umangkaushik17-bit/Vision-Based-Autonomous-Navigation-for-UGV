@@ -1,0 +1,54 @@
+# SAM-TP (SAM 2.1 Hiera-Tiny) Fine-Tuning Configuration for External GPU (Colab / Kaggle A100/T4)
+
+experiment:
+  name: "sam_tp_finetune_v3_outdoor"
+  seed: 42
+  description: "Fine-tuning SAM-TP checkpoint_finetuned_v2 on SIH26126 outdoor dataset with 50 epochs and early stopping"
+
+model:
+  name: "sam_tp"
+  architecture: "sam2.1_hiera_tiny"
+  embed_dim: 96
+  num_heads: 1
+  stages: [1, 2, 7, 2]
+  config_path: "references/GENIE-SAMTP/sam2/configs/sam2.1_inference_tiny/sam2.1_custom2.yaml"
+  init_checkpoint: "references/sana-earth-rover-policy/traversability/data/checkpoint_finetuned_v2.pt"
+  hf_repo: "sanatem/samtp-mini-traversability"
+  hf_filename: "checkpoint_finetuned_v2.pt"
+
+training:
+  epochs: 50
+  mixed_precision: "fp16"
+  gradient_accumulation_steps: 2
+  max_grad_norm: 1.0
+  save_every_epochs: 5
+  checkpoint_dir: "experiments/checkpoints/sam_tp"
+
+  early_stopping:
+    enabled: true
+    min_epochs: 25
+    patience: 7
+    min_delta: 0.001
+    mode: "max"
+    monitor: "val_mIoU"
+
+optimizer:
+  type: "AdamW"
+  base_lr: 5.0e-6
+  vision_lr: 3.0e-6
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+
+scheduler:
+  type: "CosineAnnealingLR"
+  T_max: 50
+  eta_min: 1.0e-7
+
+data:
+  train_manifest: "data/manifests/train_manifest.json"
+  val_manifest: "data/manifests/val_manifest.json"
+  test_manifest: "data/manifests/test_manifest.json"
+  batch_size: 8
+  num_workers: 4
+  input_resolution: [1024, 1024]
+  pin_memory: true

@@ -1,0 +1,59 @@
+# Vision Pipeline Configuration for SIH26126 UGV
+
+input:
+  width: 640
+  height: 480
+  color_format: "BGR"  # OpenCV default is BGR, internal pipeline converts to RGB
+  fps: 30
+
+preprocessing:
+  resize:
+    enabled: true
+    target_width: 640
+    target_height: 480
+    interpolation: "linear" # 'linear', 'cubic', 'nearest', 'area'
+
+  crop:
+    enabled: false
+    top_pixels: 0
+    bottom_pixels: 0
+    left_pixels: 0
+    right_pixels: 0
+
+  color_conversion:
+    source_format: "BGR"
+    target_format: "RGB" # 'RGB', 'GRAY', 'HSV', 'LAB'
+
+  clahe:
+    enabled: true
+    clip_limit: 2.0
+    tile_grid_size: [8, 8]
+
+  denoising:
+    enabled: true
+    method: "gaussian" # 'gaussian', 'bilateral', 'median', 'none'
+    kernel_size: 3
+    sigma: 1.0
+
+  normalization:
+    enabled: true
+    range_min: 0.0
+    range_max: 1.0
+    dtype: "float32" # 'float32', 'uint8'
+
+processing:
+  baseline_processor: "canny_edge" # 'canny_edge', 'grayscale', 'identity'
+  canny_low_threshold: 50
+  canny_high_threshold: 150
+
+visualization:
+  window_title: "SIH26126 UGV Vision Pipeline"
+  side_by_side: true
+  display_fps: true
+  display_latency: true
+  hud_font_scale: 0.6
+  hud_bg_opacity: 0.6
+
+timing:
+  fps_window_size: 30
+  percentiles: [50, 95]

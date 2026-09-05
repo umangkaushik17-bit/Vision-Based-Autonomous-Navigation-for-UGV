@@ -1,0 +1,70 @@
+# Phase 11 Gazebo UGV Simulation Parameters
+# Defines nominal physical properties, sensor configurations, and simulation rates.
+
+simulation:
+  time_step_s: 0.005             # 200 Hz physics simulation rate
+  max_step_size_s: 0.005
+  real_time_update_rate: 200.0
+  use_sim_time: true
+
+robot:
+  model_name: "ugv_4wd"
+  chassis:
+    length_m: 0.65
+    width_m: 0.45
+    height_m: 0.20
+    mass_kg: 25.0
+  wheels:
+    count: 4
+    radius_m: 0.125
+    width_m: 0.08
+    mass_each_kg: 2.0
+    track_width_m: 0.48         # Lateral distance between left and right wheel centers
+    wheelbase_m: 0.40           # Longitudinal distance between front and rear axle centers
+    friction_mu1: 1.0
+    friction_mu2: 1.0
+  total_mass_kg: 33.0
+
+sensors:
+  camera:
+    frame_id: "camera_optical"
+    parent_frame: "base_link"
+    mounting_offset_m: [0.15, 0.0, 0.40]   # x forward, y left, z up from base_link
+    pitch_deg: 15.0                        # Downward tilt
+    image_width: 640
+    image_height: 480
+    fps: 30.0
+    horizontal_fov_deg: 80.0
+    horizontal_fov_rad: 1.3962634
+    fx: 525.0
+    fy: 525.0
+    cx: 320.0
+    cy: 240.0
+    near_clip_m: 0.10
+    far_clip_m: 50.0
+    noise_std: 0.005
+
+  imu:
+    frame_id: "imu_link"
+    parent_frame: "base_link"
+    mounting_offset_m: [0.0, 0.0, 0.15]
+    rate_hz: 200.0
+    gyro_noise_density: 0.00087        # rad/s/sqrt(Hz)
+    gyro_random_walk: 0.000038         # rad/s^2/sqrt(Hz)
+    accel_noise_density: 0.00392       # m/s^2/sqrt(Hz)
+    accel_random_walk: 0.000196        # m/s^3/sqrt(Hz)
+
+  joint_states:
+    rate_hz: 50.0
+    joints:
+      - "wheel_fl_joint"
+      - "wheel_fr_joint"
+      - "wheel_rl_joint"
+      - "wheel_rr_joint"
+
+control:
+  cmd_vel_topic: "/cmd_vel"
+  max_linear_velocity_m_s: 1.5
+  max_angular_velocity_rad_s: 1.0
+  max_linear_accel_m_s2: 2.0
+  max_angular_accel_rad_s2: 3.0

@@ -1,0 +1,37 @@
+# Terrain Safety & Vehicle Physical Limits Configuration (SIH26126 UGV)
+#
+# NOTE: These parameters represent initial engineering assumptions and simulation baseline
+# values based on target 4WD UGV chassis dimensions. They are NOT universal constants and
+# are subject to empirical calibration on physical tilt-table and rough-terrain testing.
+
+vehicle_specifications:
+  chassis_type: "4wd_differential_skid_steer"
+  wheel_diameter_m: 0.26
+  wheel_radius_m: 0.13
+  ground_clearance_m: 0.12
+  wheelbase_m: 0.40
+  track_width_m: 0.45
+  center_of_gravity_height_m: 0.18
+
+slope_thresholds:
+  # Maximum inclination for normal cruising without traction loss
+  max_safe_slope_deg: 20.0
+  # Critical slope angle triggering emergency stop / rollover avoidance (cost forced to 1.0)
+  # Derived from static tipover angle arctan(half_track / cg_height) ~ 51 deg with 1.8 safety factor
+  critical_slope_deg: 28.0
+  status: "initial_simulation_parameter_pending_physical_validation"
+
+step_thresholds:
+  # Maximum vertical step height climbable without chassis scraping (~50% wheel radius)
+  max_step_height_m: 0.12
+  # Critical obstacle step height causing undercarriage high-centering (cost forced to 1.0)
+  critical_step_height_m: 0.20
+  status: "initial_simulation_parameter_pending_physical_validation"
+
+cost_weights:
+  w_learned: 0.40    # Weight on vision-learned non-traversability (SAM-TP)
+  w_slope: 0.25      # Weight on terrain slope angle
+  w_flatness: 0.15   # Weight on surface roughness / coplanarity dispersion
+  w_height: 0.10     # Weight on step height variation
+  w_obstacle: 0.10   # Weight on explicit detected obstacle hazards
+  unknown_cost: 0.50 # Exploration penalty for unobserved cells

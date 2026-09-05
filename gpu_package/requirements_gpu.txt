@@ -1,0 +1,12 @@
+# GPU Environment Requirements for SIH26126 Traversability AI Training
+# Tested on Google Colab (T4/A100), Kaggle (P100/T4), and Ubuntu 22.04 LTS
+
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+pyyaml>=6.0
+pydantic>=2.0.0
+pytest>=7.4.0
+onnx>=1.14.0
+onnxruntime>=1.15.0

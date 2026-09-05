@@ -1,0 +1,42 @@
+# SIH26126 Autonomous UGV System Configuration
+project_name: "SIH26126-UGV"
+
+camera:
+  width: 640
+  height: 480
+  fps: 30
+  fov_degrees: 75.0
+  baseline_m: 0.12
+
+robot:
+  max_linear_speed_mps: 1.2
+  min_linear_speed_mps: -0.4
+  max_angular_speed_radps: 1.5
+  robot_radius_m: 0.35
+  safety_margin_m: 0.15
+
+traversability:
+  safe_threshold: 0.35
+  unsafe_threshold: 0.70
+  model_name: "mobilenet_v3_small"
+  use_quantized_onnx: true
+  device: "auto" # 'auto', 'cpu', or 'cuda'
+
+costmap:
+  resolution_m: 0.05
+  width_m: 10.0
+  height_m: 10.0
+  inflation_radius_m: 0.50
+  decay_rate: 0.05
+
+planner:
+  algorithm: "hybrid_astar" # 'astar', 'hybrid_astar', 'dwa'
+  lookahead_dist_m: 1.5
+  replan_frequency_hz: 5.0
+  goal_tolerance_m: 0.25
+
+risk:
+  low_risk_speed_factor: 1.0
+  med_risk_speed_factor: 0.5
+  high_risk_replan: true
+  critical_risk_emergency_stop: true

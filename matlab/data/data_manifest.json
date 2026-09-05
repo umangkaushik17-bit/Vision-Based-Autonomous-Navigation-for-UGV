@@ -1,0 +1,33 @@
+{
+  "generated_by": "scripts/export_matlab_data.py",
+  "description": "Turnkey data export of Phase 1-6 UGV artifacts for MATLAB validation",
+  "files": [
+    "camera_geometry.mat",
+    "costmap_scenarios.mat",
+    "planner_trajectories.mat",
+    "synthetic_slam_trajectories.mat"
+  ],
+  "camera_intrinsics": {
+    "width": 640,
+    "height": 480,
+    "fx": 462.1386898729645,
+    "fy": 462.1386898729645,
+    "cx": 320.0,
+    "cy": 240.0
+  },
+  "costmap_dimensions": {
+    "forward_extent_m": [
+      0.2,
+      5.8
+    ],
+    "lateral_extent_m": [
+      -3.0,
+      3.0
+    ],
+    "resolution_m": 0.1,
+    "grid_shape": [
+      58,
+      60
+    ]
+  }
+}

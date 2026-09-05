@@ -1,0 +1,31 @@
+# Phase 9: Perception + Localization Spatial Fusion Configuration
+
+world_map:
+  resolution_m: 0.10            # Match Phase 5 local BEV resolution (0.10 m / cell)
+  initial_extent_x_m: 40.0      # Forward/Backward span in meters (x in [-20.0, 20.0])
+  initial_extent_y_m: 40.0      # Lateral span in meters (y in [-20.0, 20.0])
+  max_extent_m: 100.0           # Maximum dynamically expandable bound in meters
+  unknown_cost_default: 0.50    # Neutral cost for unobserved cells
+  enable_decay: true            # Enable temporal decay for old non-persistent observations
+  half_life_seconds: 30.0       # Observation confidence half-life (seconds)
+
+camera_extrinsics:
+  forward_offset_m: 0.15        # Distance ahead of vehicle center (+X body)
+  lateral_offset_m: 0.00        # Distance left of vehicle center (+Y body)
+  height_m: 0.40                # Elevation above ground contact plane (+Z body)
+  pitch_deg: 15.0               # Downward tilt angle in degrees (rotation about Y)
+  yaw_deg: 0.0                  # Heading offset in degrees (rotation about Z)
+  roll_deg: 0.0                 # Bank offset in degrees (rotation about X)
+
+synchronization:
+  max_sync_delta_s: 0.10        # Maximum allowable time delta between image and pose (seconds)
+  max_extrapolation_s: 0.05     # Maximum velocity-based temporal extrapolation (seconds)
+  reject_stale_poses: true      # Stale pose protection enabled
+
+fusion:
+  min_confidence_threshold: 0.20# Minimum perception confidence required for map update
+  degraded_confidence_scale: 0.5# Scale factor applied to observation confidence when DEGRADED
+  safety_override: true         # Enforce hard safety precedence: Critical > High > Lethal > Safe
+  hazard_threshold_critical: 0.70 # Hazard severity triggering immediate critical un-drivable state
+  hazard_threshold_high: 0.40   # Hazard severity triggering high-risk penalty
+  obstacle_inflation_cells: 2   # Conservative obstacle footprint padding (cells)

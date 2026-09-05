@@ -1,0 +1,68 @@
+# Traversability Reasoning and Rules Configuration for SIH26126 UGV
+# Explicitly separates semantic classification from vehicle driving physics and cost formulation.
+
+classes:
+  SAFE: 0
+  UNKNOWN: 1
+  UNSAFE: 2
+  VOID: 255
+
+cost_mapping:
+  SAFE:
+    cost_range: [0.00, 0.25]
+    nominal_cost: 0.10
+    speed_factor: 1.00 # Full nominal vehicle velocity
+    description: "Flat dirt trails, smooth gravel, asphalt, benign dry grass"
+
+  UNKNOWN:
+    cost_range: [0.26, 0.65]
+    nominal_cost: 0.45
+    speed_factor: 0.50 # Reduce speed by 50% for cautious exploration
+    description: "Overgrown brush, obscured shadows, uncharted terrain transition margins"
+
+  UNSAFE:
+    cost_range: [0.66, 1.00]
+    nominal_cost: 1.00 # Lethal navigation obstacle
+    speed_factor: 0.00 # Halts forward motion; triggers local avoidance replan
+    description: "Boulders, ditches, water bodies, tree trunks, logs, steep cliffs"
+
+  VOID:
+    cost_range: [null, null]
+    nominal_cost: null
+    speed_factor: null
+    description: "Sky horizon or self-chassis; masked out from navigation costmaps"
+
+semantic_to_traversability:
+  dirt: SAFE
+  trail: SAFE
+  sand: SAFE
+  grass: SAFE
+  gravel: SAFE
+  asphalt: SAFE
+  concrete: SAFE
+  mulch: UNKNOWN
+  bush: UNKNOWN
+  tall_grass: UNKNOWN
+  deep_shadow: UNKNOWN
+  puddle: UNKNOWN
+  rock: UNSAFE
+  boulder: UNSAFE
+  tree: UNSAFE
+  log: UNSAFE
+  water: UNSAFE
+  ditch: UNSAFE
+  cliff: UNSAFE
+  pole: UNSAFE
+  barrier: UNSAFE
+  sky: VOID
+
+safety_weights:
+  # Multi-cue continuous cost equation weights:
+  # Total_Cost = w_terrain * C_terrain + w_obstacle * C_obstacle + w_uncertainty * U_lighting
+  weight_terrain: 0.45
+  weight_obstacle: 0.40
+  weight_uncertainty: 0.15
+
+false_safe_penalty:
+  # Multiplier applied to False-Safe loss (marking UNSAFE terrain as SAFE)
+  penalty_multiplier: 3.5

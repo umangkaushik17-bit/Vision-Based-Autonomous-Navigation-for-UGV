@@ -1,0 +1,58 @@
+# Centralized Costmap Configuration (SIH26126 Autonomous UGV - Phase 5)
+#
+# Defines spatial dimensions, resolution, multi-layer cost weights,
+# safety overrides, temporal accumulation parameters, and obstacle inflation.
+
+coordinate_convention:
+  frame_id: "base_link"
+  axes:
+    x: "forward (meters)"
+    y: "left (meters)"
+    z: "up (meters)"
+  bev_grid_origin: "top-left maps to (max_x, max_y)"
+
+map_bounds:
+  forward_min_m: 0.2     # Minimum forward distance ahead of bumper (meters)
+  forward_max_m: 6.0     # Maximum forward sensing distance (meters)
+  lateral_min_m: -3.0    # Right-hand lateral boundary (meters)
+  lateral_max_m: 3.0     # Left-hand lateral boundary (meters)
+  resolution_m: 0.10     # Grid cell dimension: 0.10m = 10 cm/cell (60 x 58 grid)
+
+cost_weights:
+  w_traversability: 0.35 # Learned visual non-traversability (1 - trav_score)
+  w_hazard: 0.25         # Explicit detected obstacles / terrain hazards
+  w_slope: 0.15          # Geometric terrain inclination
+  w_roughness: 0.10      # Surface roughness / SVD residual coplanarity variance
+  w_height: 0.10         # Local step-height variation
+  w_unknown: 0.05        # Exploration penalty on unobserved / high-uncertainty cells
+
+unknown_policy:
+  mode: "CONSERVATIVE"   # Options: CONSERVATIVE (0.65), MODERATE (0.50), EXPLORATORY (0.35)
+  conservative_cost: 0.65
+  moderate_cost: 0.50
+  exploratory_cost: 0.35
+
+hard_safety_overrides:
+  override_enabled: true
+  critical_hazard_cost: 1.00    # Forced lethal cost for WATER, DITCH, PERSON, VEHICLE
+  high_hazard_cost: 0.90        # Very high cost for large boulders, steep steps
+  critical_slope_deg: 28.0      # Rollover threshold (degrees) -> forced lethal 1.00
+  critical_step_height_m: 0.20  # High-centering step threshold (meters) -> forced lethal 1.00
+  max_safe_slope_deg: 20.0      # Max nominal climbing slope
+  max_safe_step_height_m: 0.12  # Max nominal wheel step clearance
+
+temporal:
+  enabled: true
+  static_decay_factor: 0.98     # Slow decay for stationary terrain features
+  dynamic_decay_factor: 0.70    # Fast decay for moving agents (persons, vehicles)
+  min_observations_to_confirm: 2 # Number of hits before cell is considered stable
+  max_age_frames: 30            # Cells unobserved for 30 frames revert to UNKNOWN
+  dropout_tolerance_frames: 3   # Brief sensor drops don't erase confirmed terrain
+
+inflation:
+  enabled: true
+  robot_length_m: 0.65          # Physical UGV length
+  robot_width_m: 0.45           # Physical UGV width
+  robot_radius_m: 0.35          # Inscribed safety radius
+  inflation_radius_m: 0.55      # Circumscribed inflation radius
+  cost_scaling_factor: 3.0      # Exponential cost decay rate: C(d) = exp(-alpha * (d - r_inscribed))

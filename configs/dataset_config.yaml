@@ -1,0 +1,50 @@
+# Dataset and Perception Pipeline Configuration for SIH26126 UGV
+
+paths:
+  manifest_path: "data/manifests/dataset_manifest.json"
+  own_data_dir: "data/raw/own_data"
+  public_data_dir: "data/raw/public"
+  synthetic_data_dir: "data/synthetic_sample"
+  processed_dir: "data/processed/sequences"
+
+splits:
+  default_policy: "sequence_level" # Strictly sequence/video level, no frame leakage
+  target_proportions:
+    train: 0.70
+    val: 0.15
+    test: 0.15 # Final held-out test split
+
+preprocessing:
+  target_width: 640
+  target_height: 480
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std: [0.229, 0.224, 0.225]
+
+augmentations:
+  enabled: true
+  color_jitter:
+    brightness: 0.25
+    contrast: 0.25
+    saturation: 0.20
+    hue: 0.05
+  gaussian_blur:
+    kernel_size: 5
+    prob: 0.30
+  horizontal_flip:
+    prob: 0.50
+  perspective:
+    scale: 0.05
+    prob: 0.30
+
+dataloader:
+  batch_size: 8
+  num_workers: 0 # Windows safe default; 2-4 on Linux/Cloud A100
+  pin_memory: false
+  shuffle_train: true
+  drop_last: true
+
+classes:
+  safe: 0
+  unknown: 1
+  unsafe: 2
+  void: 255

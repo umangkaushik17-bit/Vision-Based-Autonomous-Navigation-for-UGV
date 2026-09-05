@@ -1,0 +1,108 @@
+# ROS2 Parameter Configuration for UGV Navigation Pipeline
+
+ugv_navigation:
+  # Topics
+  topics:
+    camera_image: "/camera/image_raw"
+    camera_info: "/camera/camera_info"
+    perception_costmap: "/perception/costmap"
+    localization_status: "/localization/status"
+    localization_odometry: "/localization/odometry"
+    world_terrain_map: "/terrain/world_map"
+    diagnostics: "/diagnostics"
+    dynamic_detections: "/perception/dynamic_obstacles"
+    dynamic_tracks: "/tracking/dynamic_obstacles"
+    predicted_trajectories: "/prediction/obstacle_trajectories"
+    dynamic_occupancy: "/occupancy/dynamic_slices"
+    behavioral_decision: "/behavior/tactical_decision"
+    replan_event: "/planning/dynamic_replan_event"
+    cmd_vel: "/cmd_vel"
+    global_path: "/planning/global_path"
+    dynamic_trajectory: "/planning/dynamic_trajectory"
+
+  # Dynamic Detection Configuration
+  detection:
+    frame_id: "base_link"
+    min_confidence: 0.30
+    rate_hz: 10.0
+
+  # TF2 Frame Conventions
+  tf_frames:
+    odom: "odom"
+    base_link: "base_link"
+    camera_link: "camera_link"
+    camera_optical: "camera_optical"
+
+  # Nominal Camera Extrinsics (base_link -> camera_link)
+  camera_extrinsics:
+    forward_offset_m: 0.15
+    lateral_offset_m: 0.00
+    height_offset_m: 0.40
+    pitch_deg: 15.0
+    roll_deg: 0.0
+    yaw_deg: 0.0
+
+  # Temporal Synchronization & Extrapolation
+  synchronization:
+    max_sync_delta_s: 0.10
+    max_extrapolation_s: 0.05
+    cache_time_s: 10.0
+
+  # World Grid Mapping
+  world_map:
+    resolution_m: 0.10
+    x_bounds_m: [-20.0, 20.0]
+    y_bounds_m: [-20.0, 20.0]
+    degraded_confidence_scale: 0.50
+
+  # Dynamic Tracking Configuration
+  tracking:
+    hits_to_confirm: 3
+    misses_to_expire: 5
+    max_association_distance_m: 1.50
+    max_association_dist_m: 1.50
+    use_kalman_filter: true
+    target_frame: "odom"
+
+  # Motion Prediction Configuration
+  prediction:
+    default_horizon_s: 2.0
+    default_dt_s: 0.25
+    horizon_s: 2.0
+    dt_s: 0.25
+    sigma_scale: 3.0
+    unknown_horizon_policy: "CONSERVATIVE_STOP"
+
+  # Dynamic Occupancy Layer
+  dynamic_occupancy:
+    resolution_m: 0.10
+    collision_cost_threshold: 0.65
+    frame_id: "odom"
+
+  # Behavioral State Arbitration
+  behavior:
+    stop_distance_m: 0.80
+    wait_distance_m: 1.80
+    deadlock_time_threshold_s: 3.0
+    deadlock_dist_threshold_m: 0.20
+    hysteresis_time_s: 0.50
+
+  # Event-Driven Global Replanning
+  replanning:
+    replan_cooldown_s: 2.0
+    deadlock_threshold_s: 3.0
+    max_replan_attempts: 3
+    stale_path_protection: true
+
+  # Safety Clamping & Invariants
+  safety:
+    emergency_stop_dist_m: 0.35
+    max_staleness_s: 0.50
+    enforce_zero_on_wait: true
+    enforce_zero_on_stop: true
+
+  # Replay Settings
+  replay:
+    mode: "synthetic"
+    num_frames: 25
+    fps: 10.0

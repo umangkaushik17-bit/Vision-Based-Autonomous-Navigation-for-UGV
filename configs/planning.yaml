@@ -1,0 +1,101 @@
+# ==============================================================================
+# SIH26126 UGV PATH PLANNING CONFIGURATION (PHASE 12)
+# ==============================================================================
+
+vehicle:
+  # Dimensions matching simulated 4WD UGV
+  length_m: 0.65
+  width_m: 0.45
+  wheelbase_m: 0.40
+  track_width_m: 0.48
+  wheel_radius_m: 0.125
+  inscribed_radius_m: 0.25
+  circumscribed_radius_m: 0.395
+  inflation_radius_m: 0.45
+  collision_margin_m: 0.05
+  stop_margin_m: 0.30
+  goal_margin_m: 0.15
+
+  # Kinematic and dynamic velocity limits
+  max_linear_velocity_mps: 1.00
+  min_linear_velocity_mps: -0.20
+  max_angular_velocity_radps: 1.00
+  max_linear_acceleration_mps2: 1.50
+  max_angular_acceleration_radps2: 2.50
+
+  # Degraded localization velocity cap (Phase 8/12 contract)
+  degraded_max_linear_velocity_mps: 0.35
+
+cost_weights:
+  w_distance: 1.00
+  w_traversability: 0.80
+  w_cost: 1.50
+  w_hazard: 2.50
+  w_slope: 1.20
+  w_roughness: 0.60
+  w_height: 1.00
+  w_unknown: 1.00
+  w_curvature: 0.40
+
+unknown_policy:
+  # UNKNOWN != SAFE: High penalty policy
+  unknown_is_lethal: false
+  unknown_cost_penalty: 0.80
+
+tolerances:
+  goal_xy_tolerance_m: 0.20
+  goal_yaw_tolerance_rad: 0.30
+  max_safe_cost: 0.65
+  lethal_cost_threshold: 0.85
+  critical_hazard_threshold: 0.70
+
+safety:
+  # Staleness timeouts and watchdogs
+  max_map_age_s: 2.00
+  max_localization_age_s: 1.00
+  command_timeout_s: 0.25
+  replan_cross_track_threshold_m: 0.50
+  replan_blocked_lookahead_m: 2.00
+  command_rate_hz: 10.0
+
+astar:
+  connectivity: 8
+  heuristic_type: "octile"
+  heuristic_weight: 1.00
+  enable_smoothing: true
+  max_smoothing_iterations: 100
+
+dwa:
+  prediction_horizon_s: 1.20
+  simulation_dt_s: 0.12
+  v_samples: 7
+  omega_samples: 13
+  path_cost_weight: 0.30
+  goal_dist_cost_weight: 0.25
+  heading_cost_weight: 0.15
+  clearance_cost_weight: 0.20
+  velocity_cost_weight: 0.15
+  terrain_cost_weight: 0.20
+  emergency_stop_decel_mps2: 3.00
+
+# Retained fallbacks for backward compatibility
+pf_rrt_star:
+  max_iterations: 1500
+  step_size_m: 0.30
+  goal_bias: 0.15
+  terrain_bias: 0.35
+  search_radius_gamma: 1.50
+  max_search_radius_m: 1.20
+  random_seed: 42
+
+hybrid_astar:
+  heading_bins: 16
+  min_turning_radius_m: 0.40
+  step_size_m: 0.20
+  analytic_expansion_ratio: 0.25
+
+pure_pursuit:
+  lookahead_ratio: 0.40
+  min_lookahead_m: 0.30
+  max_lookahead_m: 1.20
+  goal_reach_distance_m: 0.20

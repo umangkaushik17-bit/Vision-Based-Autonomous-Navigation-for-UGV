@@ -1,0 +1,37 @@
+# Master Perception Configuration (SIH26126 Autonomous UGV - Phase 4)
+
+models:
+  model_a:
+    name: "SAM-TP Mini+ Traversability"
+    type: "samtp"
+    checkpoint: "checkpoint_finetuned_v2.pt"
+    device: "cpu"  # Automatically elevates to cuda if available
+    threshold: 0.50
+
+  model_b:
+    name: "RUGD-Trained Traversability Baseline"
+    type: "rugd_onnx"
+    checkpoint: "models/rugd_traversability/outputs/exports/traversability_model.onnx"
+    device: "cpu"
+    threshold: 0.50
+
+obstacle_detection:
+  enable_neural: true
+  enable_water_reflection: true
+  enable_low_dark_obstacles: true
+  enable_negative_obstacles: true
+  nms_iou_threshold: 0.45
+  confidence_threshold: 0.40
+
+fusion:
+  policy_path: "configs/hazard_policy.yaml"
+  disagreement_threshold: 0.40
+  weight_model_a: 0.50
+  weight_model_b: 0.50
+  obstacle_override_enabled: true
+
+benchmarking:
+  target_resolution: [480, 640]
+  warmup_iterations: 3
+  timing_iterations: 15
+  output_dir: "outputs/perception"

@@ -1,0 +1,68 @@
+# External GPU Training Configuration for Traversability AI
+# Environment B: Google Colab, Kaggle, Lambda Cloud, or AWS GPU VM
+
+experiment:
+  name: "traversability_mobilenetv3_sih26126"
+  version: "1.0.0"
+  random_seed: 42
+  description: "Lightweight MobileNetV3-UNet with Class-Weighted Focal Loss addressing hazard imbalance"
+
+model:
+  architecture: "mobilenet_v3_small" # Options: mobilenet_v3_small, mobilenet_v3_large, resnet18
+  num_classes: 3 # SAFE (0), UNKNOWN (1), UNSAFE (2)
+  pretrained: true
+  dropout_prob: 0.20
+  in_channels: 3
+
+dataset:
+  manifest_path: "data/manifests/dataset_manifest.json"
+  target_size: [480, 640] # [height, width]
+  ignore_index: 255 # Sky / Void pixels excluded from loss calculation
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std: [0.229, 0.224, 0.225]
+
+loss:
+  type: "class_weighted_focal" # Options: class_weighted_focal, cross_entropy, dice_focal
+  gamma: 2.0
+  # Class weights: [SAFE: 1.0, UNKNOWN: 1.5, UNSAFE: 3.5] to mitigate 0.76% hazard rarity
+  class_weights: [1.0, 1.5, 3.5]
+  ignore_index: 255
+
+training:
+  epochs: 50
+  batch_size: 4 # Optimized for 5GB GPU VRAM profile (< 2.0 GB active VRAM)
+  gradient_accumulation_steps: 4 # Effective batch size = 4 x 4 = 16
+  num_workers: 2 # Conservative for 5GB environment
+  pin_memory: true
+  mixed_precision: true # torch.cuda.amp (FP16) - cuts VRAM by 50%
+  gradient_clip_norm: 1.0
+  early_stopping:
+    enabled: true
+    min_epochs: 25 # Minimum mandatory epochs before early stopping can trigger
+    patience: 7 # Number of epochs with no improvement after min_epochs before stopping
+    min_delta: 0.001 # Minimum change to qualify as an improvement
+    monitor: "val_mIoU" # Metric to monitor (val_mIoU or val_loss)
+    mode: "max" # "max" for mIoU (higher is better), "min" for loss
+
+optimizer:
+  type: "AdamW"
+  lr: 0.0005
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+
+scheduler:
+  type: "CosineAnnealingLR"
+  T_max: 50
+  eta_min: 0.000001
+  warmup_epochs: 3
+
+checkpoint:
+  save_dir: "outputs/checkpoints"
+  save_best_metric: "val_mIoU" # Primary selection metric
+  penalize_false_safe: true # Reject models with False-Safe ratio > 0.05
+  save_every_n_epochs: 5
+
+smoke_test:
+  epochs: 1
+  max_samples: 8
+  batch_size: 2

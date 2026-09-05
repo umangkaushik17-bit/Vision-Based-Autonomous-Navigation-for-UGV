@@ -1,0 +1,136 @@
+# ==============================================================================
+# SIH26126 Autonomous UGV: GPS-Denied Visual Localization & SLAM Configuration
+# ==============================================================================
+
+slam:
+  system:
+    name: "sih26126_visual_slam"
+    primary_mode: "stereo"         # Selected primary configuration: monocular, stereo, stereo_imu, rgbd
+    publish_rate_hz: 30.0
+    enable_loop_closure: true
+    enable_relocalization: true
+    diagnostic_logging: true
+
+  # ----------------------------------------------------------------------------
+  # Sensor Configurations
+  # ----------------------------------------------------------------------------
+  camera:
+    model: "pinhole"
+    specification_status: "ASSUMED_SIMULATION" # MEASURED, ASSUMED_SIMULATION, DATASET_PROVIDED
+    width: 640
+    height: 480
+    fps: 30
+    horizontal_fov_deg: 69.4
+
+    # Intrinsics (Left Camera / Primary Monocular)
+    intrinsics:
+      fx: 462.14
+      fy: 462.14
+      cx: 320.00
+      cy: 240.00
+
+    # Lens distortion coefficients [k1, k2, p1, p2, k3]
+    distortion:
+      model: "brown_conrady"
+      status: "PENDING_PHYSICAL_DATA"
+      k1: 0.00
+      k2: 0.00
+      p1: 0.00
+      p2: 0.00
+      k3: 0.00
+
+    # Stereo baseline
+    stereo:
+      baseline_m: 0.05             # 5cm baseline (RealSense D435i) or 0.12m (ZED2)
+      min_disparity_px: 1.0
+      max_disparity_px: 64.0
+      block_size: 7
+
+    # Camera Mounting Extrinsics in Robot Frame (base_link)
+    # Robot Frame: +X forward, +Y left, +Z up
+    extrinsics_base_to_camera:
+      position_m: [0.15, 0.00, 0.40] # x=0.15m forward of bumper center, z=0.40m height
+      pitch_deg: 15.0                # 15 deg downward pitch tilt
+      roll_deg: 0.0
+      yaw_deg: 0.0
+
+  # ----------------------------------------------------------------------------
+  # IMU Sensor Configuration (Bosch BMI055 Model)
+  # ----------------------------------------------------------------------------
+  imu:
+    enabled: true
+    rate_hz: 200.0
+    gravity_m_s2: 9.80665
+
+    # Noise densities
+    gyro_noise_density: 0.004        # rad/s/sqrt(Hz)
+    accel_noise_density: 0.04        # m/s^2/sqrt(Hz)
+    gyro_bias_walk: 0.00004          # rad/s^2/sqrt(Hz)
+    accel_bias_walk: 0.004           # m/s^3/sqrt(Hz)
+
+    # Initial calibration biases
+    initial_bias:
+      gyro: [0.0, 0.0, 0.0]
+      accel: [0.0, 0.0, 0.0]
+
+    # Camera-to-IMU Extrinsics
+    extrinsics_cam_to_imu:
+      translation_m: [0.0, 0.0, 0.0]
+      rotation_quat_wxyz: [1.0, 0.0, 0.0, 0.0]
+
+  # ----------------------------------------------------------------------------
+  # Feature Extraction & Tracking (ORB Frontend)
+  # ----------------------------------------------------------------------------
+  frontend:
+    feature_type: "ORB"
+    max_features: 1500
+    scale_factor: 1.2
+    pyramid_levels: 8
+    ini_fast_threshold: 20
+    min_fast_threshold: 7
+
+    # Spatial grid binning for uniform feature distribution
+    grid_rows: 30
+    grid_cols: 40
+
+    # Matching parameters
+    descriptor_dist_threshold: 45.0
+    lowe_ratio: 0.75
+    ransac_confidence: 0.99
+    ransac_reproj_threshold_px: 2.0
+
+  # ----------------------------------------------------------------------------
+  # Keyframing & Mapping Criteria
+  # ----------------------------------------------------------------------------
+  keyframing:
+    min_translation_m: 0.15          # Insert keyframe every 15cm
+    min_rotation_deg: 5.0            # Insert keyframe every 5 deg
+    min_inlier_ratio: 0.40           # Spawn keyframe if tracked inliers drop below 40%
+    max_frame_interval: 15           # Periodic fallback keyframe spawn
+
+  # ----------------------------------------------------------------------------
+  # Tracking States & Confidence Thresholds
+  # ----------------------------------------------------------------------------
+  tracking_state:
+    min_tracking_inliers: 20         # Inliers >= 20 => TRACKING_OK
+    degraded_inliers: 10             # 10 <= Inliers < 20 => DEGRADED
+    lost_inliers: 8                  # Inliers < 8 => LOST
+    relocalization_min_inliers: 25   # Inliers needed to transition from LOST to RECOVERED
+
+  # ----------------------------------------------------------------------------
+  # Loop Closure & Place Recognition
+  # ----------------------------------------------------------------------------
+  loop_closure:
+    similarity_score_threshold: 0.70
+    min_loop_separation_frames: 40
+    ransac_loop_inliers: 30
+    enable_pose_graph_relaxation: true
+
+  # ----------------------------------------------------------------------------
+  # Data & Trajectory Export
+  # ----------------------------------------------------------------------------
+  export:
+    canonical_format: "timestamp,x,y,z,qx,qy,qz,qw"
+    output_dir: "outputs/slam/trajectories"
+    matlab_dir: "matlab/data"
+    save_matlab_mat: true
