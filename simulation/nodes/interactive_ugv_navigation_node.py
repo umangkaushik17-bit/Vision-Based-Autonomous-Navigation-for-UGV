@@ -289,6 +289,9 @@ class InteractiveUGVNavigationNode(Node):
     def _on_reset_requested(self, _: Empty) -> None:
         """Reset internal navigation state."""
         self.get_logger().info("Resetting navigation and tracker states.")
+        self.cmd_pub.publish(Twist())
+        self.ugv_v = 0.0
+        self.ugv_w = 0.0
         self.active_global_path = None
         self.tracker = MultiFrameTracker(TrackerConfig(target_frame="odom", use_kalman_filter=True))
         self.predictor = MotionPredictor(PredictorConfig(default_horizon_s=2.0, default_dt_s=0.25))
