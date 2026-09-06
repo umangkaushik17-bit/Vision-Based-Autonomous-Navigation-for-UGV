@@ -1,0 +1,10 @@
+{
+  "self_test_id": "WS_25_INDUCED_FAULT_DETECTION",
+  "description": "Inject known perturbation in dynamic occupancy cost and assert harness failure detection",
+  "nominal_value": 0.825,
+  "perturbed_value": 0.999,
+  "perturbation_magnitude": 0.174,
+  "fault_detected_by_harness": true,
+  "reverted_to_nominal": true,
+  "self_test_status": "PASS"
+}

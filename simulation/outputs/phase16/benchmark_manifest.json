@@ -1,0 +1,20 @@
+{
+  "benchmark_version": "13.16.0",
+  "benchmark_name": "Phase 13 Full Closed-Loop Benchmark",
+  "timestamp_utc": "2026-09-06T11:19:17.242922+00:00",
+  "environment": {
+    "hostname": "a49ea11f61f1",
+    "os": "Linux 6.12.90+",
+    "python_version": "3.12.13",
+    "cpu_processor": "x86_64",
+    "cpu_count": 4,
+    "gpu_present": true,
+    "gpu_name": "Tesla P100-PCIE-16GB",
+    "gpu_vram": "16384 MiB",
+    "gpu_used_by_planner": false,
+    "timestamp_utc": "2026-09-06T11:19:17.242922+00:00"
+  },
+  "batch_executed": "all",
+  "total_runs_recorded": 21,
+  "total_wall_clock_s": 19097.96
+}

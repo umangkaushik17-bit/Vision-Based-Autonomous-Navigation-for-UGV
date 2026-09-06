@@ -1,0 +1,506 @@
+{
+  "scenario1_flat_terrain": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 24.67,
+      "p50_time_ms": 24.67,
+      "p95_time_ms": 24.67,
+      "nodes_explored": 908,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.41,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 725.49,
+      "p50_time_ms": 725.49,
+      "p95_time_ms": 725.49,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 4.262,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.435,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.7377,
+        "max_curvature": 15.9487,
+        "smoothness_score": 29.4052
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 375.1,
+      "p50_time_ms": 375.1,
+      "p95_time_ms": 375.1,
+      "nodes_explored": 1598,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.41,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    }
+  },
+  "scenario2_rough_terrain_detour": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 37.84,
+      "p50_time_ms": 37.84,
+      "p95_time_ms": 37.84,
+      "nodes_explored": 1542,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.2585,
+        "total_terrain_cost": 1.06,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.2695,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 677.0,
+      "p50_time_ms": 677.0,
+      "p95_time_ms": 677.0,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 4.271,
+        "mean_cost": 0.2552,
+        "total_terrain_cost": 1.11,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.2638,
+        "mean_curvature": 0.7289,
+        "max_curvature": 16.1502,
+        "smoothness_score": 30.7303
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 751.31,
+      "p50_time_ms": 751.31,
+      "p95_time_ms": 751.31,
+      "nodes_explored": 3001,
+      "metrics": {
+        "path_length_m": 4.485,
+        "mean_cost": 0.1385,
+        "total_terrain_cost": 0.63,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0654,
+        "mean_curvature": 0.4675,
+        "max_curvature": 6.1766,
+        "smoothness_score": 10.5845
+      }
+    }
+  },
+  "scenario3_steep_slope_avoidance": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 50.06,
+      "p50_time_ms": 50.06,
+      "p95_time_ms": 50.06,
+      "nodes_explored": 1535,
+      "metrics": {
+        "path_length_m": 4.882,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.495,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.1,
+        "avg_clearance_m": 0.703,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.2762,
+        "max_curvature": 13.2579,
+        "smoothness_score": 17.5941
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 810.5,
+      "p50_time_ms": 810.5,
+      "p95_time_ms": 810.5,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 5.274,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.535,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.1,
+        "avg_clearance_m": 0.79,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.7926,
+        "max_curvature": 19.3567,
+        "smoothness_score": 40.7632
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 0.0,
+      "mean_time_ms": 1411.19,
+      "p50_time_ms": 1411.19,
+      "p95_time_ms": 1411.19,
+      "nodes_explored": 6000,
+      "metrics": {
+        "path_length_m": null,
+        "mean_cost": null,
+        "min_clearance_m": null,
+        "total_risk": null,
+        "smoothness_score": null
+      }
+    }
+  },
+  "scenario4_creek_water_hazard": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 39.31,
+      "p50_time_ms": 39.31,
+      "p95_time_ms": 39.31,
+      "nodes_explored": 1427,
+      "metrics": {
+        "path_length_m": 4.696,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.48,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.1,
+        "avg_clearance_m": 0.631,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.2768,
+        "max_curvature": 10.5936,
+        "smoothness_score": 10.6621
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 761.81,
+      "p50_time_ms": 761.81,
+      "p95_time_ms": 761.81,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 5.597,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.57,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.224,
+        "avg_clearance_m": 0.853,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.8202,
+        "max_curvature": 18.5052,
+        "smoothness_score": 48.919
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 1228.25,
+      "p50_time_ms": 1228.25,
+      "p95_time_ms": 1228.25,
+      "nodes_explored": 5048,
+      "metrics": {
+        "path_length_m": 5.569,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.565,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.5,
+        "avg_clearance_m": 0.835,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.6474,
+        "max_curvature": 10.703,
+        "smoothness_score": 21.3719
+      }
+    }
+  },
+  "scenario5_negative_ditch": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 59.88,
+      "p50_time_ms": 59.88,
+      "p95_time_ms": 59.88,
+      "nodes_explored": 1608,
+      "metrics": {
+        "path_length_m": 5.25,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.535,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.1,
+        "avg_clearance_m": 0.704,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.2986,
+        "max_curvature": 13.0191,
+        "smoothness_score": 15.8247
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 723.75,
+      "p50_time_ms": 723.75,
+      "p95_time_ms": 723.75,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 6.029,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.61,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.224,
+        "avg_clearance_m": 0.838,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 1.2792,
+        "max_curvature": 20.5435,
+        "smoothness_score": 92.4482
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 0.0,
+      "mean_time_ms": 1372.83,
+      "p50_time_ms": 1372.83,
+      "p95_time_ms": 1372.83,
+      "nodes_explored": 6000,
+      "metrics": {
+        "path_length_m": null,
+        "mean_cost": null,
+        "min_clearance_m": null,
+        "total_risk": null,
+        "smoothness_score": null
+      }
+    }
+  },
+  "scenario6_unknown_region": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 46.31,
+      "p50_time_ms": 46.31,
+      "p95_time_ms": 46.31,
+      "nodes_explored": 1614,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.328,
+        "total_terrain_cost": 1.345,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.4146,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 750.75,
+      "p50_time_ms": 750.75,
+      "p95_time_ms": 750.75,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 4.262,
+        "mean_cost": 0.3276,
+        "total_terrain_cost": 1.425,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.4138,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.7878,
+        "max_curvature": 15.96,
+        "smoothness_score": 29.7517
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 1016.55,
+      "p50_time_ms": 1016.55,
+      "p95_time_ms": 1016.55,
+      "nodes_explored": 4495,
+      "metrics": {
+        "path_length_m": 4.793,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.485,
+        "total_risk": 0.0,
+        "min_clearance_m": 2.0,
+        "avg_clearance_m": 2.0,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.4506,
+        "max_curvature": 8.6128,
+        "smoothness_score": 13.2185
+      }
+    }
+  },
+  "scenario7_narrow_safe_corridor": {
+    "A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 16.78,
+      "p50_time_ms": 16.78,
+      "p95_time_ms": 16.78,
+      "nodes_explored": 766,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.41,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.6,
+        "avg_clearance_m": 0.922,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 615.46,
+      "p50_time_ms": 615.46,
+      "p95_time_ms": 615.46,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": 4.305,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.44,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.4,
+        "avg_clearance_m": 0.845,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.9088,
+        "max_curvature": 15.9417,
+        "smoothness_score": 44.2912
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 100.0,
+      "mean_time_ms": 76.29,
+      "p50_time_ms": 76.29,
+      "p95_time_ms": 76.29,
+      "nodes_explored": 478,
+      "metrics": {
+        "path_length_m": 4.0,
+        "mean_cost": 0.1,
+        "total_terrain_cost": 0.41,
+        "total_risk": 0.0,
+        "min_clearance_m": 0.6,
+        "avg_clearance_m": 0.922,
+        "mean_slope_deg": 0.0,
+        "max_slope_deg": 0.0,
+        "unknown_exposure_ratio": 0.0,
+        "mean_roughness": 0.0,
+        "mean_curvature": 0.0,
+        "max_curvature": 0.0,
+        "smoothness_score": 0.0
+      }
+    }
+  },
+  "scenario8_completely_blocked_corridor": {
+    "A*": {
+      "success_rate_percent": 0.0,
+      "mean_time_ms": 22.17,
+      "p50_time_ms": 22.17,
+      "p95_time_ms": 22.17,
+      "nodes_explored": 1320,
+      "metrics": {
+        "path_length_m": null,
+        "mean_cost": null,
+        "min_clearance_m": null,
+        "total_risk": null,
+        "smoothness_score": null
+      }
+    },
+    "PF-RRT*": {
+      "success_rate_percent": 0.0,
+      "mean_time_ms": 228.04,
+      "p50_time_ms": 228.04,
+      "p95_time_ms": 228.04,
+      "nodes_explored": 1500,
+      "metrics": {
+        "path_length_m": null,
+        "mean_cost": null,
+        "min_clearance_m": null,
+        "total_risk": null,
+        "smoothness_score": null
+      }
+    },
+    "Hybrid A*": {
+      "success_rate_percent": 0.0,
+      "mean_time_ms": 1178.42,
+      "p50_time_ms": 1178.42,
+      "p95_time_ms": 1178.42,
+      "nodes_explored": 6000,
+      "metrics": {
+        "path_length_m": null,
+        "mean_cost": null,
+        "min_clearance_m": null,
+        "total_risk": null,
+        "smoothness_score": null
+      }
+    }
+  }
+}

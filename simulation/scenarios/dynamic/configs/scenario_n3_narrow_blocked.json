@@ -1,0 +1,42 @@
+{
+  "scenario_id": "scenario_n3_narrow_blocked",
+  "name": "Scenario N3 \u2014 Narrow Passage (Too Narrow / Safe Stop)",
+  "description": "Corridor width 0.40m is physically impassable; UGV must safely stop before entry.",
+  "world_bounds_m": [
+    [
+      -5.0,
+      20.0
+    ],
+    [
+      -6.0,
+      6.0
+    ]
+  ],
+  "start_pose": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "goal_pose": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "obstacles": [],
+  "static_obstacles": [
+    {
+      "x": 1.5,
+      "y": 0.25,
+      "radius": 0.25
+    },
+    {
+      "x": 1.5,
+      "y": -0.25,
+      "radius": 0.25
+    }
+  ],
+  "control_dt_s": 0.1,
+  "max_duration_s": 14.0,
+  "random_seed": 42,
+  "expected_outcome": "SAFE_STOP"
+}

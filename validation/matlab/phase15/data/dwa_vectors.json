@@ -1,0 +1,43 @@
+{
+  "vectors": [
+    {
+      "case_id": "ideal_nominal_straight",
+      "path_dist": 0.05,
+      "heading_err": 0.02,
+      "dist_to_goal": 2.0,
+      "clearance": 1.5,
+      "velocity": 1.0,
+      "max_v": 1.0,
+      "terrain_cost": 0.1,
+      "dynamic_cost": 0.0,
+      "dynamic_risk": "FREE",
+      "unknown_horizon": false
+    },
+    {
+      "case_id": "avoidance_detour",
+      "path_dist": 0.4,
+      "heading_err": 0.15,
+      "dist_to_goal": 2.2,
+      "clearance": 0.8,
+      "velocity": 0.8,
+      "max_v": 1.0,
+      "terrain_cost": 0.2,
+      "dynamic_cost": 0.25,
+      "dynamic_risk": "LOW",
+      "unknown_horizon": false
+    },
+    {
+      "case_id": "high_risk_penalty",
+      "path_dist": 0.1,
+      "heading_err": 0.05,
+      "dist_to_goal": 1.8,
+      "clearance": 0.2,
+      "velocity": 1.0,
+      "max_v": 1.0,
+      "terrain_cost": 0.15,
+      "dynamic_cost": 0.75,
+      "dynamic_risk": "HIGH",
+      "unknown_horizon": false
+    }
+  ]
+}

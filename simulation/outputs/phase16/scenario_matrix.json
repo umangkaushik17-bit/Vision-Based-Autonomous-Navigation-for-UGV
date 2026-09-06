@@ -1,0 +1,242 @@
+[
+  {
+    "scenario_key": "B01",
+    "scenario_id": "B01_flat_baseline",
+    "scenario_name": "B01: Flat Open Terrain Baseline",
+    "category": "NOMINAL",
+    "description": "Clean nominal baseline with flat terrain and zero obstacles to verify nominal navigation.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      3.5,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 15.0,
+    "obstacle_count": 0,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B02",
+    "scenario_id": "B02_rough_terrain",
+    "scenario_name": "B02: Rough / Rocky Terrain",
+    "category": "TERRAIN",
+    "description": "Traversability-aware navigation across uneven rocky terrain with elevated costs.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 18.0,
+    "obstacle_count": 0,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B03",
+    "scenario_id": "B03_static_hazards",
+    "scenario_name": "B03: Static Hazard Environment",
+    "category": "STATIC_AVOIDANCE",
+    "description": "Navigation through static boulders and mud patches requiring route adjustment.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 18.0,
+    "obstacle_count": 0,
+    "static_obstacle_count": 2
+  },
+  {
+    "scenario_key": "B04",
+    "scenario_id": "B04_static_detour",
+    "scenario_name": "B04: Static Blockage / Detour",
+    "category": "REPLANNING",
+    "description": "Direct corridor blocked by static wall; event-driven replanner executes lateral detour.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 22.0,
+    "obstacle_count": 0,
+    "static_obstacle_count": 7
+  },
+  {
+    "scenario_key": "B05",
+    "scenario_id": "B05_single_dynamic",
+    "scenario_name": "B05: Single Dynamic Obstacle",
+    "category": "DYNAMIC_AVOIDANCE",
+    "description": "Single dynamic obstacle crossing path laterally; validates tracking, prediction, and DWA reaction.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 18.0,
+    "obstacle_count": 1,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B06",
+    "scenario_id": "B06_multi_dynamic",
+    "scenario_name": "B06: Multi-Dynamic Obstacles",
+    "category": "MULTI_TARGET",
+    "description": "Three dynamic obstacles (crossing, parallel, approaching); stresses multi-frame tracking and prediction.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.5,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 22.0,
+    "obstacle_count": 3,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B07",
+    "scenario_id": "B07_mixed_static_dynamic",
+    "scenario_name": "B07: Mixed Static + Dynamic",
+    "category": "MIXED_COST",
+    "description": "Static gate passage with crossing dynamic traffic; validates unified spatial-temporal cost reasoning.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.5,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 22.0,
+    "obstacle_count": 2,
+    "static_obstacle_count": 2
+  },
+  {
+    "scenario_key": "B08",
+    "scenario_id": "B08_dynamic_bottleneck",
+    "scenario_name": "B08: Dynamic Bottleneck",
+    "category": "BOTTLENECK",
+    "description": "Constrained doorway blocked by moving obstacle that clears; tests WAIT/STOP to PROCEED state recovery.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 22.0,
+    "obstacle_count": 1,
+    "static_obstacle_count": 6
+  },
+  {
+    "scenario_key": "B09",
+    "scenario_id": "B09_perception_degraded",
+    "scenario_name": "B09: Perception Degraded",
+    "category": "PERCEPTION_ROBUSTNESS",
+    "description": "Controlled perception degradation (25% dropout, 0.08m noise); verifies tracker coasting and safe control.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 18.0,
+    "obstacle_count": 2,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B10",
+    "scenario_id": "B10_localization_degraded",
+    "scenario_name": "B10: Localization Degraded",
+    "category": "LOCALIZATION_ROBUSTNESS",
+    "description": "Controlled pose measurement noise (0.08m std) and drift; tests path tracking and goal convergence.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 18.0,
+    "obstacle_count": 0,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B11",
+    "scenario_id": "B11_sensor_recovery",
+    "scenario_name": "B11: Temporary Sensor Failure + Recovery",
+    "category": "FAILURE_RECOVERY",
+    "description": "Full-horizon sensor failure and recovery: pre-fault -> blackout -> reacquisition -> goal arrival.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.0,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 20.0,
+    "obstacle_count": 1,
+    "static_obstacle_count": 0
+  },
+  {
+    "scenario_key": "B12",
+    "scenario_id": "B12_compound_stress",
+    "scenario_name": "B12: Compound Stress Mission",
+    "category": "COMPOUND_STRESS",
+    "description": "Compound stress scenario: 3 dynamic obstacles + perception noise + temporary replanner failure.",
+    "start_pose": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "goal_pose": [
+      4.5,
+      0.0,
+      0.0
+    ],
+    "max_duration_s": 22.0,
+    "obstacle_count": 3,
+    "static_obstacle_count": 0
+  }
+]

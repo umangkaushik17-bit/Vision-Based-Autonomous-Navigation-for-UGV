@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-09-03 16:20:13",
+  "ablation_study": {
+    "ablation_a_occupancy_only": {
+      "path_length_m": 4.0,
+      "mean_cost": 0.1878,
+      "total_terrain_cost": 0.77,
+      "total_risk": 0.0,
+      "min_clearance_m": 0.2,
+      "avg_clearance_m": 0.914,
+      "mean_slope_deg": 0.0,
+      "max_slope_deg": 0.0,
+      "unknown_exposure_ratio": 0.0,
+      "mean_roughness": 0.1756,
+      "mean_curvature": 0.0,
+      "max_curvature": 0.0,
+      "smoothness_score": 0.0
+    },
+    "ablation_b_terrain_aware": {
+      "path_length_m": 4.0,
+      "mean_cost": 0.1878,
+      "total_terrain_cost": 0.77,
+      "total_risk": 0.0,
+      "min_clearance_m": 0.2,
+      "avg_clearance_m": 0.914,
+      "mean_slope_deg": 0.0,
+      "max_slope_deg": 0.0,
+      "unknown_exposure_ratio": 0.0,
+      "mean_roughness": 0.1756,
+      "mean_curvature": 0.0,
+      "max_curvature": 0.0,
+      "smoothness_score": 0.0
+    },
+    "ablation_c_hazard_aware": {
+      "path_length_m": 4.0,
+      "mean_cost": 0.1878,
+      "total_terrain_cost": 0.77,
+      "total_risk": 0.0,
+      "min_clearance_m": 0.2,
+      "avg_clearance_m": 0.914,
+      "mean_slope_deg": 0.0,
+      "max_slope_deg": 0.0,
+      "unknown_exposure_ratio": 0.0,
+      "mean_roughness": 0.1756,
+      "mean_curvature": 0.0,
+      "max_curvature": 0.0,
+      "smoothness_score": 0.0
+    },
+    "ablation_d_full_fusion": {
+      "path_length_m": 4.0,
+      "mean_cost": 0.1878,
+      "total_terrain_cost": 0.77,
+      "total_risk": 0.0,
+      "min_clearance_m": 0.2,
+      "avg_clearance_m": 0.914,
+      "mean_slope_deg": 0.0,
+      "max_slope_deg": 0.0,
+      "unknown_exposure_ratio": 0.0,
+      "mean_roughness": 0.1756,
+      "mean_curvature": 0.0,
+      "max_curvature": 0.0,
+      "smoothness_score": 0.0
+    }
+  },
+  "terrain_detour_experiment": {
+    "direct_geometric_distance_m": 4.0,
+    "actual_path_length_m": 4.498,
+    "detour_ratio": 1.12,
+    "max_lateral_detour_m": 0.85,
+    "safe_detour_selected": true
+  },
+  "dynamic_obstacle_experiment": {
+    "nominal_velocity_mps": 0.65,
+    "evasive_steering_w_radps": 0.0,
+    "emergency_stop_velocity_mps": 0.0,
+    "emergency_stop_passed": true,
+    "recovery_resumed_passed": true
+  }
+}

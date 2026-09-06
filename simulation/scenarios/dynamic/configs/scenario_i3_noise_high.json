@@ -1,0 +1,62 @@
+{
+  "scenario_id": "scenario_i3_noise_high",
+  "name": "Scenario I3 \u2014 Sensor Noise (High)",
+  "description": "Obstacle tracking under high Gaussian position measurement noise (std=0.12m).",
+  "world_bounds_m": [
+    [
+      -5.0,
+      20.0
+    ],
+    [
+      -6.0,
+      6.0
+    ]
+  ],
+  "start_pose": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "goal_pose": [
+    3.5,
+    0.0,
+    0.0
+  ],
+  "obstacles": [
+    {
+      "obstacle_id": 903,
+      "motion_model": "CONSTANT_VELOCITY",
+      "size": [
+        0.8,
+        0.5
+      ],
+      "initial_pose": [
+        1.0,
+        1.5,
+        0.0
+      ],
+      "initial_velocity": [
+        0.3,
+        0.0
+      ],
+      "acceleration": [
+        0.0,
+        0.0
+      ],
+      "yaw_rate_rad_s": 0.0,
+      "waypoints": [],
+      "spawn_time_s": 0.0,
+      "despawn_time_s": Infinity,
+      "measurement_noise_std": 0.12,
+      "dropout_probability": 0.0,
+      "dropout_windows": [],
+      "stale_timestamp_offset_s": 0.0,
+      "confidence": 0.95
+    }
+  ],
+  "static_obstacles": [],
+  "control_dt_s": 0.1,
+  "max_duration_s": 14.0,
+  "random_seed": 42,
+  "expected_outcome": "SUCCESS"
+}

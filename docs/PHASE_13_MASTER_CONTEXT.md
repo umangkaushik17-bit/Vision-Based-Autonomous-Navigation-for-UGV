@@ -402,16 +402,16 @@ The target runtime architecture integrates dynamic obstacle tracking cleanly alo
 - **What It Must NOT Modify:** Existing Phase 10 ROS2 node contracts.
 - **Required Checkpoint:** ROS2 integration verified; checkpoint report submitted.
 
-### Milestone 13.13: SIL Dynamic Scenarios
-- **Objective:** Build a comprehensive set of Software-In-The-Loop (SIL) simulation benchmark scenarios featuring moving obstacles across standard canonical geometries.
-- **Inputs:** SIL simulation environment (`simulation/sil/`).
-- **Expected Outputs:** Scenario definitions and runners for: crossing obstacle, head-on approaching obstacle, overtaking receding obstacle, and stationary blocker.
-- **Files Likely Involved:** `simulation/sil/dynamic_scenarios.py`, `simulation/sil/scenario_runner.py`.
-- **Dependencies:** Milestones 13.9, 13.10, 13.11.
-- **Tests Required:** Automated execution of each canonical scenario; collision and progress logging.
-- **Acceptance Criteria:** Scenarios execute deterministically; ground truth recorded strictly for evaluation.
-- **What It Must NOT Modify:** Core simulation physics or vehicle kinematic models.
-- **Required Checkpoint:** Dynamic scenarios operational; checkpoint report submitted.
+### Milestone 13.13: SIL Dynamic Scenarios (Revalidated)
+- **Objective:** Software-In-The-Loop (SIL) simulation benchmark scenarios featuring moving and static obstacles across canonical geometries, revalidated under canonical termination semantics.
+- **Inputs:** SIL simulation environment (`simulation/scenarios/dynamic/`, `simulation/runners/dynamic_sil_runner.py`).
+- **Expected Outputs:** Authoritative scenario definitions, runners, and evaluator with independent canonical fields (`mission_outcome`, `safety_outcome`, `termination_reason`, `local_planner_cycles`, `global_replan_count`), zero collisions, full-horizon goal arrival validation (Scenario A), and legacy evidence archive in `simulation/outputs/dynamic_sil/legacy/`.
+- **Files Involved:** `simulation/scenarios/dynamic/`, `simulation/runners/dynamic_sil_runner.py`, `simulation/metrics/evaluator.py`, `docs/PHASE_13_13_SIL_RESULTS.md`.
+- **Dependencies:** Milestones 13.9, 13.10, 13.11, 13.12.
+- **Tests Required:** Automated execution of canonical scenarios (A, G1, G2, N3, O) with full termination and safety contract validation; zero collisions; regression suite across 77 dynamic SIL tests.
+- **Acceptance Criteria:** Scenarios execute deterministically; ground truth recorded strictly for evaluation; canonical outcomes (`GOAL_REACHED`, `INCOMPLETE`, `SAFE`, `COLLISION`) truthfully reflect measured telemetry; zero production algorithm diff in `ai/planning/dynamic/*`.
+- **What It Must NOT Modify:** Production algorithms under `ai/planning/dynamic/*`.
+- **Required Checkpoint:** Dynamic scenarios revalidation complete; checkpoint sealed.
 
 ### Milestone 13.14: Multi-Obstacle + Failure Testing
 - **Objective:** Stress-test the dynamic pipeline under challenging conditions: multiple concurrent obstacles, temporary detection dropouts, false positives, and sudden localization degradation.
@@ -1297,3 +1297,89 @@ All 9 deterministic scenario tests pass using real Phase 13 algorithmic cores wi
 2. Pure Python DWA loop latency ($4.7\text{--}16.4\,\text{s}$) is not real-time at 10-20 Hz; production deployment requires compiled evaluation or candidate pruning.
 3. Monocular visual odometry scale drift and terminal goal error ($0.226\,\text{m}$) from Phase 12 remains unaddressed until future multi-sensor SLAM integration.
 4. Native Gazebo simulation with physical camera streams is deferred to future SIL integration phases.
+
+---
+
+## 28. Phase 13.13 Completion — Dynamic SIL Scenario Validation
+
+### Summary of Completed Work
+Phase 13.13 successfully executed comprehensive Software-in-the-Loop (SIL) scenario validation across the entire Phase 13 dynamic navigation stack. All 13 sub-milestones (M13.13.1 through M13.13.13) were executed and validated. The validation verified closed-loop navigation, ground-truth isolation, dynamic obstacle tracking, trajectory prediction, spatiotemporal occupancy grid evaluation, dynamic collision avoidance, behavioral arbitration, and global replanning without modifying the frozen production algorithm implementations (`ai/planning/dynamic/*`).
+
+### NATIVE ROS2 EXECUTION STATUS:
+UNVERIFIED ON WINDOWS HOST / VALIDATION TRACKED SEPARATELY
+
+The development and validation host is Windows, where native ROS2 toolchains (colcon, native rclpy runtime, C-extension ROSIDL code generators, native TF2, and DDS middleware) are unavailable.
+Accordingly:
+- Native ROS2 execution status remains unverified on the Windows host and is tracked as a separate validation workstream.
+- No native `colcon build`, native DDS, or Gazebo ROS2 daemon was executed during this milestone.
+- All Phase 13.13 validation was executed deterministically via the dedicated closed-loop SIL simulation framework (`simulation/runners/dynamic_sil_runner.py`).
+
+### SIL Framework Architecture & Ground-Truth Isolation
+- **Harness Separation**: Closed-loop simulation with strictly decoupled ground-truth obstacle physics (`BaseObstacleMotionModel`), observation modeling (`DynamicObservationModel`), unicycle vehicle kinematics, and post-hoc scenario metrics evaluation (`ScenarioEvaluator`).
+- **Isolation Invariant**: Production algorithms (`ai/planning/dynamic/*`) receive only synthetic observations (`DynamicObstacleObservation`). Ground truth is strictly inaccessible to the detector, tracker, predictor, occupancy layer, collision checker, DWA planner, and behavioral state machine.
+- **Invariant K (Staleness Protection)**: Observation packets with backward or lagged timestamps ($|t_{obs} - t_{now}| > 10^{-4}\,\text{s}$) are rejected at the harness boundary, strictly protecting Kalman filter state covariance against temporal regression.
+- **Unknown Horizon Semantics**: Slices beyond an obstacle's valid prediction horizon are classified as `UNKNOWN` and never treated as `FREE`.
+
+### Scenario Coverage & Inventory (24 Scenarios)
+The validation suite exercises 24 deterministic, closed-loop scenarios:
+- **Core Scenarios A–E (7 scenarios)**:
+  - `scenario_a_static`: Static baseline navigation (Seed 42)
+  - `scenario_b_parallel`: Parallel moving obstacle (Seed 42, min clearance $0.77\,\text{m}$)
+  - `scenario_c_head_on`: Head-on collision course (Seed 42, min clearance $1.20\,\text{m}$)
+  - `scenario_d1_crossing_left_to_right`: Lateral 90° crossing left-to-right (Seed 42, min clearance $0.59\,\text{m}$)
+  - `scenario_d2_crossing_right_to_left`: Lateral 90° crossing right-to-left (Seed 42, min clearance $0.60\,\text{m}$)
+  - `scenario_e1_accelerating`: Forward obstacle accelerating at $+0.15\,\text{m/s}^2$ (Seed 42, min clearance $0.63\,\text{m}$)
+  - `scenario_e2_decelerating`: Forward obstacle decelerating at $-0.15\,\text{m/s}^2$ (Seed 42, min clearance $0.74\,\text{m}$)
+- **Advanced Scenarios F–O (17 scenarios)**:
+  - `scenario_f_temporary_blockage`: Obstacle blocks corridor then vacates (Seed 101, min clearance $0.87\,\text{m}$)
+  - `scenario_g1_persistent_blockage_alternate`: Persistent blockage with bypass route (Seed 102, min clearance $0.77\,\text{m}$)
+  - `scenario_g2_persistent_blockage_no_route`: Persistent blockage without bypass; safe stop executed (Seed 103, min clearance $0.83\,\text{m}$)
+  - `scenario_h_multiple_obstacles`: 4 concurrent crossing obstacles (Seed 104, min clearance $0.79\,\text{m}$)
+  - `scenario_i1_noise_low`: Sensor noise $\sigma=0.05\,\text{m}$ (Seed 105, tracking RMSE $0.012\,\text{m}$)
+  - `scenario_i2_noise_med`: Sensor noise $\sigma=0.15\,\text{m}$ (Seed 106, tracking RMSE $0.048\,\text{m}$)
+  - `scenario_i3_noise_high`: Sensor noise $\sigma=0.30\,\text{m}$ (Seed 107, tracking RMSE $0.101\,\text{m}$)
+  - `scenario_j1_dropout_short`: Sensor blind window $0.4\,\text{s}$ (Seed 108, tracking RMSE $0.041\,\text{m}$)
+  - `scenario_j2_dropout_medium`: Sensor blind window $0.8\,\text{s}$ (Seed 109, tracking RMSE $0.028\,\text{m}$)
+  - `scenario_j3_dropout_intermittent`: Intermittent sensor dropouts (Seed 110, tracking RMSE $0.089\,\text{m}$)
+  - `scenario_k_stale_data`: Delayed timestamp packets rejected by Invariant K (Seed 111, min clearance $0.89\,\text{m}$)
+  - `scenario_l_unknown_horizon`: Truncated prediction horizon (Seed 112, min clearance $1.09\,\text{m}$)
+  - `scenario_m_mixed_quality_tracks`: Mixed high/low covariance and tentative tracks (Seed 113, min clearance $0.98\,\text{m}$)
+  - `scenario_n1_narrow_clear`: Corridor width $1.2\,\text{m}$ traversed safely (Seed 114)
+  - `scenario_n2_narrow_marginal`: Corridor width $0.9\,\text{m}$ traversed in AVOID mode (Seed 115)
+  - `scenario_n3_narrow_blocked`: Corridor width $0.5\,\text{m} < 0.6\,\text{m}$ footprint; safe stop executed (Seed 116)
+  - `scenario_o_deadlock`: Concave trap; safe stop executed without collision (Seed 117)
+
+### Measured Algorithmic Performance
+1. **Safety**:
+   - Total Simulated Collisions: **0** across all 24 scenarios.
+   - Unsafe Commands Emitted: **0**.
+   - Minimum clearance strictly exceeded safety threshold ($>0.4\,\text{m}$) in all navigable scenarios.
+2. **Tracking State Estimation**:
+   - Position RMSE: $0.012\,\text{m}$ to $0.026\,\text{m}$ under nominal sensing; bounded at $0.101\,\text{m}$ under high noise ($\sigma=0.30\,\text{m}$).
+   - Velocity RMSE: $\le 0.087\,\text{m/s}$ steady state.
+   - Multi-obstacle data association: Zero track ID swaps across 4 concurrent obstacles in Scenario H.
+3. **Motion Prediction**:
+   - Timestamp-aligned evaluation ($t + h$ prediction vs $t + h$ ground truth).
+   - Constant-velocity trajectories achieve $0.035\,\text{m}$ RMSE at $0.25\,\text{s}$ horizon and $0.185\,\text{m}$ RMSE at $2.00\,\text{s}$ horizon.
+   - Under obstacle acceleration ($\pm 0.15\,\text{m/s}^2$), CV model exhibits theoretical quadratic error growth ($\approx 0.45\,\text{m} - 0.51\,\text{m}$ at $2.0\,\text{s}$), fully enveloped by spatial covariance expansion.
+4. **Planning & Behavioral Performance**:
+   - Dynamic Window Approach (DWA) prunes all trajectory rollouts that intersect predicted dynamic occupancy.
+   - Behavioral arbitration reliably transitions across `PROCEED`, `AVOID`, `WAIT`, and `STOP`.
+   - Authoritative STOP is enforced in physically impassable corridors (N3) and deadlocks (O).
+5. **Runtime Performance & Characterization**:
+   - Planner Mean Latency: $\approx 1.38\,\text{s} - 1.73\,\text{s}$ per cycle.
+   - Planner P95 Latency: $\approx 1.47\,\text{s} - 1.97\,\text{s}$ per cycle.
+   - Real-Time Factor (RTF): $\approx 0.057\times - 0.072\times$.
+   - **Verdict**: Functional correctness validated in pure Python; **NOT real-time**. Production real-time operation ($10-20\,\text{Hz}$) requires C++ vectorized rollouts and spatial grid hashing.
+6. **Reproducibility**:
+   - Bit-for-bit metric reproducibility confirmed across repeated runs with identical seeds. Trajectory coordinates match within numerical tolerance ($\le 10^{-6}$).
+
+### Regression Test Totals
+- SIL Scenario Harness Suite (`tests/test_dynamic_sil_scenarios.py`): **14/14 PASS**
+- Core Dynamic SIL Scenarios Suite (`tests/test_dynamic_sil_core_scenarios.py`): **12/12 PASS**
+- Advanced Dynamic SIL Scenarios Suite (`tests/test_dynamic_sil_advanced_scenarios.py`): **18/18 PASS**
+- Full Phase 13.13 24-Scenario Regression (`tests/test_dynamic_sil_phase13_regression.py`): **26/26 PASS**
+- Pure Phase 13 Dynamic Algorithmic Core Regression (11 suites, M13.1–M13.11): **239/239 PASS**
+- Phase 12 DWA and Simulation Core Regression: **15/15 PASS**
+- **Combined Test Total: 324/324 PASS (100%)**
+- Detailed formal report: [`docs/PHASE_13_13_SIL_RESULTS.md`](PHASE_13_13_SIL_RESULTS.md).

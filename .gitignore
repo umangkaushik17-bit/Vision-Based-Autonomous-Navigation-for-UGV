@@ -57,7 +57,10 @@ logs/
 runs/
 wandb/
 /outputs/
-/models/
+simulation/outputs/*
+!simulation/outputs/phase16/
+tools/kaggle/dataset/*.zip
+models/
 scratch/
 references/
 frame.jpg
@@ -68,5 +71,3 @@ gpu_results.zip
 Thumbs.db
 .DS_Store
 *.tar
-*.zip
-gpu_package.zip

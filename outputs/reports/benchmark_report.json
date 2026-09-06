@@ -1,0 +1,14 @@
+{
+  "device": "cpu",
+  "device_name": "Host CPU",
+  "input_resolution": [
+    480,
+    640
+  ],
+  "parameter_count": 1102499,
+  "model_size_mb": 4.21,
+  "avg_latency_ms": 157.75,
+  "p50_latency_ms": 158.0,
+  "p95_latency_ms": 179.8,
+  "fps": 6.34
+}

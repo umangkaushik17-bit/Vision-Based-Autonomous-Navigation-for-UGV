@@ -1,0 +1,176 @@
+{
+  "vectors": [
+    {
+      "case_id": "nominal_forward_prediction",
+      "x0": [
+        2.0,
+        3.0,
+        1.0,
+        -0.5
+      ],
+      "P0": [
+        0.04,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.04,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.25,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.25
+      ],
+      "q": 1.0,
+      "sigma_scale": 3.0,
+      "horizon_s": 2.0,
+      "dt_step": 0.25,
+      "expected_waypoints": [
+        {
+          "step": 0,
+          "tau": 0.0,
+          "expected_x": 2.0,
+          "expected_y": 3.0,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 0.04,
+          "expected_p_yy": 0.04,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 0.6000000000000001
+        },
+        {
+          "step": 1,
+          "tau": 0.25,
+          "expected_x": 2.25,
+          "expected_y": 2.875,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 0.060833333333333336,
+          "expected_p_yy": 0.060833333333333336,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 0.7399324293474371
+        },
+        {
+          "step": 2,
+          "tau": 0.5,
+          "expected_x": 2.5,
+          "expected_y": 2.75,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 0.14416666666666667,
+          "expected_p_yy": 0.14416666666666667,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 1.1390785749894516
+        },
+        {
+          "step": 3,
+          "tau": 0.75,
+          "expected_x": 2.75,
+          "expected_y": 2.625,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 0.32125000000000004,
+          "expected_p_yy": 0.32125000000000004,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 1.700367607313195
+        },
+        {
+          "step": 4,
+          "tau": 1.0,
+          "expected_x": 3.0,
+          "expected_y": 2.5,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 0.6233333333333333,
+          "expected_p_yy": 0.6233333333333333,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 2.3685438564654024
+        },
+        {
+          "step": 5,
+          "tau": 1.25,
+          "expected_x": 3.25,
+          "expected_y": 2.375,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 1.0816666666666666,
+          "expected_p_yy": 1.0816666666666666,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 3.1200961523645385
+        },
+        {
+          "step": 6,
+          "tau": 1.5,
+          "expected_x": 3.5,
+          "expected_y": 2.25,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 1.7275,
+          "expected_p_yy": 1.7275,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 3.9430318284284747
+        },
+        {
+          "step": 7,
+          "tau": 1.75,
+          "expected_x": 3.75,
+          "expected_y": 2.125,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 2.592083333333333,
+          "expected_p_yy": 2.592083333333333,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 4.829984472024728
+        },
+        {
+          "step": 8,
+          "tau": 2.0,
+          "expected_x": 4.0,
+          "expected_y": 2.0,
+          "expected_vx": 1.0,
+          "expected_vy": -0.5,
+          "expected_p_xx": 3.7066666666666666,
+          "expected_p_yy": 3.7066666666666666,
+          "expected_p_xy": 0.0,
+          "expected_r_unc": 5.775811631277461
+        }
+      ]
+    },
+    {
+      "case_id": "stationary_prediction",
+      "x0": [
+        5.0,
+        5.0,
+        0.0,
+        0.0
+      ],
+      "P0": [
+        0.01,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.01,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.01,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.01
+      ],
+      "q": 0.1,
+      "sigma_scale": 3.0,
+      "horizon_s": 1.0,
+      "dt_step": 0.5
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "experiment": "traversability_mobilenetv3_sih26126",
+  "device": "cpu",
+  "is_smoke_test": true,
+  "best_val_mIoU": 0.09853650354009995,
+  "total_epochs_configured": 1,
+  "epochs_completed": 1,
+  "early_stopped": false,
+  "early_stopped_epoch": null,
+  "early_stopping_best_epoch": null,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.4718575477600098,
+      "val_mIoU": 0.09853650354009995,
+      "val_acc": 0.21654459635416667,
+      "val_false_safe_ratio": 0.0,
+      "epoch_time_sec": 4.140075922012329
+    }
+  ]
+}

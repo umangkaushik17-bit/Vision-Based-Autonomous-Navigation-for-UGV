@@ -1,0 +1,52 @@
+{
+  "test_samples": 28,
+  "baseline_metrics": {
+    "pixel_accuracy": 0.2886121127136752,
+    "iou_safe": 0.2546594518810435,
+    "iou_unknown": 0.06112249720574038,
+    "iou_unsafe": 0.0,
+    "mIoU": 0.10526064969559462,
+    "false_safe_pixel_ratio": 1.0,
+    "false_unsafe_ratio": 0.0,
+    "unsafe_recall": 0.0,
+    "traversable_precision": 0.2590389289599054,
+    "unknown_ratio": 0.06168970352564102
+  },
+  "dl_overall_metrics": {
+    "pixel_accuracy": 0.5995977492559523,
+    "iou_safe": 0.2993666824439495,
+    "iou_unknown": 0.5239668129633024,
+    "iou_unsafe": 0.09916020671834626,
+    "mIoU": 0.3074979007085327,
+    "false_safe_pixel_ratio": 0.5361743237440961,
+    "false_unsafe_ratio": 0.0,
+    "unsafe_recall": 0.461356805495921,
+    "traversable_precision": 0.2993666824439495,
+    "unknown_ratio": 0.43647693452380953
+  },
+  "synthetic_metrics": {
+    "pixel_accuracy": 0.7461896534455128,
+    "iou_safe": 0.5045117083223022,
+    "iou_unknown": 0.6609810420120809,
+    "iou_unsafe": 0.45174581152382753,
+    "mIoU": 0.5390795206194036,
+    "false_safe_pixel_ratio": 0.5361743237440961,
+    "false_unsafe_ratio": 0.0,
+    "unsafe_recall": 0.461356805495921,
+    "traversable_precision": 0.5045117083223022,
+    "unknown_ratio": 0.48268679887820515
+  },
+  "own_real_metrics": {
+    "pixel_accuracy": 0.36138590494791667,
+    "iou_safe": 0.0,
+    "iou_unknown": 0.36138590494791667,
+    "iou_unsafe": 0.0,
+    "mIoU": 0.12046196831597222,
+    "false_safe_pixel_ratio": 0.0,
+    "false_unsafe_ratio": 0.0,
+    "unsafe_recall": 1.0,
+    "traversable_precision": 0.0,
+    "unknown_ratio": 0.36138590494791667
+  },
+  "domain_gap_mIoU": 0.41861755230343134
+}

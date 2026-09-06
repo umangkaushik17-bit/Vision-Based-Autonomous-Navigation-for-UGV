@@ -1,0 +1,42 @@
+{
+  "scenario_id": "scenario_n2_narrow_marginal",
+  "name": "Scenario N2 \u2014 Narrow Passage (Marginal Corridor)",
+  "description": "Corridor width 0.90m creates marginal clearance around UGV footprint.",
+  "world_bounds_m": [
+    [
+      -5.0,
+      20.0
+    ],
+    [
+      -6.0,
+      6.0
+    ]
+  ],
+  "start_pose": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "goal_pose": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "obstacles": [],
+  "static_obstacles": [
+    {
+      "x": 1.5,
+      "y": 0.45,
+      "radius": 0.2
+    },
+    {
+      "x": 1.5,
+      "y": -0.45,
+      "radius": 0.2
+    }
+  ],
+  "control_dt_s": 0.1,
+  "max_duration_s": 14.0,
+  "random_seed": 42,
+  "expected_outcome": "SUCCESS"
+}

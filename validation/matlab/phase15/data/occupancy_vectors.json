@@ -1,0 +1,63 @@
+{
+  "obs_pos": [
+    0.0,
+    0.0
+  ],
+  "obs_size": [
+    1.0,
+    0.6
+  ],
+  "obs_yaw": 0.0,
+  "r_unc": 0.6,
+  "sigma_scale": 3.0,
+  "query_points": [
+    {
+      "id": "center",
+      "x": 0.0,
+      "y": 0.0,
+      "expected_cost": 1.0,
+      "expected_risk": 4,
+      "is_nominal": true
+    },
+    {
+      "id": "near_edge_inside",
+      "x": 0.45,
+      "y": 0.25,
+      "expected_cost": 1.0,
+      "expected_risk": 4,
+      "is_nominal": true
+    },
+    {
+      "id": "high_risk_mid",
+      "x": 0.6,
+      "y": 0.0,
+      "expected_cost": 0.825,
+      "expected_risk": 3,
+      "is_nominal": false
+    },
+    {
+      "id": "med_risk_mid",
+      "x": 0.8,
+      "y": 0.0,
+      "expected_cost": 0.55,
+      "expected_risk": 2,
+      "is_nominal": false
+    },
+    {
+      "id": "low_risk_mid",
+      "x": 1.0,
+      "y": 0.0,
+      "expected_cost": 0.275,
+      "expected_risk": 1,
+      "is_nominal": false
+    },
+    {
+      "id": "free_space",
+      "x": 1.5,
+      "y": 0.0,
+      "expected_cost": 0.0,
+      "expected_risk": 0,
+      "is_nominal": false
+    }
+  ]
+}

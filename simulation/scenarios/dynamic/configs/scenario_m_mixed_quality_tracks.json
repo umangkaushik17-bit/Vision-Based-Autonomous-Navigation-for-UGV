@@ -1,0 +1,162 @@
+{
+  "scenario_id": "scenario_m_mixed_quality_tracks",
+  "name": "Scenario M \u2014 Mixed-Quality Tracks",
+  "description": "Scene contains TRACKING, DEGRADED, LOST, noisy, and intermittent tracks simultaneously.",
+  "world_bounds_m": [
+    [
+      -5.0,
+      20.0
+    ],
+    [
+      -6.0,
+      6.0
+    ]
+  ],
+  "start_pose": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "goal_pose": [
+    4.0,
+    0.0,
+    0.0
+  ],
+  "obstacles": [
+    {
+      "obstacle_id": 1301,
+      "motion_model": "CONSTANT_VELOCITY",
+      "size": [
+        0.8,
+        0.5
+      ],
+      "initial_pose": [
+        0.5,
+        -1.8,
+        0.0
+      ],
+      "initial_velocity": [
+        0.3,
+        0.0
+      ],
+      "acceleration": [
+        0.0,
+        0.0
+      ],
+      "yaw_rate_rad_s": 0.0,
+      "waypoints": [],
+      "spawn_time_s": 0.0,
+      "despawn_time_s": Infinity,
+      "measurement_noise_std": 0.01,
+      "dropout_probability": 0.0,
+      "dropout_windows": [],
+      "stale_timestamp_offset_s": 0.0,
+      "confidence": 0.95
+    },
+    {
+      "obstacle_id": 1302,
+      "motion_model": "CONSTANT_VELOCITY",
+      "size": [
+        0.7,
+        0.5
+      ],
+      "initial_pose": [
+        1.0,
+        1.8,
+        0.0
+      ],
+      "initial_velocity": [
+        0.25,
+        0.0
+      ],
+      "acceleration": [
+        0.0,
+        0.0
+      ],
+      "yaw_rate_rad_s": 0.0,
+      "waypoints": [],
+      "spawn_time_s": 0.0,
+      "despawn_time_s": Infinity,
+      "measurement_noise_std": 0.03,
+      "dropout_probability": 0.0,
+      "dropout_windows": [
+        [
+          0.4,
+          0.6
+        ]
+      ],
+      "stale_timestamp_offset_s": 0.0,
+      "confidence": 0.95
+    },
+    {
+      "obstacle_id": 1303,
+      "motion_model": "CONSTANT_VELOCITY",
+      "size": [
+        0.6,
+        0.4
+      ],
+      "initial_pose": [
+        2.5,
+        -1.8,
+        0.0
+      ],
+      "initial_velocity": [
+        0.2,
+        0.0
+      ],
+      "acceleration": [
+        0.0,
+        0.0
+      ],
+      "yaw_rate_rad_s": 0.0,
+      "waypoints": [],
+      "spawn_time_s": 0.0,
+      "despawn_time_s": Infinity,
+      "measurement_noise_std": 0.02,
+      "dropout_probability": 0.0,
+      "dropout_windows": [
+        [
+          0.5,
+          1.4
+        ]
+      ],
+      "stale_timestamp_offset_s": 0.0,
+      "confidence": 0.95
+    },
+    {
+      "obstacle_id": 1304,
+      "motion_model": "CONSTANT_VELOCITY",
+      "size": [
+        0.7,
+        0.5
+      ],
+      "initial_pose": [
+        3.0,
+        1.8,
+        0.0
+      ],
+      "initial_velocity": [
+        0.2,
+        0.0
+      ],
+      "acceleration": [
+        0.0,
+        0.0
+      ],
+      "yaw_rate_rad_s": 0.0,
+      "waypoints": [],
+      "spawn_time_s": 0.0,
+      "despawn_time_s": Infinity,
+      "measurement_noise_std": 0.1,
+      "dropout_probability": 0.0,
+      "dropout_windows": [],
+      "stale_timestamp_offset_s": 0.0,
+      "confidence": 0.95
+    }
+  ],
+  "static_obstacles": [],
+  "control_dt_s": 0.1,
+  "max_duration_s": 15.0,
+  "random_seed": 42,
+  "expected_outcome": "SUCCESS"
+}

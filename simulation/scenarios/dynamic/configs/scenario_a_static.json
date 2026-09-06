@@ -1,0 +1,31 @@
+{
+  "scenario_id": "scenario_a_static",
+  "name": "Scenario A \u2014 Static / No Dynamic Hazard",
+  "description": "Regression baseline: open traversable corridor with no dynamic obstacles.",
+  "world_bounds_m": [
+    [
+      -5.0,
+      20.0
+    ],
+    [
+      -6.0,
+      6.0
+    ]
+  ],
+  "start_pose": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "goal_pose": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "obstacles": [],
+  "static_obstacles": [],
+  "control_dt_s": 0.1,
+  "max_duration_s": 12.0,
+  "random_seed": 42,
+  "expected_outcome": "SUCCESS"
+}

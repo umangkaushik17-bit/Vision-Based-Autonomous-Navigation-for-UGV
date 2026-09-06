@@ -1,0 +1,124 @@
+{
+  "vectors": [
+    {
+      "case_id": "zero_innovation",
+      "y": [
+        0.0,
+        0.0
+      ],
+      "S": [
+        [
+          0.05,
+          0.0
+        ],
+        [
+          0.0,
+          0.05
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 0.0,
+      "expected_gated": true
+    },
+    {
+      "case_id": "one_sigma_diagonal",
+      "y": [
+        0.2,
+        0.0
+      ],
+      "S": [
+        [
+          0.04,
+          0.0
+        ],
+        [
+          0.0,
+          0.04
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 1.0,
+      "expected_gated": true
+    },
+    {
+      "case_id": "boundary_inside_9_20",
+      "y": [
+        0.6066300355241241,
+        0.0
+      ],
+      "S": [
+        [
+          0.04,
+          0.0
+        ],
+        [
+          0.0,
+          0.04
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 9.2,
+      "expected_gated": true
+    },
+    {
+      "case_id": "boundary_outside_9_22",
+      "y": [
+        0.6072890580275591,
+        0.0
+      ],
+      "S": [
+        [
+          0.04,
+          0.0
+        ],
+        [
+          0.0,
+          0.04
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 9.22,
+      "expected_gated": false
+    },
+    {
+      "case_id": "outlier_rejection",
+      "y": [
+        0.5,
+        0.0
+      ],
+      "S": [
+        [
+          0.02,
+          0.0
+        ],
+        [
+          0.0,
+          0.02
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 12.5,
+      "expected_gated": false
+    },
+    {
+      "case_id": "correlated_anisotropic_ellipse",
+      "y": [
+        0.1,
+        -0.1
+      ],
+      "S": [
+        [
+          0.05,
+          0.02
+        ],
+        [
+          0.02,
+          0.04
+        ]
+      ],
+      "chi2_threshold": 9.21,
+      "expected_d2": 0.8125,
+      "expected_gated": true
+    }
+  ]
+}

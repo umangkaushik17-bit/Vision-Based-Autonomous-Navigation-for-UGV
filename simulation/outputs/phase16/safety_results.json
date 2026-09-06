@@ -1,0 +1,212 @@
+[
+  {
+    "scenario_key": "B01",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B02",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B03",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.498,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B04",
+    "seed": 42,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 9,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B05",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.997,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B06",
+    "seed": 42,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 41,
+    "near_collision_count": 12,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B07",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 1,
+    "near_collision_count": 28,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B08",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.855,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B09",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.57,
+    "emergency_stop_count": 33,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B10",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B11",
+    "seed": 42,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 35,
+    "near_collision_count": 17,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B12",
+    "seed": 42,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 47,
+    "near_collision_count": 14,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B01",
+    "seed": 101,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B01",
+    "seed": 202,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 0,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B06",
+    "seed": 101,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 44,
+    "near_collision_count": 13,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B06",
+    "seed": 202,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 43,
+    "near_collision_count": 13,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B07",
+    "seed": 101,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 1,
+    "near_collision_count": 8,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B07",
+    "seed": 202,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.076,
+    "emergency_stop_count": 2,
+    "near_collision_count": 29,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B12",
+    "seed": 101,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 46,
+    "near_collision_count": 14,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B12",
+    "seed": 202,
+    "safety_outcome": "COLLISION",
+    "collision_count": 1,
+    "minimum_clearance_m": 0.0,
+    "emergency_stop_count": 44,
+    "near_collision_count": 16,
+    "unsafe_command_count": 0
+  },
+  {
+    "scenario_key": "B06",
+    "seed": 999,
+    "safety_outcome": "SAFE",
+    "collision_count": 0,
+    "minimum_clearance_m": 0.538,
+    "emergency_stop_count": 13,
+    "near_collision_count": 0,
+    "unsafe_command_count": 0
+  }
+]

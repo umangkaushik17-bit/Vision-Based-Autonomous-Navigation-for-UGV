@@ -55,6 +55,11 @@ The stack unifies deep semantic traversability estimation, visual-inertial odome
    - Isolated bidirectional conversion layer (`dynamic_converters.py`) keeping all mathematical and AI models 100% ROS-independent.
    - Unified launch orchestrator (`dynamic_navigation.launch.py`) with validated QoS contracts and topic ownership.
 
+6. **Dynamic SIL Scenario Validation (Phase 13.13 Revalidated):**
+   - Comprehensive Software-in-the-Loop closed-loop validation revalidated under canonical termination semantics.
+   - Strict ground-truth isolation, zero simulated collisions, full-horizon goal arrival validation, and legacy evidence separation.
+   - Full quantitative characterization documented in [docs/PHASE_13_13_SIL_RESULTS.md](docs/PHASE_13_13_SIL_RESULTS.md).
+
 ---
 
 ## 📁 Repository Structure

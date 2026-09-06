@@ -1,0 +1,12 @@
+{
+  "total_missions_evaluated": 21,
+  "overall_mission_success_count": 6,
+  "overall_mission_success_rate": 0.2857,
+  "overall_collision_count": 8,
+  "overall_collision_rate": 0.381,
+  "overall_safe_incomplete_count": 7,
+  "overall_safe_incomplete_rate": 0.3333,
+  "overall_mean_clearance_m": 0.168,
+  "overall_mean_p95_latency_ms": 6347.41,
+  "overall_mean_rtf": 0.023
+}

@@ -1,0 +1,16 @@
+edge_case_id,title,boundary_behavior,result,status
+EC-01,Stationary Object Pure Zero Velocity,"Speed = 0, is_stationary = True",VERIFIED,PASS
+EC-02,Sub-centimeter Sensor Jitter Rejection,Speed < 0.08m/s threshold filtered to 0,VERIFIED,PASS
+EC-03,Collinear Multi-frame Points,Linear OLS slope perfectly matches axis,VERIFIED,PASS
+EC-04,Uneven & Variable Time Step History,OLS weights dynamic dt intervals correctly,VERIFIED,PASS
+EC-05,Outlier Measurement Gate Boundary,Chi2 gate rejects d2 > 9.21 (99% conf),VERIFIED,PASS
+EC-06,Highly Anisotropic Covariance Ellipse,Mahalanobis contour properly reflects correlation,VERIFIED,PASS
+EC-07,Zero Process Noise Extrapolation,Covariance propagates linearly without Q inflation,VERIFIED,PASS
+EC-08,Tangent Bounding Box Contact,SAT detects exact boundary touch within margin,VERIFIED,PASS
+EC-09,10:1 Aspect Ratio Bounding Box,Separating axis normal correctly checks thin edges,VERIFIED,PASS
+EC-10,Concentric Internal Box Collision,SAT correctly detects full enclosure as overlap,VERIFIED,PASS
+EC-11,Dwell Time Sub-cycle Thrashing,Transitions held when dt < 0.20s dwell,VERIFIED,PASS
+EC-12,Wait Timeout Failsafe Transition,WAIT forced to STOP when elapsed >= 3.0s,VERIFIED,PASS
+EC-13,Two-cycle Recovery Confirmation,STOP only recovers to PROCEED on 2nd cycle,VERIFIED,PASS
+EC-14,Goal Reached Replanning Lockout,Goal distance <= 0.20m strictly prevents replan,VERIFIED,PASS
+EC-15,Debounced Path Invalidation,Path replan requires 2 consecutive cycles,VERIFIED,PASS
