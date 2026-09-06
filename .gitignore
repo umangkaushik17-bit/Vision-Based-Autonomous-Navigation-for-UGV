@@ -71,3 +71,8 @@ gpu_results.zip
 Thumbs.db
 .DS_Store
 *.tar
+
+# ROS2 build artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
