@@ -75,6 +75,7 @@ class DWAPlanner(LocalPlanner):
         behavior_cfg = getattr(self.config, "behavior", None)
         self.behavioral_state_machine = BehavioralStateMachine(behavior_cfg)
         self.enable_behavioral_arbitration = bool(getattr(self.config, "enable_behavioral_arbitration", False))
+        self.latest_candidates: List[Any] = []
 
     def _grid_coords(self, map_obj: Any, x_m: float, y_m: float) -> Tuple[int, int]:
         """Convert metric coordinate to (row, col) across WorldTerrainMap and BEVTerrainCostmap."""
@@ -365,6 +366,7 @@ class DWAPlanner(LocalPlanner):
 
         # If no valid collision-free trajectory exists: STOP SAFELY
         if not valid_candidates:
+            self.latest_candidates = []
             zero_traj = Trajectory(
                 points=[TrajectoryPoint(
                     t=current_state.timestamp + self.sim_dt,
@@ -416,6 +418,7 @@ class DWAPlanner(LocalPlanner):
 
         # Select candidate with highest safety-informed score
         valid_candidates.sort(key=lambda item: item[0], reverse=True)
+        self.latest_candidates = list(valid_candidates)
         best_score, best_traj, best_v, best_w, best_dyn_res = valid_candidates[0]
 
         diagnostics = {

@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import cv2
 import numpy as np
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 
 from ai.obstacles.base import HazardType, ObstacleDetection, ObstacleDetectorBase, RiskLevel
 from ai.utils.logging_utils import get_vision_logger

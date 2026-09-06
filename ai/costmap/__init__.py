@@ -10,7 +10,10 @@ from ai.costmap.base import (
 from ai.costmap.bev_costmap import BEVTerrainCostmap
 from ai.costmap.fusion import BEVCostmapFuser
 from ai.costmap.inflation import ObstacleInflator
-from ai.costmap.layers import LayerGenerator
+try:
+    from ai.costmap.layers import LayerGenerator
+except ImportError:
+    LayerGenerator = None
 from ai.costmap.motion_compensation import MotionCompensator
 from ai.costmap.serialization import CostmapSerializer
 from ai.costmap.temporal import TemporalCostmapAccumulator
