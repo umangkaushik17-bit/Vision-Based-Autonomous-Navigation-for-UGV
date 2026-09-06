@@ -12,10 +12,10 @@ The final judge demonstration executes a complete end-to-end interactive story:
 7. System supports single-key repeatable reset ('R') for at least 5 repeatable demonstrations.
 
 ## Current Status
-M1 (Create Minimal Gazebo World) COMPLETE. World `simulation/worlds/demo_outdoor.sdf` created, validated with Gazebo Sim Harmonic 8.11.0. UGV and Dynamic Obstacle physics and topic motions verified. Proceeding to M2 (ROS2 Simulation Bridge).
+M2 (ROS2 Simulation Bridge) COMPLETE. `simulation/config/bridge_params.yaml` configured and validated. Bidirectional communication established for `/cmd_vel`, `/odom`, `/dynamic_obstacle/cmd_vel`, `/dynamic_obstacle/odom`, `/clock`, `/joint_states`, and camera topics. Proceeding to M3 (Connect Existing Navigation).
 
 ## Current Milestone
-M1 Complete -> Active: M2 (ROS2 Simulation Bridge).
+M2 Complete -> Active: M3 (Connect Existing Navigation).
 
 ## Environment
 - OS: Microsoft Windows 11 / WSL2 Linux subsystem
@@ -153,20 +153,23 @@ M1 Complete -> Active: M2 (ROS2 Simulation Bridge).
 - `docs/DEMO_01_MASTER_CONTEXT.md`: Persistent demo memory.
 - `simulation/worlds/demo_outdoor.sdf`: Unified demo world containing outdoor ground, lighting, goal marker, static rock boulder, dynamic obstacle with velocity control, and 4WD UGV.
 - `simulation/scripts/test_m1_gazebo.sh`: Headless Gazebo validation script.
+- `simulation/scripts/test_m2_bridge.sh`: ROS2 simulation bridge validation script.
 
 ## Files Modified
-- None yet.
+- `simulation/config/bridge_params.yaml`: Configured mappings for `/cmd_vel`, `/odom`, `/dynamic_obstacle/cmd_vel`, `/dynamic_obstacle/odom`, clock, and sensors.
+- `.gitignore`: Added `ros2_ws` build/install/log artifacts.
 
 ## Tests
 - M0: Environment audit verified WSL2 Ubuntu 24.04, ROS2 Jazzy, and WSLg display.
 - M1: `simulation/scripts/test_m1_gazebo.sh` verified Gazebo world loading, physics, topic generation (`/model/ugv_4wd/cmd_vel`, `/model/dynamic_obstacle/cmd_vel`), and odometry velocity responses.
+- M2: `simulation/scripts/test_m2_bridge.sh` verified `ros_gz_bridge` bidirectional topic routing, ROS2 `/cmd_vel` command actuation, and ROS2 `/odom` / `/dynamic_obstacle/odom` telemetry.
 
 ## Milestone History
 - M0: Complete environment audit and repository inspection. Master Context created.
 - M1: Minimal Gazebo demo world created (`demo_outdoor.sdf`) and validated.
+- M2: ROS2 Simulation Bridge configured and validated with active message routing.
 
 ## Remaining Work
-- M2: Configure ROS2-Gazebo bridge for UGV and dynamic obstacle control/sensing.
 - M3: Connect navigation stack to UGV closed-loop.
 - M4: Validate static rock avoidance.
 - M5: Integrate dynamic obstacle pipeline with simulated sensor adapter.
@@ -177,4 +180,4 @@ M1 Complete -> Active: M2 (ROS2 Simulation Bridge).
 - Final Audit: Comprehensive verification and operator documentation.
 
 ## Next Action
-Implement and validate M2: ROS2 Simulation Bridge (`bridge_params.yaml`), mapping `/cmd_vel` to UGV, `/odom` to ROS2, and `/dynamic_obstacle/cmd_vel` / `/dynamic_obstacle/odom`.
+Connect existing navigation stack (M3): configure `ugv_params.yaml`, launch navigation nodes with `use_sim_time:=true`, verify global path generation, DWA local planning, and closed-loop motion control towards goal.
