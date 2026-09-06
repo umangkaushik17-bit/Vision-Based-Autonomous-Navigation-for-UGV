@@ -93,7 +93,7 @@ def setup_workspace():
     print("Environment successfully configured.\n")
 
 
-DEFAULT_CMD = "python scripts/run_phase16_benchmark.py --batch all && python scripts/generate_phase16_plots.py"
+DEFAULT_CMD = "pytest tests/test_dwa_acceleration_parity.py -v && python scripts/benchmark_planner_performance.py --backend gpu --preferred-device cuda --scenario all --cycles 25 --seed 42"
 
 
 def execute_tasks():
