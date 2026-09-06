@@ -12,14 +12,22 @@ The final judge demonstration executes a complete end-to-end interactive story:
 7. System supports single-key repeatable reset ('R') for at least 5 repeatable demonstrations.
 
 ## Current Status
-M3 (Connect Navigation Stack) & M4 (Static Rock Avoidance) COMPLETE.
-- Decoupled torch/CUDA imports across `ai/costmap` and `ai/obstacles` for pure CPU execution.
-- Created `simulation/nodes/interactive_ugv_navigation_node.py` integrating closed-loop Gazebo `/odom` subscriber, TF `odom` -> `base_link` broadcasting, static rock mapping, A* global routing, DWA local planning (with real-time CPU sampling grid 5x9 at 4Hz), Kalman tracking, motion prediction, dynamic occupancy, and behavioral arbitration.
-- Validated with `simulation/scripts/test_m3_m4_navigation.sh`: UGV navigated autonomously from (0.0, 0.0) forward to X=4.86m, safely bypassing the stationary rock boulder at (3.5, 0.15) with 1.10m clearance (passing required >0.45m margin).
-- Proceeding autonomously to M5 (Dynamic Obstacle Pipeline Integration) & M6 (Dynamic Obstacle Manual Keyboard Control).
+M5 (Dynamic Obstacle Pipeline Integration) & M6 (Dynamic Obstacle Manual Keyboard Control) COMPLETE.
+- Implemented `simulation/nodes/teleop_obstacle_keyboard.py` capturing WASD keyboard inputs, translating world-aligned Cartesian velocities to obstacle body frame via odometry yaw feedback, and triggering demo reset ('R').
+- Simulated sensor observation adapter in `interactive_ugv_navigation_node.py` verified with realistic noise and front camera FOV gating.
+- Full Phase 13 dynamic perception-planning loop verified in WSL2 via `simulation/scripts/run_test_m5_m6.sh`:
+  - Operator moves obstacle into UGV forward corridor ('A' / +Y direction).
+  - Perception detections generated on `/perception/dynamic_obstacles` (SIMULATED SENSOR INPUT).
+  - MultiFrameTracker assigns Track ID #1 with Kalman filtered velocity.
+  - MotionPredictor forecasts 9 waypoints (+0.5s, +1.0s, +1.5s, +2.0s).
+  - DynamicOccupancyLayer slices forward spatiotemporal risk region.
+  - DWA local planner evaluates candidate trajectories and selects tactical risk avoidance (`AVOID`).
+  - Operator moves obstacle away ('D' / -Y direction) -> risk clears -> state recovers -> UGV continues forward.
+  - Demo reset ('R') resets simulation poses in Gazebo, tracker, and navigation state.
+- Proceeding autonomously to M7 (Judge-Facing Visualization in RViz2) & M8 (Demo Polish & Launch Packaging).
 
 ## Current Milestone
-M4 Complete -> Active: M5 (Dynamic Obstacle Pipeline) & M6 (WASD Keyboard Control).
+M6 Complete -> Active: M7 (Judge-Facing RViz2 Visualization) & M8 (Demo Polish & Launch File).
 
 ## Environment
 - OS: Microsoft Windows 11 / WSL2 Linux subsystem
@@ -159,10 +167,13 @@ M4 Complete -> Active: M5 (Dynamic Obstacle Pipeline) & M6 (WASD Keyboard Contro
 - `docs/DEMO_01_MASTER_CONTEXT.md`: Persistent demo memory.
 - `simulation/worlds/demo_outdoor.sdf`: Unified demo world containing outdoor ground, lighting, goal marker, static rock boulder, dynamic obstacle with velocity control, and 4WD UGV.
 - `simulation/nodes/interactive_ugv_navigation_node.py`: Integrated closed-loop navigation, tracking, DWA, and RViz telemetry node.
+- `simulation/nodes/teleop_obstacle_keyboard.py`: Keyboard controller for dynamic obstacle teleoperation (WASD + Space + R).
 - `simulation/scripts/test_m1_gazebo.sh`: Headless Gazebo validation script.
 - `simulation/scripts/test_m2_bridge.sh`: ROS2 simulation bridge validation script.
 - `simulation/scripts/test_m3_m4_navigation.sh`: Automated M3 & M4 validation test script.
 - `simulation/scripts/verify_navigation_run.py`: Closed-loop odometry trajectory and clearance verifier.
+- `simulation/scripts/test_m5_m6_dynamic_obstacle.py`: Automated dynamic obstacle interaction and teleoperation test.
+- `simulation/scripts/run_test_m5_m6.sh`: Runner for M5 & M6 validation test.
 
 ## Files Modified
 - `simulation/config/bridge_params.yaml`: Configured mappings for `/cmd_vel`, `/odom`, `/dynamic_obstacle/cmd_vel`, `/dynamic_obstacle/odom`, clock, and sensors.
@@ -176,6 +187,7 @@ M4 Complete -> Active: M5 (Dynamic Obstacle Pipeline) & M6 (WASD Keyboard Contro
 - M1: `simulation/scripts/test_m1_gazebo.sh` verified Gazebo world loading, physics, topic generation, and odometry velocity responses.
 - M2: `simulation/scripts/test_m2_bridge.sh` verified `ros_gz_bridge` bidirectional topic routing, ROS2 `/cmd_vel` command actuation, and ROS2 `/odom` / `/dynamic_obstacle/odom` telemetry.
 - M3 & M4: `simulation/scripts/test_m3_m4_navigation.sh` verified full closed-loop navigation from (0.0, 0.0) forward past the static rock boulder (X=4.86m), maintaining 1.10m safe clearance.
+- M5 & M6: `simulation/scripts/run_test_m5_m6.sh` verified simulated sensor detection, Kalman tracking, multi-step trajectory prediction, dynamic occupancy, tactical DWA avoidance (`AVOID`), and simulation reset ('R').
 
 ## Milestone History
 - M0: Complete environment audit and repository inspection. Master Context created.
@@ -183,14 +195,14 @@ M4 Complete -> Active: M5 (Dynamic Obstacle Pipeline) & M6 (WASD Keyboard Contro
 - M2: ROS2 Simulation Bridge configured and validated with active message routing.
 - M3: Existing navigation stack connected closed-loop with Gazebo UGV.
 - M4: Static rock boulder avoidance validated with 1.10m clearance.
+- M5: Dynamic obstacle perception-prediction pipeline connected via simulated sensor adapter.
+- M6: Keyboard teleoperation node (`teleop_obstacle_keyboard.py`) implemented and verified.
 
 ## Remaining Work
-- M5: Integrate dynamic obstacle into Phase 13 pipeline with simulated sensor adapter (active and verified in node, now connecting operator interaction).
-- M6: Implement keyboard teleoperation node for dynamic obstacle (`teleop_obstacle_keyboard.py` with WASD + Space + R).
-- M7: Build comprehensive RViz2 judge-facing visualization configuration (`judge_demo.rviz`).
-- M8: Build single-command demo launch file `interactive_judge_demo.launch.py`.
+- M7: Build comprehensive RViz2 judge-facing visualization configuration (`simulation/rviz/judge_demo.rviz`).
+- M8: Build single-command demo launch file (`simulation/launch/interactive_judge_demo.launch.py`).
 - M9: Execute 5 repeatable end-to-end interactive demo runs with reset ('R').
 - Final Audit: Comprehensive verification and operator documentation.
 
 ## Next Action
-Implement Milestone 5 & Milestone 6: create `simulation/nodes/teleop_obstacle_keyboard.py` to enable keyboard teleoperation of `/dynamic_obstacle/cmd_vel` (W/A/S/D to drive, Space to stop, R to publish `/demo/reset`) and validate dynamic obstacle interaction triggering DWA risk assessment.
+Implement Milestone 7 & Milestone 8: create RViz2 display profile `simulation/rviz/judge_demo.rviz` and top-level launch file `simulation/launch/interactive_judge_demo.launch.py` launching Gazebo Sim, RViz2, Bridge, and Navigation stack in one unified command.
