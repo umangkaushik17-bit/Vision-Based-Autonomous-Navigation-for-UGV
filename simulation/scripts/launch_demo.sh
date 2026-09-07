@@ -19,7 +19,7 @@ trap cleanup EXIT INT TERM
 cleanup
 sleep 0.5
 
-# Ensure GUI display environment for WSLg / X11
+# Ensure GUI display environment for WSLg / Wayland / X11
 if [ -z "$DISPLAY" ]; then
     export DISPLAY=:0
 fi
@@ -31,7 +31,6 @@ if [ -d "/run/user/1000" ]; then
 elif [ -d "/mnt/wslg/runtime-dir" ]; then
     export XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
 fi
-export QT_QPA_PLATFORM=xcb
 
 source /opt/ros/jazzy/setup.bash
 source /mnt/c/Users/shres/Desktop/SIH2026/ros2_ws/install/setup.bash
@@ -39,7 +38,7 @@ export PYTHONPATH=/mnt/c/Users/shres/Desktop/SIH2026:$PYTHONPATH
 
 echo "=============================================================="
 echo "  LAUNCHING DEMO-01 INTERACTIVE UGV SIMULATION & RVIZ2 HUD"
-echo "  DISPLAY: $DISPLAY | QT_PLATFORM: $QT_QPA_PLATFORM"
+echo "  DISPLAY: $DISPLAY | WAYLAND: $WAYLAND_DISPLAY"
 echo "=============================================================="
 
 ros2 launch /mnt/c/Users/shres/Desktop/SIH2026/simulation/launch/interactive_judge_demo.launch.py "$@"

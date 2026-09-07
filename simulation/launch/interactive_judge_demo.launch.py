@@ -18,6 +18,7 @@ from launch.actions import (
     ExecuteProcess,
     LogInfo,
     SetEnvironmentVariable,
+    Shutdown,
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
@@ -66,7 +67,6 @@ def generate_launch_description() -> LaunchDescription:
 
     gui_env = {
         "DISPLAY": display_val,
-        "QT_QPA_PLATFORM": "xcb",
         "XDG_RUNTIME_DIR": xdg_runtime,
         "GZ_SIM_RESOURCE_PATH": resource_path,
     }
@@ -77,7 +77,6 @@ def generate_launch_description() -> LaunchDescription:
         value=f"{workspace_dir}:{os.environ.get('PYTHONPATH', '')}",
     )
     set_display = SetEnvironmentVariable(name="DISPLAY", value=display_val)
-    set_qt_platform = SetEnvironmentVariable(name="QT_QPA_PLATFORM", value="xcb")
     set_xdg = SetEnvironmentVariable(name="XDG_RUNTIME_DIR", value=xdg_runtime)
     set_resource = SetEnvironmentVariable(name="GZ_SIM_RESOURCE_PATH", value=resource_path)
 
@@ -120,7 +119,7 @@ def generate_launch_description() -> LaunchDescription:
         name="rviz2_judge",
         output="screen",
         additional_env=gui_env,
-        on_exit_shutdown=True,
+        on_exit=Shutdown(),
         condition=IfCondition(rviz),
     )
 
@@ -150,7 +149,6 @@ def generate_launch_description() -> LaunchDescription:
         decl_teleop,
         set_pythonpath,
         set_display,
-        set_qt_platform,
         set_xdg,
         set_resource,
         info_log,
