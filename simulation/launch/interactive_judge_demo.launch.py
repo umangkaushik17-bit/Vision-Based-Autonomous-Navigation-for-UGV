@@ -56,17 +56,37 @@ def generate_launch_description() -> LaunchDescription:
         description="Launch dynamic obstacle keyboard teleoperation node in this process",
     )
 
+    # Resolve GUI display environment variables for WSLg / X11
+    display_val = os.environ.get("DISPLAY", ":0")
+    if not display_val:
+        display_val = ":0"
+
+    xdg_runtime = "/run/user/1000" if os.path.isdir("/run/user/1000") else os.environ.get("XDG_RUNTIME_DIR", "/mnt/wslg/runtime-dir")
+    resource_path = f"{pkg_dir}/worlds:{pkg_dir}/models:{os.environ.get('GZ_SIM_RESOURCE_PATH', '')}"
+
+    gui_env = {
+        "DISPLAY": display_val,
+        "QT_QPA_PLATFORM": "xcb",
+        "XDG_RUNTIME_DIR": xdg_runtime,
+        "GZ_SIM_RESOURCE_PATH": resource_path,
+    }
+
     # Environment
     set_pythonpath = SetEnvironmentVariable(
         name="PYTHONPATH",
         value=f"{workspace_dir}:{os.environ.get('PYTHONPATH', '')}",
     )
+    set_display = SetEnvironmentVariable(name="DISPLAY", value=display_val)
+    set_qt_platform = SetEnvironmentVariable(name="QT_QPA_PLATFORM", value="xcb")
+    set_xdg = SetEnvironmentVariable(name="XDG_RUNTIME_DIR", value=xdg_runtime)
+    set_resource = SetEnvironmentVariable(name="GZ_SIM_RESOURCE_PATH", value=resource_path)
 
     # 1. Gazebo Sim Process (GUI mode)
     gz_gui = ExecuteProcess(
-        cmd=["gz", "sim", "-r", str(world_path)],
+        cmd=["gz", "sim", "-r", "-v", "3", str(world_path)],
         name="gz_sim_gui",
         output="screen",
+        additional_env=gui_env,
         condition=UnlessCondition(headless),
     )
 
@@ -99,6 +119,8 @@ def generate_launch_description() -> LaunchDescription:
         cmd=["rviz2", "-d", str(rviz_config_path)],
         name="rviz2_judge",
         output="screen",
+        additional_env=gui_env,
+        on_exit_shutdown=True,
         condition=IfCondition(rviz),
     )
 
@@ -127,6 +149,10 @@ def generate_launch_description() -> LaunchDescription:
         decl_rviz,
         decl_teleop,
         set_pythonpath,
+        set_display,
+        set_qt_platform,
+        set_xdg,
+        set_resource,
         info_log,
         gz_gui,
         gz_headless,
