@@ -109,8 +109,10 @@ class GPUCollisionChecker:
 
         # Costmap metadata
         res = float(getattr(costmap, "resolution_m", getattr(costmap, "resolution", 0.10)))
-        origin_x = float(getattr(costmap, "origin_x", 0.0))
-        origin_y = float(getattr(costmap, "origin_y", 0.0))
+        x_bounds = getattr(costmap, "x_bounds_m", getattr(costmap, "x_range_m", (-20.0, 20.0)))
+        y_bounds = getattr(costmap, "y_bounds_m", getattr(costmap, "y_range_m", (-20.0, 20.0)))
+        x_min, x_max = float(x_bounds[0]), float(x_bounds[1])
+        y_min, y_max = float(y_bounds[0]), float(y_bounds[1])
         shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
         H, W = int(shape[0]), int(shape[1])
 
@@ -119,6 +121,9 @@ class GPUCollisionChecker:
         cost_tensor = torch.as_tensor(costmap.cost, device=device, dtype=self.dtype)
         has_hazard = hasattr(costmap, "hazard")
         hazard_tensor = torch.as_tensor(costmap.hazard, device=device, dtype=self.dtype) if has_hazard else None
+
+        # Static footprint offsets (exact Phase 13 reference footprint without artificial expansion)
+        static_offsets = self._build_footprint_offsets(margin_m=0.0)
 
         # Transform footprint points across all (K, S) poses
         # Shape: (K, S, 1) and (1, 1, P)
@@ -129,24 +134,20 @@ class GPUCollisionChecker:
         cos_yaw = torch.cos(yaw)  # (K, S, 1)
         sin_yaw = torch.sin(yaw)  # (K, S, 1)
 
-        dx = self.footprint_offsets[:, 0].unsqueeze(0).unsqueeze(0)  # (1, 1, P)
-        dy = self.footprint_offsets[:, 1].unsqueeze(0).unsqueeze(0)  # (1, 1, P)
+        dx = static_offsets[:, 0].unsqueeze(0).unsqueeze(0)  # (1, 1, P)
+        dy = static_offsets[:, 1].unsqueeze(0).unsqueeze(0)  # (1, 1, P)
 
         # Rotated world footprint positions: (K, S, P)
         px = x + dx * cos_yaw - dy * sin_yaw
         py = y + dx * sin_yaw + dy * cos_yaw
 
-        # Convert to grid indices (row, col)
-        # Note: row corresponds to y or x depending on map convention
-        # Check world_to_grid conversion convention
-        test_r, test_c = costmap.world_to_grid(origin_x, origin_y) if hasattr(costmap, "world_to_grid") else costmap.meter_to_grid(origin_x, origin_y)
-        # In this codebase:
-        # col = int((x - origin_x) / res), row = int((y - origin_y) / res)
-        grid_c = torch.floor((px - origin_x) / res).to(torch.long)
-        grid_r = torch.floor((py - origin_y) / res).to(torch.long)
+        # Convert to grid indices (row, col) matching WorldTerrainMap / BEVTerrainCostmap convention:
+        # row = floor((x_max - x) / res), col = floor((y_max - y) / res)
+        grid_r = torch.floor((x_max - px) / res).to(torch.long)
+        grid_c = torch.floor((y_max - py) / res).to(torch.long)
 
         # 1. Bounds check
-        in_bounds = (grid_r >= 0) & (grid_r < H) & (grid_c >= 0) & (grid_c < W)
+        in_bounds = (px >= x_min) & (px < x_max) & (py >= y_min) & (py < y_max) & (grid_r >= 0) & (grid_r < H) & (grid_c >= 0) & (grid_c < W)
 
         # Clamp indices for safe tensor lookup (out of bounds will be flagged by in_bounds mask)
         clamped_r = torch.clamp(grid_r, 0, H - 1)
@@ -177,6 +178,8 @@ class GPUCollisionChecker:
         hvar_tensor = torch.as_tensor(hvar_raw, device=device, dtype=self.dtype)
 
         haz_val = hazard_tensor if hazard_tensor is not None else torch.zeros((H, W), device=device, dtype=self.dtype)
+        unk_tensor = torch.as_tensor(costmap.unknown, device=device, dtype=torch.bool) if hasattr(costmap, "unknown") else None
+        unk_val = torch.where(unk_tensor, torch.tensor(0.80, device=device, dtype=self.dtype), torch.tensor(0.0, device=device, dtype=self.dtype)) if unk_tensor is not None else torch.zeros((H, W), device=device, dtype=self.dtype)
 
         terrain_cost_map = (
             1.50 * cost_tensor +
@@ -184,15 +187,16 @@ class GPUCollisionChecker:
             2.50 * haz_val +
             1.20 * torch.clamp(slope_tensor / 20.0, 0.0, 2.0) +
             0.60 * rough_tensor +
-            1.00 * torch.clamp(hvar_tensor / 0.12, 0.0, 2.0)
+            1.00 * torch.clamp(hvar_tensor / 0.12, 0.0, 2.0) +
+            1.00 * unk_val
         )
         lethal_mask = obs_tensor | (cost_tensor >= 0.85) | (haz_val >= critical_hazard)
         terrain_cost_map = torch.where(lethal_mask, torch.tensor(float("inf"), device=device, dtype=self.dtype), terrain_cost_map)
 
         center_x = trajectories[:, :, 0]  # (K, S)
         center_y = trajectories[:, :, 1]  # (K, S)
-        center_c = torch.clamp(torch.floor((center_x - origin_x) / res).to(torch.long), 0, W - 1)
-        center_r = torch.clamp(torch.floor((center_y - origin_y) / res).to(torch.long), 0, H - 1)
+        center_r = torch.clamp(torch.floor((x_max - center_x) / res).to(torch.long), 0, H - 1)
+        center_c = torch.clamp(torch.floor((y_max - center_y) / res).to(torch.long), 0, W - 1)
 
         center_costs = terrain_cost_map[center_r, center_c]  # (K, S)
         inf_mask = torch.isinf(center_costs).any(dim=-1)
@@ -204,15 +208,12 @@ class GPUCollisionChecker:
         # If map has obstacles, compute distance to nearest obstacle cell
         if obs_tensor.any():
             obs_indices = obs_tensor.nonzero(as_tuple=False)  # (M, 2) [r, c]
-            obs_x = origin_x + (obs_indices[:, 1].to(self.dtype) + 0.5) * res  # (M,)
-            obs_y = origin_y + (obs_indices[:, 0].to(self.dtype) + 0.5) * res  # (M,)
+            obs_x = x_max - (obs_indices[:, 0].to(self.dtype) + 0.5) * res  # (M,)
+            obs_y = y_max - (obs_indices[:, 1].to(self.dtype) + 0.5) * res  # (M,)
             obs_pts = torch.stack([obs_x, obs_y], dim=-1)  # (M, 2)
 
             # Compute min distance for each trajectory center points
-            # Shape: center (K, S, 2) vs obs (M, 2)
-            # Center poses for valid trajectories only to conserve memory
             pts_eval = trajectories[:, :, :2].reshape(-1, 2)  # (K*S, 2)
-            # Chunked distance if M is large, or 2.0m bounding filter
             dists = torch.cdist(pts_eval, obs_pts)  # (K*S, M)
             min_pts_dist = dists.min(dim=-1).values.reshape(K, S)  # (K, S)
             min_clearance = min_pts_dist.min(dim=-1).values  # (K,)
@@ -257,6 +258,9 @@ class GPUCollisionChecker:
         dyn_min_clearance = torch.full((K,), float(self.config.max_clearance_search_m), device=device, dtype=self.dtype)
         dyn_max_cost = torch.zeros(K, device=device, dtype=self.dtype)
         dyn_risk_level = torch.zeros(K, device=device, dtype=torch.long)
+        dyn_unknown_mask = torch.zeros(K, device=device, dtype=torch.bool)
+
+        dyn_footprint_offsets = self._build_footprint_offsets(margin_m=self.margin)
 
         # 1. Dynamic Layer Raster Evaluation (if provided)
         if dynamic_layer is not None:
@@ -277,8 +281,8 @@ class GPUCollisionChecker:
                 cos_s = torch.cos(yaw_s)
                 sin_s = torch.sin(yaw_s)
 
-                px = x_s + self.footprint_offsets[:, 0].unsqueeze(0) * cos_s - self.footprint_offsets[:, 1].unsqueeze(0) * sin_s
-                py = y_s + self.footprint_offsets[:, 0].unsqueeze(0) * sin_s + self.footprint_offsets[:, 1].unsqueeze(0) * cos_s
+                px = x_s + dyn_footprint_offsets[:, 0].unsqueeze(0) * cos_s - dyn_footprint_offsets[:, 1].unsqueeze(0) * sin_s
+                py = y_s + dyn_footprint_offsets[:, 0].unsqueeze(0) * sin_s + dyn_footprint_offsets[:, 1].unsqueeze(0) * cos_s
 
                 # Exact DynamicOccupancyLayer coordinate convention:
                 # row = floor((x_max - x) / res), col = floor((y_max - y) / res)
@@ -300,17 +304,20 @@ class GPUCollisionChecker:
                 pt_hit = (~in_b) | pt_nom | (pt_cost >= 1.0) | (pt_risk == 4)
                 traj_hit = pt_hit.any(dim=-1)
 
-                dyn_collision_mask = dyn_collision_mask | traj_hit
+                if not tracks_list:
+                    dyn_collision_mask = dyn_collision_mask | traj_hit
                 dyn_max_cost = torch.maximum(dyn_max_cost, pt_cost.max(dim=-1).values)
                 dyn_risk_level = torch.maximum(dyn_risk_level, pt_risk.max(dim=-1).values)
 
         # 2. Exact Track Evaluation (SAT and Clearance)
         ugv_obbs = self._compute_ugv_obbs(trajectories)
-        for trk in tracks_list:
-            obs_obbs, obs_radii, obs_centers, obs_uncs = self._extract_track_tensors(trk, trajectories[0, :, 3])
+        future_times = trajectories[0, :, 3]
 
-            if obs_obbs is None:
+        for trk in tracks_list:
+            extracted = self._extract_track_tensors(trk, future_times)
+            if extracted[0] is None:
                 continue
+            obs_obbs, obs_radii, obs_centers, obs_uncs, step_valid = extracted
 
             # Broad-phase distance filter: (K, S)
             # Distance from UGV center to obstacle center at each step
@@ -319,12 +326,15 @@ class GPUCollisionChecker:
             search_thresh = self.r_circumscribed + obs_radii.unsqueeze(0) + self.config.max_clearance_search_m
             broad_phase_mask = d_centers <= search_thresh  # (K, S) candidates needing exact check
 
+            if (future_times > trk.horizon_s + 1e-4).any():
+                dyn_unknown_mask = dyn_unknown_mask | broad_phase_mask.any(dim=1)
+
             if not broad_phase_mask.any():
                 continue
 
             # Exact 8-axis SAT collision check where broad_phase_mask is True
             sat_collision, clearance, risk_cost, risk_lvl = self._evaluate_sat_and_clearance(
-                ugv_obbs, obs_obbs, obs_uncs, broad_phase_mask
+                ugv_obbs, obs_obbs, obs_uncs, broad_phase_mask, step_valid_mask=step_valid
             )
 
             # Update candidate summaries
@@ -333,7 +343,7 @@ class GPUCollisionChecker:
             dyn_max_cost = torch.maximum(dyn_max_cost, risk_cost)
             dyn_risk_level = torch.maximum(dyn_risk_level, risk_lvl)
 
-        return dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level
+        return dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask
 
     def _compute_ugv_obbs(self, trajectories: torch.Tensor) -> torch.Tensor:
         """Compute oriented bounding box corners (K, S, 4, 2) for UGV poses."""
@@ -370,7 +380,7 @@ class GPUCollisionChecker:
         self,
         track: PredictedObstacleTrajectory,
         future_times: torch.Tensor,
-    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
+    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Interpolate obstacle track waypoints to match planning time steps."""
         S = future_times.shape[0]
         obs_size = track.current_state.bbox_size
@@ -381,14 +391,16 @@ class GPUCollisionChecker:
         obbs_list = []
         centers_list = []
         uncs_list = []
+        step_valid_list = []
 
         for s in range(S):
             t_s = float(future_times[s].item())
+            is_valid_step = t_s <= (track.horizon_s + 1e-4)
+            step_valid_list.append(is_valid_step)
             # Find matching waypoint or interpolate
             wp_data = self._interpolate_waypoint(track, t_s)
             if wp_data is None:
-                # Beyond track horizon
-                return None, None, None, None
+                return None, None, None, None, None
 
             ox, oy, oyaw, or_unc = wp_data
             c = math.cos(oyaw)
@@ -407,8 +419,9 @@ class GPUCollisionChecker:
         centers = torch.tensor(centers_list, device=self.device, dtype=self.dtype)  # (S, 2)
         radii = torch.full((S,), r_obs, device=self.device, dtype=self.dtype)  # (S,)
         uncs = torch.tensor(uncs_list, device=self.device, dtype=self.dtype)  # (S,)
+        step_valid = torch.tensor(step_valid_list, device=self.device, dtype=torch.bool)  # (S,)
 
-        return obbs, radii, centers, uncs
+        return obbs, radii, centers, uncs, step_valid
 
     def _interpolate_waypoint(
         self,
@@ -419,8 +432,11 @@ class GPUCollisionChecker:
         wps = track.waypoints
         if not wps:
             return None
-        if target_t < -1e-6 or target_t > track.horizon_s + 1e-4:
+        if target_t < -1e-6:
             return None
+
+        # Clamp to track horizon for extrapolation beyond horizon
+        query_t = min(float(target_t), float(track.horizon_s))
 
         yaw = float(track.current_state.bbox_yaw)
 
@@ -428,22 +444,22 @@ class GPUCollisionChecker:
             return float(getattr(w, "uncertainty_radius", getattr(w, "position_uncertainty_radius", 0.10)))
 
         for wp in wps:
-            if abs(wp.time_offset - target_t) < 1e-4:
+            if abs(wp.time_offset - query_t) < 1e-4:
                 return (float(wp.x), float(wp.y), yaw, get_unc(wp))
 
-        if target_t <= wps[0].time_offset:
+        if query_t <= wps[0].time_offset:
             return (float(wps[0].x), float(wps[0].y), yaw, get_unc(wps[0]))
-        if target_t >= wps[-1].time_offset:
+        if query_t >= wps[-1].time_offset:
             return (float(wps[-1].x), float(wps[-1].y), yaw, get_unc(wps[-1]))
 
         for i in range(len(wps) - 1):
             w1 = wps[i]
             w2 = wps[i + 1]
-            if w1.time_offset <= target_t <= w2.time_offset:
+            if w1.time_offset <= query_t <= w2.time_offset:
                 dt = w2.time_offset - w1.time_offset
                 if dt < 1e-6:
                     return (float(w1.x), float(w1.y), yaw, get_unc(w1))
-                alpha = (target_t - w1.time_offset) / dt
+                alpha = (query_t - w1.time_offset) / dt
                 x = float(w1.x + alpha * (w2.x - w1.x))
                 y = float(w1.y + alpha * (w2.y - w1.y))
                 unc = float(get_unc(w1) + alpha * (get_unc(w2) - get_unc(w1)))
@@ -456,10 +472,14 @@ class GPUCollisionChecker:
         obs_obbs: torch.Tensor,  # (S, 4, 2)
         obs_uncs: torch.Tensor,  # (S,)
         broad_phase_mask: torch.Tensor,  # (K, S)
+        step_valid_mask: Optional[torch.Tensor] = None,  # (S,)
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Perform vectorized 8-axis SAT collision check and clearance calculation."""
         K, S, _, _ = ugv_obbs.shape
         device = self.device
+
+        if step_valid_mask is not None:
+            broad_phase_mask = broad_phase_mask & step_valid_mask.unsqueeze(0)
 
         # 1. Fully batched 8-axis SAT across all (K, S) candidates
         e1 = ugv_obbs[:, :, [1, 2, 3, 0]] - ugv_obbs  # (K, S, 4, 2)

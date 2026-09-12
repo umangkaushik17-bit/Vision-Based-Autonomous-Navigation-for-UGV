@@ -126,6 +126,86 @@ class AcceleratedDWAPlanner(LocalPlanner):
 
         return (float(xy[target_idx, 0]), float(xy[target_idx, 1]))
 
+    def _apply_broad_phase_filter(
+        self,
+        trajectories: torch.Tensor,
+        times: torch.Tensor,
+        predicted_tracks: Any,
+        dynamic_layer: Any,
+        dyn_collision_mask: torch.Tensor,
+        dyn_min_clearance: torch.Tensor,
+        dyn_max_cost: torch.Tensor,
+        dyn_risk_level: torch.Tensor,
+        dyn_unknown_mask: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Apply conservative hierarchical broad-phase filter semantics to match CPU reference."""
+        obstacle_hulls = self.broad_phase_filter.build_obstacle_hulls(
+            predicted_tracks, dynamic_layer, max_horizon_s=self.pred_horizon
+        )
+        if not obstacle_hulls:
+            return dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask
+
+        K, S, _ = trajectories.shape
+        xs = trajectories[:, :, 0]
+        ys = trajectories[:, :, 1]
+        r_ugv = self.r_circumscribed
+        margin = float(self.broad_phase_filter.config.broad_phase_margin_m)
+        sagitta_eps = 0.005
+
+        t_xmin = xs.min(dim=1).values - r_ugv
+        t_xmax = xs.max(dim=1).values + r_ugv
+        t_ymin = ys.min(dim=1).values - r_ugv
+        t_ymax = ys.max(dim=1).values + r_ugv
+
+        gpu_relevant = torch.zeros(K, device=self.device, dtype=torch.bool)
+        for hull in obstacle_hulls:
+            rel_t_end = float(times[-1].item())
+            if rel_t_end > hull.t_max + 1e-4:
+                gpu_relevant[:] = True
+                continue
+            in_aabb = (t_xmax >= hull.x_min) & (t_xmin <= hull.x_max) & (t_ymax >= hull.y_min) & (t_ymin <= hull.y_max)
+            if not in_aabb.any():
+                continue
+            if not hull.samples:
+                gpu_relevant = gpu_relevant | in_aabb
+                continue
+
+            t0_list = [float(times[k].item()) for k in range(S - 1)]
+            t1_list = [float(times[k + 1].item()) for k in range(S - 1)]
+            s0_list = [hull.interpolate_at_t(t) for t in t0_list]
+            s1_list = [hull.interpolate_at_t(t) for t in t1_list]
+
+            if any(s is None for s in s0_list) or any(s is None for s in s1_list):
+                gpu_relevant = gpu_relevant | in_aabb
+                continue
+
+            obs0 = torch.tensor([[s[0], s[1]] for s in s0_list], device=self.device, dtype=self.dtype)
+            obs1 = torch.tensor([[s[0], s[1]] for s in s1_list], device=self.device, dtype=self.dtype)
+            r_obs0 = torch.tensor([s[2] for s in s0_list], device=self.device, dtype=self.dtype)
+            r_obs1 = torch.tensor([s[2] for s in s1_list], device=self.device, dtype=self.dtype)
+
+            pts0 = trajectories[:, :-1, :2]
+            pts1 = trajectories[:, 1:, :2]
+            d0 = pts0 - obs0.unsqueeze(0)
+            d1 = pts1 - obs1.unsqueeze(0)
+            v = d1 - d0
+            l_sq = torch.clamp((v * v).sum(dim=-1), min=1e-10)
+            alpha = torch.clamp(-(d0 * v).sum(dim=-1) / l_sq, 0.0, 1.0)
+            closest = d0 + alpha.unsqueeze(-1) * v
+            d_min_sq = (closest * closest).sum(dim=-1)
+            r_reach = r_ugv + torch.maximum(r_obs0, r_obs1) + margin + sagitta_eps
+            hit = (d_min_sq <= (r_reach * r_reach).unsqueeze(0)).any(dim=-1)
+            gpu_relevant = gpu_relevant | (in_aabb & hit)
+
+        # Candidates cleared by broad-phase receive normalized clearance 1.0 (1.50m) and zero penalty
+        dyn_min_clearance = torch.where(gpu_relevant, dyn_min_clearance, torch.tensor(1.50, device=self.device, dtype=self.dtype))
+        dyn_max_cost = torch.where(gpu_relevant, dyn_max_cost, torch.tensor(0.0, device=self.device, dtype=self.dtype))
+        dyn_risk_level = torch.where(gpu_relevant, dyn_risk_level, torch.tensor(0, device=self.device, dtype=torch.long))
+        dyn_collision_mask = torch.where(gpu_relevant, dyn_collision_mask, torch.tensor(False, device=self.device, dtype=torch.bool))
+        dyn_unknown_mask = torch.where(gpu_relevant, dyn_unknown_mask, torch.tensor(False, device=self.device, dtype=torch.bool))
+
+        return dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask
+
     def compute_trajectory(
         self,
         current_state: RobotState,
@@ -182,17 +262,25 @@ class AcceleratedDWAPlanner(LocalPlanner):
             has_dynamic = False
 
         if has_dynamic:
-            dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level = (
+            dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask = (
                 self.collision_kernel.evaluate_dynamic_obstacles(
                     trajectories, predicted_tracks, dynamic_layer, max_horizon_s=self.pred_horizon
                 )
             )
+            if dyn_cfg.enable_broad_phase:
+                dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask = (
+                    self._apply_broad_phase_filter(
+                        trajectories, times, predicted_tracks, dynamic_layer,
+                        dyn_collision_mask, dyn_min_clearance, dyn_max_cost, dyn_risk_level, dyn_unknown_mask
+                    )
+                )
         else:
             K = v_flat.shape[0]
             dyn_collision_mask = torch.zeros(K, device=self.device, dtype=torch.bool)
             dyn_min_clearance = torch.full((K,), 5.0, device=self.device, dtype=self.dtype)
             dyn_max_cost = torch.zeros(K, device=self.device, dtype=self.dtype)
             dyn_risk_level = torch.zeros(K, device=self.device, dtype=torch.long)
+            dyn_unknown_mask = torch.zeros(K, device=self.device, dtype=torch.bool)
         timing["dynamic_col_ms"] = (time.perf_counter() - t_dyn0) * 1000.0
 
         # 5. Candidate scoring & argmax reduction
@@ -221,8 +309,15 @@ class AcceleratedDWAPlanner(LocalPlanner):
             self.w_terrain,
             has_dynamic=has_dynamic,
             dynamic_config=dyn_cfg,
+            dyn_unknown_mask=dyn_unknown_mask,
         )
         timing["scoring_ms"] = (time.perf_counter() - t_score0) * 1000.0
+
+        # Retain latest score tensors for detailed diagnostics/ranking analysis
+        self.latest_composite_scores = composite_scores
+        self.latest_valid_mask = valid_mask
+        self.latest_v_flat = v_flat
+        self.latest_w_flat = w_flat
 
         # Synchronize if on CUDA
         sync_ms = self.backend.synchronize()
@@ -237,6 +332,8 @@ class AcceleratedDWAPlanner(LocalPlanner):
         penalized_mask = valid_mask & ((dyn_risk_level > 0) | (dyn_max_cost >= 0.15))
         dynamically_penalized_count = int(penalized_mask.sum().item())
         expensive_checks = statically_valid_count if has_dynamic else 0
+
+        unknown_horizon_count = int(dyn_unknown_mask.sum().item())
 
         # No safe trajectory case
         if best_idx is None:
@@ -260,10 +357,10 @@ class AcceleratedDWAPlanner(LocalPlanner):
                 "number_of_candidates_evaluated": len(v_flat),
                 "dynamically_rejected_candidates": dynamically_rejected_count,
                 "dynamically_penalized_candidates": 0,
-                "unknown_horizon_candidates": 0,
+                "unknown_horizon_candidates": unknown_horizon_count,
                 "dynamic_collision": dynamically_rejected_count > 0,
-                "dynamic_risk": "LETHAL" if dynamically_rejected_count > 0 else "FREE",
-                "unknown_horizon": False,
+                "dynamic_risk": "LETHAL" if dynamically_rejected_count > 0 else ("UNKNOWN_HORIZON" if unknown_horizon_count > 0 else "FREE"),
+                "unknown_horizon": unknown_horizon_count > 0,
                 "blocking_obstacle_id": None,
                 "earliest_collision_time": None,
                 "minimum_dynamic_clearance": 0.0,
@@ -302,6 +399,8 @@ class AcceleratedDWAPlanner(LocalPlanner):
         best_risk_int = int(dyn_risk_level[best_idx].item())
         risk_names = ["FREE", "LOW_RISK", "MEDIUM_RISK", "HIGH_RISK", "LETHAL"]
         best_risk_str = risk_names[best_risk_int] if 0 <= best_risk_int < len(risk_names) else "FREE"
+        if dyn_unknown_mask[best_idx].item():
+            best_risk_str = "UNKNOWN_HORIZON"
 
         best_traj_pts_tensor = trajectories[best_idx]  # (S, 4)
         best_pts_np = best_traj_pts_tensor.detach().cpu().numpy()
@@ -338,10 +437,10 @@ class AcceleratedDWAPlanner(LocalPlanner):
             "number_of_candidates_evaluated": len(v_flat),
             "dynamically_rejected_candidates": dynamically_rejected_count,
             "dynamically_penalized_candidates": dynamically_penalized_count,
-            "unknown_horizon_candidates": 0,
+            "unknown_horizon_candidates": unknown_horizon_count,
             "dynamic_collision": False,
             "dynamic_risk": best_risk_str,
-            "unknown_horizon": False,
+            "unknown_horizon": bool(dyn_unknown_mask[best_idx].item()),
             "blocking_obstacle_id": None,
             "earliest_collision_time": None,
             "minimum_dynamic_clearance": best_dyn_clearance,

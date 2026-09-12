@@ -43,18 +43,18 @@ This roadmap outlines the systematic, phased implementation plan for the autonom
   [Phase 11: Gazebo UGV Simulation]
              │
              ▼
-  [Phase 12: Global + Local Path Planning]
-             │
-             ▼
-  [Phase 13: Dynamic Obstacle Tracking & Replanning]
-             │
-             ▼
-  [Phase 14: GPS-Denied Outdoor Navigation]
-             │
-             ▼
-  [Phase 15: Advanced Terrain-Aware Navigation]
-             │
-             ▼
+   [Phase 12: Global + Local Path Planning]
+              │
+              ▼
+   [Phase 13: Dynamic Obstacles & Predictive Planning (COMPLETE WITH DOCUMENTED LIMITATIONS)]
+              │  (Milestones 13.0-13.19 Complete; Frozen)
+              ▼
+   [Phase 14: GPS-Denied Outdoor Navigation (Planned / Not Started)]
+              │
+              ▼
+   [Phase 15: Advanced Terrain-Aware Navigation]
+              │
+              ▼
   [Phase 16: Full Benchmarking & SIH Demonstration]
 ```
 
@@ -127,15 +127,41 @@ This roadmap outlines the systematic, phased implementation plan for the autonom
 - **Deliverables:** `AStarPlanner` (octile heuristic, multi-layer cost function, footprint-validated path smoothing), `DWAPlanner` (dynamic window velocity sampling, kinematic rollout, 2D footprint collision checking, polyline cross-track scoring), `FootprintCollisionChecker` (0.65m x 0.45m oriented bounding box, inscribed circle shortcut, 35 interior samples), `SafetyController` (emergency stop arbitration, tracking-state gating, staleness watchdogs, degraded velocity cap), `PlannerAdapter` and `PlannerNode` (`ugv_navigation`), `configs/planning.yaml`, `scripts/evaluate_path_planning.py`, `tests/test_planning_*.py`, `outputs/planning/benchmarks/path_planning_metrics.json`, `docs/PHASE_12_PATH_PLANNING.md`.
 - **Exit Criteria:** APPROVED WITH SPECIFIC CONDITIONS; 8 deterministic scenarios passing (open flat, obstacle detour, water hazard avoidance, narrow passage, blocked goal, localization loss, map stale, invalid goal); 4 closed-loop SIL simulation missions executed with Phase 11 UGV with zero collisions and strictly isolated ground truth; scaling benchmarks measured from 50x50 to 400x400 grids with P95 latencies reported; 29 Phase 12 tests passed; all 250 repository tests passing with zero regressions.
 
-### Phase 13: Dynamic Obstacle Tracking & Predictive Replanning (Milestones 13.1–13.12 Complete)
-- **Goal:** Implement dynamic hazard tracking (moving obstacles, crossing pedestrians, moving vehicles) with Kalman state estimation, multi-horizon velocity obstacle prediction ($1.0\text{--}3.0\,\text{s}$), dynamic occupancy grid slices, predictive DWA local planning with swept-segment broad-phase filtering, four-state behavioral arbitration (`PROCEED`, `AVOID`, `WAIT`, `STOP`), event-driven global replanning ($A^*$), and clean native ROS 2 package architecture (`ugv_navigation_msgs` + `ugv_navigation`).
-- **Deliverables:** `ai/planning/dynamic/` subsystem (`data_model.py`, `tracker.py`, `prediction.py`, `occupancy_layer.py`, `predictive_collision.py`, `dwa_filter.py`, `behavioral_state.py`, `global_replanner.py`), `ros2_ws/src/ugv_navigation_msgs/` interface package (13 canonical `.msg` definitions), `ros2_ws/src/ugv_navigation/` package (`converters/dynamic_converters.py`, 7 dynamic nodes, `launch/dynamic_navigation.launch.py`), test suites (239 dynamic core + 180 ROS 2 boundary tests), `docs/PHASE_13_MASTER_CONTEXT.md`, and `docs/ROS2_RUNTIME_INTEGRATION_PLAN.md`.
-- **Exit Criteria:** SEALED IMPLEMENTATION BASELINE (Commit `45397f8`, Tag `phase-13.12-complete`); all 461 automated tests passing across the repository (100% pass rate); 9 deterministic dynamic obstacle scenarios passing; zero regressions against Phases 0–12; native ROS 2 runtime execution plan established for Linux/Jazzy integration.
+### Phase 13: Dynamic Obstacle Tracking, Predictive Replanning & Acceleration (COMPLETE WITH DOCUMENTED LIMITATIONS — Frozen)
+- **Goal:** Implement dynamic hazard tracking (moving obstacles, crossing pedestrians, moving vehicles) with Kalman state estimation, multi-horizon velocity obstacle prediction ($1.0\text{--}3.0\,\text{s}$), dynamic occupancy grid slices, predictive DWA local planning with swept-segment broad-phase filtering, four-state behavioral arbitration (`PROCEED`, `AVOID`, `WAIT`, `STOP`), event-driven global replanning ($A^*$), clean native ROS 2 package architecture (`ugv_navigation_msgs` + `ugv_navigation`), and GPU-accelerated real-time execution validated on NVIDIA Tesla T4.
+- **Deliverables:**
+  - `ai/planning/dynamic/`: Frozen CPU reference stack (`data_model.py`, `tracker.py`, `prediction.py`, `occupancy_layer.py`, `predictive_collision.py`, `dwa_filter.py`, `behavioral_state.py`, `global_replanner.py`).
+  - `ai/planning/dynamic_gpu/`: GPU-accelerated local planner (`gpu_backend.py`, `gpu_rollout.py`, `gpu_collision.py`, `gpu_scoring.py`, `gpu_dwa.py`).
+  - `ros2_ws/src/ugv_navigation_msgs/`: Pure ROSIDL interface package (13 canonical `.msg` definitions).
+  - `ros2_ws/src/ugv_navigation/`: ROS 2 integration package (converters, 7 nodes, launch files).
+  - Validation Suites: Dynamic SIL scenarios (13.13), multi-obstacle failure testing (13.14), MATLAB numerical parity (13.15), 21-mission CPU benchmark (13.16), and Kaggle Tesla T4 GPU acceleration workstream (hist. 13.17.1–13.17.4).
+- **Status:** **COMPLETE WITH DOCUMENTED LIMITATIONS (Phase 13 Frozen)**.
+  - **Completed Engineering Milestones (13.0–13.16 & GPU Acceleration):**
+    - 13.0–13.12: Core Perception, Tracking, Prediction, Dynamic DWA, ROS2 Boundary (**PASS**).
+    - 13.13: Dynamic SIL Scenarios (24 closed-loop scenarios, 0 collisions) (**PASS**).
+    - 13.14: Multi-Obstacle & Failure Testing (17 CPU scenarios, 0 collisions) (**PASS**).
+    - 13.15: MATLAB Independent Numerical Parity (1,055/1,055 checks pass) (**PASS**).
+    - 13.16: Full Closed-Loop CPU Benchmark (21 missions, 3,008 cycles, identified 5.7s latency) (**COMPLETE**).
+    - **GPU Acceleration Workstream (Hist. 13.17.1–13.17.4):** Slashed DWA latency from $5,673.7\,\text{ms} \to 58.31\,\text{ms}$ ($97.32\times$ speedup, $1.235\times$ RTF) on NVIDIA Tesla T4; 1,210-case parity (**PASS**); 250-cycle stability (**PASS**); Phase 13.16-R2 benchmark (**COMPLETE**).
+  - **Finalization Milestones (13.17 to 13.19):**
+    - **Milestone 13.17: Visualization + Documentation** (**PASS**)
+      - Multi-panel diagnostic plots (Trajectory vs Time, Velocity vs Time, Clearance vs Time, Prediction Fan).
+      - Trajectory animations and video/GIF recordings demonstrating dynamic obstacle avoidance (`07_avoidance_animation.gif`).
+      - Dedicated RViz marker configs for dynamic tracking and predictive occupancy (`simulation/rviz/judge_demo.rviz`).
+      - User/developer documentation: `docs/DYNAMIC_OBSTACLES.md` and `docs/VISUALIZATION_GUIDE.md`.
+    - **Milestone 13.18: Full Regression + CPU/GPU Parity Audit** (**CONDITIONAL PASS**)
+      - Full 809-test backward regression executed with 99.51% pass rate (805/809) and zero genuine production regressions.
+      - Phase 12 static navigation baseline verified with 100% numerical and behavioral reproduction.
+      - CPU vs GPU parity verified across 1,210 cases with zero false negatives and zero safety divergences.
+    - **Milestone 13.19: Strict Engineering Audit** (**COMPLETE**)
+      - Final safety hierarchy, data contract, ground-truth isolation audit, and Phase 14 handoff package.
+      - Full adversarial audit report published in `docs/PHASE_13_19_STRICT_ENGINEERING_AUDIT.md`.
 
-### Phase 14: GPS-Denied Outdoor Navigation
-- **Goal:** Full mission execution across long-distance outdoor scenarios under changing daylight, shadows, and high-contrast environments without GPS signals.
-- **Deliverables:** `ugv_mission/` mission executive managing sequential waypoint navigation.
-- **Exit Criteria:** Autonomous traversal of a 100-meter outdoor scenario with $100\%$ goal attainment.
+### Phase 14: GPS-Denied Outdoor Navigation & Mission Executive (Planned / Not Started)
+- **Goal:** Full mission execution across long-distance outdoor scenarios under changing daylight, shadows, and high-contrast environments without GPS signals, leveraging the real-time GPU-accelerated local planner. Introduce hierarchical recovery behaviors and multi-waypoint mission management.
+- **Deliverables:** `ugv_mission/` mission executive managing sequential waypoint navigation, stuck detection, escape maneuvers, and topological recovery.
+- **Status:** **PLANNED / NOT STARTED** (Phase 13 frozen with documented limitations).
+- **Scope Note:** *Phase 14 is the planned next major phase. Detailed milestone breakdown requires a dedicated Phase 14 architecture and planning task.*
 
 ### Phase 15: Advanced Terrain-Aware Navigation
 - **Goal:** Extend traversability scoring to evaluate slope/pitch angle, surface slip risk, and vehicle ground clearance.

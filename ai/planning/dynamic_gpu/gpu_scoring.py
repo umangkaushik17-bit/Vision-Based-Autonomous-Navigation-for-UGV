@@ -50,6 +50,7 @@ class GPUScorer:
         w_terrain: float = 0.20,
         has_dynamic: bool = False,
         dynamic_config: Optional[DynamicPlanningConfig] = None,
+        dyn_unknown_mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, Optional[int]]:
         """Compute composite scores and identify best valid candidate.
 
@@ -125,10 +126,27 @@ class GPUScorer:
             # Physical collision strictly rejects
             dyn_rejected = dyn_rejected | dyn_collision_mask
 
-            # Risk level: 4=LETHAL, 3=HIGH, 2=MED, 1=LOW, 0=FREE
-            high_mask = dyn_risk_level == 3
-            med_mask = dyn_risk_level == 2
-            low_mask = dyn_risk_level == 1
+            # Unknown horizon handling (takes precedence over risk classification in PredictiveCollisionChecker)
+            is_unknown = torch.zeros(K, device=device, dtype=torch.bool)
+            if dyn_unknown_mask is not None:
+                is_unknown = dyn_unknown_mask
+                if dyn_cfg.unknown_horizon_policy == "REJECT":
+                    dyn_rejected = dyn_rejected | is_unknown
+                elif dyn_cfg.unknown_horizon_policy == "PENALIZE":
+                    dyn_penalty = torch.where(
+                        is_unknown,
+                        dyn_cfg.unknown_horizon_penalty,
+                        dyn_penalty,
+                    )
+
+            # Risk classification matching PredictiveCollisionChecker (only active when not unknown horizon):
+            # HIGH_RISK: risk >= 3 or cost >= 0.70
+            # MEDIUM_RISK: risk == 2 or cost >= 0.40
+            # LOW_RISK: risk == 1 or cost >= 0.15
+            known_mask = ~is_unknown
+            high_mask = known_mask & ((dyn_risk_level >= 3) | (dyn_max_cost >= 0.70))
+            med_mask = known_mask & (~high_mask) & ((dyn_risk_level == 2) | (dyn_max_cost >= 0.40))
+            low_mask = known_mask & (~high_mask) & (~med_mask) & ((dyn_risk_level == 1) | (dyn_max_cost >= 0.15))
 
             if dyn_cfg.reject_high_risk:
                 dyn_rejected = dyn_rejected | high_mask
