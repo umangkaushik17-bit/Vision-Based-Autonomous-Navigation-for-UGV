@@ -75,7 +75,7 @@ class IntelGPUDWABackend(DWABackend):
             is_available=avail,
             device_name=self.device_name,
             safety_validated=avail,
-            benchmark_latency_ms=35.0 if avail else None,
+            benchmark_latency_ms=204.72 if avail else None,
             error_message=None if avail else "Intel GPU runtime (torch.xpu / DirectML) not installed",
         )
 

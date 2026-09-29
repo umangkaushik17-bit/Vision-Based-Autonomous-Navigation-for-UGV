@@ -27,17 +27,40 @@ class GPUBackend:
             dtype: Tensor numerical precision (default: torch.float64 for strict Phase 13 parity).
         """
         self.dtype = dtype
-        if preferred_device == "cuda":
+        pref = preferred_device.lower() if isinstance(preferred_device, str) else "auto"
+        if pref in ("cuda", "cuda:0"):
             if not torch.cuda.is_available():
                 raise RuntimeError("CUDA device requested but torch.cuda.is_available() is False.")
             self.device = torch.device("cuda:0")
-        elif preferred_device == "cpu":
+        elif pref in ("xpu", "xpu:0", "intel_gpu"):
+            has_xpu = hasattr(torch, "xpu") and getattr(torch.xpu, "is_available", lambda: False)()
+            if not has_xpu:
+                raise RuntimeError("Intel XPU device requested but torch.xpu.is_available() is False.")
+            self.device = torch.device("xpu:0")
+        elif pref == "cpu":
             self.device = torch.device("cpu")
         else:  # auto
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            if torch.cuda.is_available():
+                self.device = torch.device("cuda:0")
+            elif hasattr(torch, "xpu") and getattr(torch.xpu, "is_available", lambda: False)():
+                self.device = torch.device("xpu:0")
+            else:
+                self.device = torch.device("cpu")
 
         self.is_cuda = self.device.type == "cuda"
-        self.device_name = torch.cuda.get_device_name(self.device) if self.is_cuda else "CPU (Vectorized)"
+        self.is_xpu = self.device.type == "xpu"
+
+        # Intel iGPU hardware execution units natively accelerate single precision (float32).
+        # oneDNN disables double-precision (float64) matrix/distance kernels on Intel integrated graphics.
+        if self.is_xpu and self.dtype == torch.float64:
+            self.dtype = torch.float32
+
+        if self.is_cuda:
+            self.device_name = torch.cuda.get_device_name(self.device)
+        elif self.is_xpu:
+            self.device_name = torch.xpu.get_device_name(self.device)
+        else:
+            self.device_name = "CPU (Vectorized)"
 
         # Preallocated buffers dictionary
         self._buffers: Dict[str, torch.Tensor] = {}
@@ -57,12 +80,15 @@ class GPUBackend:
         Returns:
             Synchronization duration in milliseconds.
         """
-        if not self.is_cuda:
-            return 0.0
-        t0 = time.perf_counter()
-        torch.cuda.synchronize(self.device)
-        sync_ms = (time.perf_counter() - t0) * 1000.0
-        return sync_ms
+        if self.is_cuda:
+            t0 = time.perf_counter()
+            torch.cuda.synchronize(self.device)
+            return (time.perf_counter() - t0) * 1000.0
+        elif self.is_xpu:
+            t0 = time.perf_counter()
+            torch.xpu.synchronize(self.device)
+            return (time.perf_counter() - t0) * 1000.0
+        return 0.0
 
     def to_tensor(
         self,
@@ -83,6 +109,8 @@ class GPUBackend:
             tensor = torch.tensor(data, device=self.device, dtype=dt)
         if self.is_cuda:
             torch.cuda.synchronize(self.device)
+        elif self.is_xpu:
+            torch.xpu.synchronize(self.device)
         transfer_ms = (time.perf_counter() - t0) * 1000.0
         return tensor, transfer_ms
 
@@ -94,7 +122,7 @@ class GPUBackend:
             transfer_ms: Device-to-Host transfer time in milliseconds.
         """
         t0 = time.perf_counter()
-        if tensor.is_cuda:
+        if tensor.device.type != "cpu":
             arr = tensor.detach().cpu().numpy()
         else:
             arr = tensor.detach().numpy()
