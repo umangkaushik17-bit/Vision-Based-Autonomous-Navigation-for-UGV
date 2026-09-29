@@ -9,6 +9,7 @@
   "enable_tpu": "false",
   "enable_internet": "true",
   "dataset_sources": [
+    "umangkaushik17/sih2026-traversability-eval",
     "umangkaushik17/sih2026-ugv-code"
   ],
   "competition_sources": [],

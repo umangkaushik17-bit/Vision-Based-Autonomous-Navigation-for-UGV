@@ -29,39 +29,65 @@ class SAMTPTraversabilityPredictor(TraversabilityPredictorBase):
         config: Optional[Union[str, Path]] = None,
         device: Optional[str] = None,
         contrast_refine: bool = True,
-        overlay_alpha: float = 0.45
+        overlay_alpha: float = 0.45,
+        use_dense: bool = True
     ) -> None:
-        """Initialize the SAM-TP predictor.
+        """Initialize the traversability predictor.
+
+        By default, routes to the high-throughput DenseTraversabilityPredictor (MobileNetV3-Small RELLIS-3D).
 
         Args:
-            checkpoint: Optional explicit path to `checkpoint_finetuned_v2.pt`.
-                        If None, auto-resolved from cache or Hugging Face Hub.
-            config: Optional path to `sam2.1_custom2.yaml`.
+            checkpoint: Optional explicit path to model checkpoint.
+            config: Optional path to config file.
             device: Compute device ('cpu', 'cuda', etc.). Defaults to best available.
             contrast_refine: Whether to apply per-frame luminance contrast refinement.
             overlay_alpha: Blending transparency for debug visualization overlays.
+            use_dense: If True, uses the fast RELLIS-3D model instead of legacy SAM-TP.
         """
-        try:
-            from rover_traversability import TraversabilityPredictor
-        except ImportError as exc:
-            raise ImportError(
-                "rover_traversability package is required. Install via:\n"
-                "  pip install -e references/sana-earth-rover-policy/traversability"
-            ) from exc
+        self._dense_fallback = None
+        self._predictor = None
 
-        logger.info(f"Initializing SAM-TP Predictor (device requested: {device})...")
-        self._predictor = TraversabilityPredictor(
-            checkpoint=checkpoint,
-            config=config,
-            device=device,
-            contrast_refine=contrast_refine,
-            overlay_alpha=overlay_alpha
-        )
-        self._device = self._predictor.device
+        force_dense = use_dense or (os.environ.get("USE_DENSE_TRAVERSABILITY", "1") == "1")
+        if force_dense:
+            from ai.traversability.dense_predictor import DenseTraversabilityPredictor
+            logger.info("Using production DenseTraversabilityPredictor (LightweightTraversabilityNet RELLIS-3D).")
+            self._dense_fallback = DenseTraversabilityPredictor(
+                checkpoint=checkpoint if checkpoint and Path(checkpoint).exists() else None,
+                device=device,
+                overlay_alpha=overlay_alpha
+            )
+            self._device = self._dense_fallback.device
+            self._model_name = self._dense_fallback.model_name
+        else:
+            try:
+                from rover_traversability import TraversabilityPredictor
+                logger.info(f"Initializing legacy SAM-TP Predictor (device requested: {device})...")
+                self._predictor = TraversabilityPredictor(
+                    checkpoint=checkpoint,
+                    config=config,
+                    device=device,
+                    contrast_refine=contrast_refine,
+                    overlay_alpha=overlay_alpha
+                )
+                self._device = self._predictor.device
+                self._model_name = "SAM-TP_Mini+_v2_HieraTiny"
+                logger.info(f"SAM-TP ready on compute device: {self._device}")
+            except Exception as exc:
+                logger.warning(
+                    f"rover_traversability package not found or failed ({exc}). "
+                    "Seamlessly routing to production DenseTraversabilityPredictor (MobileNetV3-Small RELLIS-3D)."
+                )
+                from ai.traversability.dense_predictor import DenseTraversabilityPredictor
+                self._dense_fallback = DenseTraversabilityPredictor(
+                    checkpoint=checkpoint if checkpoint and Path(checkpoint).exists() else None,
+                    device=device,
+                    overlay_alpha=overlay_alpha
+                )
+                self._device = self._dense_fallback.device
+                self._model_name = self._dense_fallback.model_name
+
         self._contrast_refine = contrast_refine
         self._overlay_alpha = overlay_alpha
-        self._model_name = "SAM-TP_Mini+_v2_HieraTiny"
-        logger.info(f"SAM-TP ready on compute device: {self._device}")
 
     @property
     def device(self) -> str:
@@ -96,6 +122,10 @@ class SAMTPTraversabilityPredictor(TraversabilityPredictorBase):
         else:
             raise TypeError(f"Unsupported image input type: {type(image)}")
 
+        # If running dense model, delegate directly
+        if self._dense_fallback is not None:
+            return self._dense_fallback.predict(rgb)
+
         # Run underlying SAM-TP predictor
         raw_res = self._predictor.predict(rgb)
 
@@ -121,4 +151,9 @@ class SAMTPTraversabilityPredictor(TraversabilityPredictorBase):
 
     def warmup(self) -> float:
         """Run dummy inference pass to prime PyTorch computation graphs."""
-        return float(self._predictor.warmup())
+        if self._dense_fallback is not None:
+            return float(self._dense_fallback.warmup())
+        if self._predictor is not None:
+            return float(self._predictor.warmup())
+        return 0.0
+

@@ -1,0 +1,28 @@
+# Dataset Discovery and Preprocessing Configuration for RELLIS-3D
+dataset:
+  name: "RELLIS-3D"
+  canonical_resolution: [480, 640] # [height, width]
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+discovery:
+  search_directories:
+    - "./data/raw/RELLIS-3D"
+    - "./data/raw/public/RELLIS-3D"
+    - "../data/raw/public/RELLIS-3D"
+    - "/data/RELLIS-3D"
+    - "/mnt/data/RELLIS-3D"
+    - "~/data/RELLIS-3D"
+  archive_names:
+    - "rellis_sample.zip"
+    - "RELLIS-3D.zip"
+    - "rellis3d.tar.gz"
+  expected_subdirs:
+    rgb: "pylon_camera_node"
+    labels: "pylon_camera_node_label_id"
+
+splits:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  random_seed: 42

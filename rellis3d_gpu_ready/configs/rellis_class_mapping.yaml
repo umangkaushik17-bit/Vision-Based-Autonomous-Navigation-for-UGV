@@ -1,0 +1,199 @@
+# RELLIS-3D to UGV Traversability Class Mapping Configuration
+# Project: SIH26126 — Vision Based Autonomous Navigation for UGV
+# Contract Target:
+#   SAFE: 0       (Flat dirt, dry trail, benign grass, asphalt, concrete)
+#   UNKNOWN: 1    (Puddles, deep mud, dense brush, shadows, unclassified)
+#   UNSAFE: 2     (Trees, poles, water, rocks, vehicles, barriers, rubble, logs)
+#   VOID: 255     (Sky, unannotated pixels, ego-vehicle chassis - ignored in loss)
+
+dataset_name: "RELLIS-3D"
+version: "1.0.0"
+description: "Authoritative mapping of RELLIS-3D semantic classes to 3-class UGV traversability"
+
+# Primary Scheme: RUGD-Harmonized Class Space (Commonly used in robotics benchmark distributions)
+harmonized_mapping:
+  0:
+    name: "void"
+    target_class: 255
+    category: "VOID"
+    ignored_in_loss: true
+    confidence: 1.0
+    reason: "Unannotated pixels or background noise"
+    safety_implication: "Ignored during cross-entropy loss computation; filtered from costmap"
+
+  1:
+    name: "dirt"
+    target_class: 0
+    category: "SAFE"
+    ignored_in_loss: false
+    confidence: 0.95
+    reason: "Firm, compacted earthen surface standard for UGV outdoor wheel traction"
+    safety_implication: "Low rolling resistance, safe for full velocity trajectory rollout"
+
+  3:
+    name: "grass"
+    target_class: 0
+    category: "SAFE"
+    ignored_in_loss: false
+    confidence: 0.90
+    reason: "Low-cut to medium natural grass easily traversable by 4WD chassis"
+    safety_implication: "Slight slip potential when wet; acceptable for normal navigation"
+
+  4:
+    name: "tree"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Rigid vertical trunk structure representing an impassable lethal obstacle"
+    safety_implication: "High-speed collision hazard; immediate lethal costmap inflation"
+
+  5:
+    name: "pole"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Narrow metal/wood pole with high structural rigidity"
+    safety_implication: "Severe impact risk if undetected; requires footprint buffer margin"
+
+  6:
+    name: "water"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 0.98
+    reason: "Deep standing or flowing water posing severe chassis submergence/drowning risk"
+    safety_implication: "Non-negotiable lethal hazard; emergency stop required"
+
+  7:
+    name: "sky"
+    target_class: 255
+    category: "VOID"
+    ignored_in_loss: true
+    confidence: 1.0
+    reason: "Above-horizon non-ground region outside UGV navigation manifold"
+    safety_implication: "Excluded from ground traversability costmap projection"
+
+  8:
+    name: "vehicle"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Large metal dynamic/static obstacle"
+    safety_implication: "Physical collision hazard; hand off to dynamic tracker if moving"
+
+  9:
+    name: "object"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 0.85
+    reason: "Miscellaneous man-made or natural physical obstacles"
+    safety_implication: "Corrected from legacy baseline (which marked object safe); MUST be treated as obstacle"
+
+  10:
+    name: "asphalt"
+    target_class: 0
+    category: "SAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Paved, high-friction engineered road surface"
+    safety_implication: "Ideal traction surface, zero wheel slip, optimal for navigation"
+
+  12:
+    name: "building"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Permanent architectural structure"
+    safety_implication: "Absolute physical boundary, lethal costmap penalty"
+
+  15:
+    name: "log"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 0.95
+    reason: "Fallen timber or wood beam creating severe chassis high-centering risk"
+    safety_implication: "Lethal step-height hazard exceeding 15 cm UGV clearance"
+
+  17:
+    name: "person"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Human pedestrian dynamic agent"
+    safety_implication: "Highest safety critical category; triggers immediate WAIT / STOP arbitration"
+
+  18:
+    name: "fence"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 0.98
+    reason: "Wire or wooden boundary perimeter"
+    safety_implication: "Physical barrier; entangles drive wheels and chassis"
+
+  19:
+    name: "bush"
+    target_class: 1
+    category: "UNKNOWN"
+    ignored_in_loss: false
+    confidence: 0.80
+    reason: "Compliant shrubbery or low hedge; traversability depends on wood density"
+    safety_implication: "Assigned UNKNOWN: induces speed clamping and cautious detour"
+
+  23:
+    name: "concrete"
+    target_class: 0
+    category: "SAFE"
+    ignored_in_loss: false
+    confidence: 0.98
+    reason: "Flat engineered pavement / walkway"
+    safety_implication: "Firm traction, fully traversable"
+
+  27:
+    name: "barrier"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 1.0
+    reason: "Concrete Jersey barrier, guard rail, or barricade"
+    safety_implication: "Corrected from legacy baseline (which mistakenly marked barrier safe); lethal collision obstacle"
+
+  31:
+    name: "puddle"
+    target_class: 1
+    category: "UNKNOWN"
+    ignored_in_loss: false
+    confidence: 0.75
+    reason: "Shallow surface water of uncertain depth concealing potential ruts"
+    safety_implication: "Degraded velocity cap (0.2 m/s), optical uncertainty cost applied"
+
+  33:
+    name: "mud"
+    target_class: 1
+    category: "UNKNOWN"
+    ignored_in_loss: false
+    confidence: 0.80
+    reason: "Viscous soft soil with high slip ratio and severe sinkage potential"
+    safety_implication: "Traction-limited zone; triggers warning and local detour preference"
+
+  34:
+    name: "rubble"
+    target_class: 2
+    category: "UNSAFE"
+    ignored_in_loss: false
+    confidence: 0.95
+    reason: "Loose broken concrete, bricks, and sharp rocky debris"
+    safety_implication: "Severe tipping/puncture risk; high chassis damage hazard"
+
+# Fallback Policy:
+unmapped_class_policy:
+  default_target: 1 # Assign UNKNOWN to any unexpected or corrupted class ID
+  log_warning: true
+  safety_clamp: true

@@ -25,9 +25,17 @@ from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from geometry_msgs.msg import Point, PoseStamped, Quaternion, TransformStamped, Twist, Vector3
 from nav_msgs.msg import Odometry, Path
+from sensor_msgs.msg import Image as RosImage
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
 import tf2_ros
+
+try:
+    from ai.traversability.dense_predictor import DenseTraversabilityPredictor
+    TORCH_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    DenseTraversabilityPredictor = None
+    TORCH_AVAILABLE = False
 
 # Custom ROS2 Messages
 from ugv_navigation_msgs.msg import (
@@ -184,6 +192,22 @@ class InteractiveUGVNavigationNode(Node):
         self.create_subscription(Odometry, "/dynamic_obstacle/odom", self._on_obs_odom, sensor_qos)
         self.create_subscription(PoseStamped, "/goal_pose", self._on_goal_pose, state_qos)
         self.create_subscription(Empty, "/demo/reset", self._on_reset_requested, state_qos)
+        self.create_subscription(RosImage, "/camera/image_raw", self._on_camera_image, sensor_qos)
+
+        # 6b. Live Traversability Model (RELLIS-3D Dense Net)
+        self.traversability_predictor = None
+        self.last_trav_fps = 0.0
+        self.last_trav_ms = 0.0
+        if DenseTraversabilityPredictor is not None:
+            try:
+                self.traversability_predictor = DenseTraversabilityPredictor(
+                    checkpoint="outputs/rellis3d/checkpoints/best.pt"
+                )
+                self.get_logger().info(f"Loaded Dense Traversability Model: {self.traversability_predictor.model_name}")
+            except Exception as e:
+                self.get_logger().warn(f"Could not initialize dense traversability predictor: {e}")
+        else:
+            self.get_logger().info("Dense Traversability: Running in core geometric/obstacle mode (PyTorch optional).")
 
         # 7. Publishers
         self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", cmd_qos)
@@ -195,6 +219,7 @@ class InteractiveUGVNavigationNode(Node):
         self.track_pub = self.create_publisher(RosTrackedObstacleArray, "/tracking/dynamic_obstacles", sensor_qos)
         self.pred_pub = self.create_publisher(RosPredictedTrajectoryArray, "/prediction/obstacle_trajectories", sensor_qos)
         self.marker_pub = self.create_publisher(MarkerArray, "/visualization_marker_array", state_qos)
+        self.overlay_pub = self.create_publisher(RosImage, "/perception/traversability_overlay", sensor_qos)
 
         # 8. Control Loop Timer
         dt = 1.0 / self.control_rate_hz
@@ -277,6 +302,38 @@ class InteractiveUGVNavigationNode(Node):
         self.obs_vx = msg.twist.twist.linear.x
         self.obs_vy = msg.twist.twist.linear.y
         self.obs_odom_received = True
+
+    def _on_camera_image(self, msg: RosImage) -> None:
+        """Processes camera feed through the RELLIS-3D Dense Traversability Net."""
+        if self.traversability_predictor is None:
+            return
+        try:
+            h, w = msg.height, msg.width
+            if msg.encoding in ("rgb8", "bgr8"):
+                arr = np.frombuffer(msg.data, dtype=np.uint8).reshape((h, w, 3))
+                rgb = arr if msg.encoding == "rgb8" else arr[:, :, ::-1]
+            elif msg.encoding == "mono8":
+                mono = np.frombuffer(msg.data, dtype=np.uint8).reshape((h, w))
+                rgb = np.stack([mono, mono, mono], axis=-1)
+            else:
+                return
+
+            t0 = time.perf_counter()
+            res = self.traversability_predictor.predict(rgb)
+            dt_ms = (time.perf_counter() - t0) * 1000.0
+            self.last_trav_ms = dt_ms
+            self.last_trav_fps = 1000.0 / max(dt_ms, 1e-3)
+
+            if res.overlay is not None:
+                out_msg = RosImage()
+                out_msg.header = msg.header
+                out_msg.height, out_msg.width = res.overlay.shape[:2]
+                out_msg.encoding = "rgb8"
+                out_msg.step = out_msg.width * 3
+                out_msg.data = res.overlay.tobytes()
+                self.overlay_pub.publish(out_msg)
+        except Exception:
+            pass
 
     def _on_goal_pose(self, msg: PoseStamped) -> None:
         """Allows dynamic goal updates."""
@@ -738,8 +795,11 @@ class InteractiveUGVNavigationNode(Node):
         else:
             hud_m.color = ColorRGBA(r=1.0, g=0.1, b=0.1, a=1.0)
 
+        model_tag = "LightweightTraversabilityNet (RELLIS-3D)" if self.traversability_predictor else "Default Core"
         hud_m.text = (
             f"=== DEMO-01 JUDGE MONITOR ===\n"
+            f"MODEL STATUS   : {model_tag}\n"
+            f"INFERENCE      : {self.last_trav_fps:.1f} FPS ({self.last_trav_ms:.1f} ms)\n"
             f"BEHAVIOR STATE : [ {decision_str} ]\n"
             f"UGV SPEED      : {self.ugv_v:.2f} m/s | ROT : {self.ugv_w:.2f} rad/s\n"
             f"GOAL DISTANCE  : {dist_to_goal:.2f} m\n"

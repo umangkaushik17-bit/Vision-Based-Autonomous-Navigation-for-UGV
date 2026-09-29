@@ -1,0 +1,36 @@
+# GPU-Only Training Configuration for RELLIS-3D Fine-Tuning / Retraining
+experiment:
+  name: "rellis3d_mobilenetv3_traversability"
+  version: "1.0.0"
+  description: "GPU-accelerated fine-tuning of MobileNetV3-Small on RELLIS-3D dataset"
+
+model:
+  architecture: "LightweightTraversabilityNet"
+  backbone: "mobilenet_v3_small"
+  num_classes: 3 # SAFE (0), UNKNOWN (1), UNSAFE (2)
+  pretrained_backbone: true
+  initial_checkpoint: "checkpoints/rugd_baseline_best.pt" # Initialize from frozen RUGD baseline
+
+training:
+  device: "cuda" # STRICT: Enforced GPU execution (no CPU fallback)
+  mixed_precision: true # Automatic Mixed Precision (AMP)
+  batch_size: 16
+  grad_accum_steps: 2 # Effective batch size = 32
+  num_workers: 4
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  max_epochs: 40
+  early_stopping_patience: 8
+  clip_grad_norm: 1.0
+
+loss:
+  focal_gamma: 2.0
+  dice_weight: 0.5
+  ce_weight: 0.5
+  class_weights: [1.0, 1.5, 2.5] # Higher penalty for UNSAFE misclassification (safety critical)
+  ignore_index: 255 # Sky and unannotated void
+
+checkpointing:
+  save_dir: "outputs/checkpoints"
+  save_best_metric: "val_mIoU"
+  save_frequency_epochs: 5

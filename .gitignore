@@ -71,6 +71,9 @@ gpu_results.zip
 Thumbs.db
 .DS_Store
 *.tar
+*.tar.gz
+artifacts/
+tools/kaggle/eval_dataset/
 
 # ROS2 build artifacts
 ros2_ws/build/

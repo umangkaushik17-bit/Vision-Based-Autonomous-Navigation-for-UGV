@@ -1,0 +1,137 @@
+{
+  "dataset_root": "/tmp/rellis3d/extracted",
+  "total_sequences": 5,
+  "sequences": [
+    "00004",
+    "00000",
+    "00002",
+    "00001",
+    "00003"
+  ],
+  "sequence_statistics": {
+    "00000": {
+      "total_images": 2847,
+      "total_masks": 1200,
+      "valid_pairs": 1200,
+      "missing_masks": 1647
+    },
+    "00001": {
+      "total_images": 2319,
+      "total_masks": 1161,
+      "valid_pairs": 1161,
+      "missing_masks": 1158
+    },
+    "00002": {
+      "total_images": 4147,
+      "total_masks": 2074,
+      "valid_pairs": 2074,
+      "missing_masks": 2073
+    },
+    "00003": {
+      "total_images": 2184,
+      "total_masks": 900,
+      "valid_pairs": 900,
+      "missing_masks": 1284
+    },
+    "00004": {
+      "total_images": 2059,
+      "total_masks": 899,
+      "valid_pairs": 899,
+      "missing_masks": 1160
+    }
+  },
+  "total_rgb_images": 13556,
+  "total_label_masks": 6234,
+  "total_valid_pairs": 6234,
+  "total_missing_masks": 7322,
+  "total_corrupt_files": 0,
+  "splits_found": true,
+  "splits": {
+    "train": {
+      "split_file": "/tmp/rellis3d/extracted/train.lst",
+      "pair_count": 3302,
+      "sample_entry": "00000/pylon_camera_node/frame000308-1581624683_550.jpg -> 00000/pylon_camera_node_label_id/frame000308-1581624683_550.png"
+    },
+    "val": {
+      "split_file": "/tmp/rellis3d/extracted/val.lst",
+      "pair_count": 983,
+      "sample_entry": "00000/pylon_camera_node/frame001707-1581624823_450.jpg -> 00000/pylon_camera_node_label_id/frame001707-1581624823_450.png"
+    },
+    "test": {
+      "split_file": "/tmp/rellis3d/extracted/test.lst",
+      "pair_count": 1672,
+      "sample_entry": "00000/pylon_camera_node/frame000000-1581624652_750.jpg -> 00000/pylon_camera_node_label_id/frame000000-1581624652_750.png"
+    }
+  },
+  "image_specifications": {
+    "formats_detected": [
+      "JPEG"
+    ],
+    "dimensions_detected_wh": [
+      [
+        1920,
+        1200
+      ]
+    ],
+    "aspect_ratio": 1.6
+  },
+  "mask_specifications": {
+    "formats_detected": [
+      "PNG"
+    ],
+    "dimensions_detected_wh": [
+      [
+        1920,
+        1200
+      ]
+    ],
+    "spatial_alignment_with_rgb": true
+  },
+  "class_id_inventory": {
+    "total_unique_classes_in_sample": 19,
+    "class_ids_present": [
+      0,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      15,
+      17,
+      18,
+      19,
+      23,
+      27,
+      31,
+      33,
+      34
+    ],
+    "class_id_to_name": {
+      "0": "void",
+      "3": "grass",
+      "4": "tree",
+      "5": "pole",
+      "6": "water",
+      "7": "sky",
+      "8": "vehicle",
+      "9": "object",
+      "10": "asphalt",
+      "12": "building",
+      "15": "log",
+      "17": "person",
+      "18": "fence",
+      "19": "bush",
+      "23": "concrete",
+      "27": "barrier",
+      "31": "puddle",
+      "33": "mud",
+      "34": "rubble"
+    },
+    "ignore_index": 255,
+    "void_id": 0
+  }
+}

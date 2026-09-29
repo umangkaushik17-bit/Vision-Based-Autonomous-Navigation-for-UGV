@@ -1,0 +1,14 @@
+# Inference & Evaluation Configuration
+inference:
+  device: "cuda" # 'cuda' for GPU inference, 'cpu' for CPU benchmark validation
+  checkpoint_path: "checkpoints/rugd_baseline_best.pt"
+  target_size: [480, 640]
+  use_onnx: false
+  onnx_path: "checkpoints/traversability_model.onnx"
+
+costmap_integration:
+  drivable_threshold: 0.50
+  unknown_threshold: 0.50
+  lethal_hazard_threshold: 0.70
+  grid_resolution_m: 0.10
+  costmap_dimensions: [200, 200] # 20m x 20m rolling window

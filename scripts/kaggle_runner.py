@@ -63,7 +63,11 @@ def package_code() -> str:
     """Create a lean zip package of local code (ai, simulation, tests, validation, configs)."""
     os.makedirs(DATASET_DIR, exist_ok=True)
     zip_path = os.path.join(DATASET_DIR, "code.zip")
-    include_dirs = ["ai", "simulation", "tests", "validation", "config", "scripts", "docs", "ros2_ws"]
+    include_dirs = [
+        "ai", "simulation", "tests", "validation", "config", "configs",
+        "scripts", "docs", "ros2_ws", "models", "rellis3d_gpu_ready", "reports",
+        "data/benchmark_test"
+    ]
 
     print(f"[*] Packaging local code into {zip_path} ...")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -74,7 +78,7 @@ def package_code() -> str:
                 parts = root.split(os.sep)
                 if any(p in parts for p in ["__pycache__", ".pytest_cache", ".venv", "build", "install", "log", "kaggle"]):
                     continue
-                if "outputs" in parts and not any(k in parts for k in ["performance", "phase16", "phase16_r2"]):
+                if "outputs" in parts and not any(k in parts for k in ["performance", "phase16", "phase16_r2", "checkpoints", "exports", "reports"]):
                     continue
                 for f in files:
                     if f.endswith((".pyc", ".pyo")):
@@ -147,6 +151,7 @@ def sync_kernel_metadata(username: str, kernel_slug: str = "sih2026-ugv-gpu-runn
         "enable_tpu": "false",
         "enable_internet": "true",
         "dataset_sources": [
+            f"{username}/sih2026-traversability-eval",
             f"{username}/sih2026-ugv-code"
         ],
         "competition_sources": [],
@@ -271,6 +276,17 @@ def check_status() -> dict:
 
 def download_outputs() -> bool:
     """Download generated output artifacts from Kaggle to local simulation/outputs/kaggle/."""
+    import builtins
+    _orig_open = builtins.open
+
+    def _utf8_open(file, mode="r", *args, **kwargs):
+        if "b" not in mode and "encoding" not in kwargs:
+            kwargs["encoding"] = "utf-8"
+            kwargs["errors"] = "replace"
+        return _orig_open(file, mode, *args, **kwargs)
+
+    builtins.open = _utf8_open
+
     username, _ = init_credentials()
     kernel_id = f"{username}/sih2026-ugv-gpu-runner"
     shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
@@ -282,17 +298,53 @@ def download_outputs() -> bool:
             res = api.kernels_output(kernel_id, OUTPUT_DIR, force=True)
             print(f"[+] Output download finished. Artifacts saved in {OUTPUT_DIR}")
 
-            # Propagate all performance and phase16_r2 artifacts
+            # Propagate all performance, phase16_r2, reports, outputs, data, artifacts, logs
             perf_dest = os.path.join("simulation", "outputs", "performance")
             r2_dest = os.path.join("simulation", "outputs", "phase16_r2")
             os.makedirs(perf_dest, exist_ok=True)
             os.makedirs(r2_dest, exist_ok=True)
 
+            # Sync directories directly if present in OUTPUT_DIR
+            for dir_name in ["reports", "outputs", "artifacts", "logs"]:
+                src_d = os.path.join(OUTPUT_DIR, dir_name)
+                if os.path.exists(src_d):
+                    shutil.copytree(src_d, dir_name, dirs_exist_ok=True)
+                    print(f"    [+] Synced directory: {src_d} -> {dir_name}")
+
+            # Also check if data/rellis3d exists in OUTPUT_DIR
+            src_data = os.path.join(OUTPUT_DIR, "data", "rellis3d")
+            if os.path.exists(src_data):
+                dst_data = os.path.join("data", "rellis3d")
+                shutil.copytree(src_data, dst_data, dirs_exist_ok=True)
+                print(f"    [+] Synced data directory: {src_data} -> {dst_data}")
+            elif os.path.exists(os.path.join(OUTPUT_DIR, "rellis3d")):
+                dst_data = os.path.join("data", "rellis3d")
+                os.makedirs(dst_data, exist_ok=True)
+                for item in os.listdir(os.path.join(OUTPUT_DIR, "rellis3d")):
+                    sp = os.path.join(OUTPUT_DIR, "rellis3d", item)
+                    dp = os.path.join(dst_data, item)
+                    if os.path.isfile(sp):
+                        shutil.copy2(sp, dp)
+                        print(f"    [+] Synced rellis3d item: {sp} -> {dp}")
+
             for root, dirs, files in os.walk(OUTPUT_DIR):
                 root_lower = root.lower()
+                # Check for t4_environment.json or kaggle_t4_environment.json anywhere
+                for f in files:
+                    if f in ("t4_environment.json", "kaggle_t4_environment.json"):
+                        dst_f = os.path.join("reports", f)
+                        os.makedirs("reports", exist_ok=True)
+                        shutil.copy2(os.path.join(root, f), dst_f)
+                        print(f"    [+] Synced environment report: {dst_f}")
+                    elif f.endswith((".md", ".json", ".csv", ".pt", ".zip")) and any(k in root_lower for k in ["reports", "rellis3d", "outputs"]):
+                        rel = os.path.relpath(root, OUTPUT_DIR)
+                        dst_target = os.path.join(rel, f)
+                        os.makedirs(os.path.dirname(dst_target), exist_ok=True)
+                        shutil.copy2(os.path.join(root, f), dst_target)
+                        print(f"    [+] Synced artifact: {dst_target}")
+
                 if "phase16_r2" in root_lower:
                     rel = os.path.relpath(root, OUTPUT_DIR)
-                    # Strip leading phase16_r2 / outputs if present
                     rel_parts = rel.split(os.sep)
                     idx = -1
                     for i, p in enumerate(rel_parts):
@@ -307,7 +359,7 @@ def download_outputs() -> bool:
                         dst_file = os.path.join(target_dir, f)
                         shutil.copy2(src_file, dst_file)
                         print(f"    [+] Synced Phase16-R2 artifact: {dst_file}")
-                elif "performance" in root_lower or "outputs" in root_lower:
+                elif "performance" in root_lower:
                     for f in files:
                         if f.endswith((".json", ".csv", ".png")):
                             src_file = os.path.join(root, f)

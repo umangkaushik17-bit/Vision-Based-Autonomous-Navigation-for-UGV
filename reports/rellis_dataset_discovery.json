@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-09-18T05:55:00Z",
+  "discovery_scope": {
+    "search_roots": [
+      "c:\\Users\\shres\\Desktop\\SIH2026",
+      "c:\\Users\\shres\\Desktop\\SIH2026\\data",
+      "c:\\Users\\shres\\Desktop\\SIH2026\\data\\raw",
+      "c:\\Users\\shres\\Desktop\\SIH2026\\data\\processed",
+      "C:\\Users\\shres\\Downloads",
+      "C:\\Users\\shres\\Desktop"
+    ],
+    "target_indicators": [
+      "RELLIS",
+      "RELLIS-3D",
+      "pylon_camera_node",
+      "pylon_camera_node_label_id",
+      "pylon_camera_node_label_color",
+      "rellis_sample.zip",
+      "rellis3d.zip",
+      "rellis.tar.gz"
+    ]
+  },
+  "search_results": {
+    "archives_detected": [],
+    "extracted_directories_detected": [],
+    "total_candidates_found": 0
+  },
+  "detected_datasets": {
+    "rugd_sample": {
+      "status": "MANIFEST_REGISTERED",
+      "manifest_path": "data/manifests/dataset_manifest.json",
+      "processed_samples_count": 1656,
+      "location": "data/processed/sequences/rugd"
+    },
+    "synthetic_sequences": {
+      "status": "LOCAL_PRESENT",
+      "location": "data/processed/sequences/synthetic",
+      "samples_count": 1200
+    },
+    "own_recorded_data": {
+      "status": "LOCAL_PRESENT",
+      "location": "data/processed/sequences/own_data",
+      "samples_count": 300
+    },
+    "rellis3d": {
+      "status": "NOT_FOUND",
+      "location": null,
+      "archives": null,
+      "pylon_camera_images_found": 0,
+      "label_id_masks_found": 0,
+      "confidence_level": 0.0,
+      "missing_expected_components": [
+        "pylon_camera_node RGB image directories (*.jpg / *.png)",
+        "pylon_camera_node_label_id segmentation masks (*.png)",
+        "train.txt / val.txt / test.txt split definitions",
+        "calibration / camera_info YAML metadata",
+        "archive download (rellis_sample.zip / RELLIS-3D.zip)"
+      ]
+    }
+  },
+  "extraction_summary": {
+    "archives_extracted": 0,
+    "failed_extractions": 0,
+    "status": "SKIPPED_NO_ARCHIVE"
+  },
+  "verdict": {
+    "dataset_found": false,
+    "status": "BLOCKED \u2014 DATASET NOT LOCATED IN LOCAL ENVIRONMENT",
+    "note": "RELLIS-3D dataset was not downloaded or mounted into the local Windows filesystem. Automatic extraction cannot be performed because no archive is present."
+  }
+}

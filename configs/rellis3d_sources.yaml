@@ -1,0 +1,33 @@
+# Authoritative RELLIS-3D Dataset Source Configuration
+# Used by automated downloaders and Kaggle GPU training pipelines
+
+dataset_name: "RELLIS-3D"
+description: "Multimodal dataset for off-road autonomous navigation in unstructured outdoor environments"
+
+sources:
+  - name: "Full Images"
+    drive_url: "https://drive.google.com/file/d/1F3Leu0H_m6aPVpZITragfreO_SGtL2yV/view"
+    drive_file_id: "1F3Leu0H_m6aPVpZITragfreO_SGtL2yV"
+    expected_filename: "Rellis_3D_pylon_camera_node.zip"
+    expected_size_bytes: 11610983413
+    expected_purpose: "High-resolution RGB camera frames (Basler Pylon camera, ~1920x1200)"
+    local_archive_destination: "data/rellis3d/Rellis_3D_pylon_camera_node.zip"
+    extract_destination: "data/raw/public/RELLIS-3D"
+
+  - name: "Full Image Annotations ID Format"
+    drive_url: "https://drive.google.com/file/d/16URBUQn_VOGvUqfms-0I8HHKMtjPHsu5/view"
+    drive_file_id: "16URBUQn_VOGvUqfms-0I8HHKMtjPHsu5"
+    expected_filename: "Rellis_3D_pylon_camera_node_label_id.zip"
+    expected_size_bytes: 98850316
+    expected_purpose: "Dense pixel-wise semantic segmentation class ID masks"
+    local_archive_destination: "data/rellis3d/Rellis_3D_pylon_camera_node_label_id.zip"
+    extract_destination: "data/raw/public/RELLIS-3D"
+
+  - name: "Image Split File"
+    drive_url: "https://drive.google.com/file/d/1zHmnVaItcYJAWat3Yti1W_5Nfux194WQ/view"
+    drive_file_id: "1zHmnVaItcYJAWat3Yti1W_5Nfux194WQ"
+    expected_filename: "Rellis_3D_image_split.zip"
+    expected_size_bytes: 44657
+    expected_purpose: "Official train, validation, and test split lists (train.lst, val.lst, test.lst)"
+    local_archive_destination: "data/rellis3d/Rellis_3D_image_split.zip"
+    extract_destination: "data/raw/public/RELLIS-3D"

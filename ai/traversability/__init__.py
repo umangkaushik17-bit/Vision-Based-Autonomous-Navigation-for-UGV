@@ -9,6 +9,7 @@ from ai.traversability.metrics import (
 )
 from ai.traversability.postprocess import refine_traversability_by_contrast, TemporalTraversabilityFilter
 from ai.traversability.sam_tp import SAMTPTraversabilityPredictor
+from ai.traversability.dense_predictor import DenseTraversabilityPredictor
 from ai.traversability.temporal_stabilizer import TemporalStabilizer
 from ai.traversability.uncertainty import apply_uncertainty_threshold
 from ai.traversability.visualization import (
@@ -21,6 +22,7 @@ __all__ = [
     "TraversabilityPredictorBase",
     "TraversabilityResult",
     "SAMTPTraversabilityPredictor",
+    "DenseTraversabilityPredictor",
     "BaselineTerrainClassifier",
     "ClassWeightedFocalLoss",
     "DiceLoss",
