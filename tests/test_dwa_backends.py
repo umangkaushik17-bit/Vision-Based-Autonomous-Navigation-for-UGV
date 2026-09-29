@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 
 from ai.planning.backends import (
+    CPPDWABackend,
     CPUDWABackend,
     CUDADWABackend,
     DWABackendType,
@@ -69,6 +70,23 @@ def test_cpu_backend_nominal(planning_config: PlanningConfig, world_map: WorldTe
 def test_vectorized_cpu_backend_nominal(planning_config: PlanningConfig, world_map: WorldTerrainMap) -> None:
     planner = UnifiedDWAPlanner(config=planning_config, backend=DWABackendType.VECTORIZED_CPU)
     assert planner.backend_type == DWABackendType.VECTORIZED_CPU
+
+    state = RobotState(x=0.0, y=0.0, yaw=0.0, v=0.20, omega=0.0)
+    path = Path.from_xy_array(np.array([(0.0, 0.0), (2.0, 0.0), (4.0, 0.0)]))
+    traj, v, w, status, diag = planner.compute_trajectory(state, path, world_map)
+
+    assert status == PlannerStatus.SUCCESS
+    assert traj is not None
+    assert v > 0.0
+
+
+def test_cpp_cpu_backend_nominal(planning_config: PlanningConfig, world_map: WorldTerrainMap) -> None:
+    if not CPPDWABackend.is_available():
+        pytest.skip("Native C++ DWA library not available on this machine")
+
+    planner = UnifiedDWAPlanner(config=planning_config, backend=DWABackendType.CPP_CPU)
+    assert planner.backend_type == DWABackendType.CPP_CPU
+    assert "Native C++" in planner.backend_name
 
     state = RobotState(x=0.0, y=0.0, yaw=0.0, v=0.20, omega=0.0)
     path = Path.from_xy_array(np.array([(0.0, 0.0), (2.0, 0.0), (4.0, 0.0)]))

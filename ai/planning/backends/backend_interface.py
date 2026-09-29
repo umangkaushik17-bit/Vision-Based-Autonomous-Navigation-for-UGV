@@ -31,6 +31,7 @@ class DWABackendType(str, Enum):
     NPU = "NPU"
     AUTO = "AUTO"
     VECTORIZED_CPU = "VECTORIZED_CPU"
+    CPP_CPU = "CPP_CPU"
 
     @classmethod
     def from_str(cls, val: str) -> DWABackendType:
@@ -45,9 +46,11 @@ class DWABackendType(str, Enum):
             return cls.CPU
         elif normalized in ("VECTORIZED_CPU", "VEC_CPU", "TORCH_CPU"):
             return cls.VECTORIZED_CPU
+        elif normalized in ("CPP", "CPP_CPU", "NATIVE_CPP", "C++"):
+            return cls.CPP_CPU
         elif normalized in ("AUTO", "AUTOMATIC"):
             return cls.AUTO
-        raise ValueError(f"Unknown DWA backend type: '{val}'. Supported: CPU, CUDA, INTEL_GPU, NPU, AUTO, VECTORIZED_CPU")
+        raise ValueError(f"Unknown DWA backend type: '{val}'. Supported: CPU, CUDA, INTEL_GPU, NPU, AUTO, VECTORIZED_CPU, CPP_CPU")
 
 
 @dataclass

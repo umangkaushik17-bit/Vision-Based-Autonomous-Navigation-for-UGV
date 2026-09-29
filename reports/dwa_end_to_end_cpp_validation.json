@@ -1,0 +1,157 @@
+{
+  "benchmark_name": "Phase 13.21 End-to-End Navigation Pipeline Benchmark",
+  "date": "2026-09-30 04:50:26",
+  "hardware": {
+    "cpu": "Intel Core Ultra 7 155H (16 cores, 22 threads)",
+    "gpu": "Intel(R) Graphics",
+    "xpu_available": true
+  },
+  "traversability_model": "LightweightTraversabilityNet (FROZEN)",
+  "with_reference_cpu_dwa": {
+    "perception": {
+      "mean_ms": 118.38,
+      "p95_ms": 160.37,
+      "pct_of_total": 7.1
+    },
+    "costmap": {
+      "mean_ms": 0.47,
+      "p95_ms": 0.68,
+      "pct_of_total": 0.0
+    },
+    "dynamic_update": {
+      "mean_ms": 4.86,
+      "p95_ms": 7.99,
+      "pct_of_total": 0.3
+    },
+    "dwa": {
+      "mean_ms": 1552.87,
+      "p95_ms": 1800.19,
+      "pct_of_total": 92.6
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.02,
+      "p95_ms": 0.03,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 1676.61,
+      "p95_ms": 1953.1,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 0.6,
+    "command_publication_frequency_hz": 0.6
+  },
+  "with_vectorized_cpu_dwa": {
+    "perception": {
+      "mean_ms": 118.38,
+      "p95_ms": 160.37,
+      "pct_of_total": 45.9
+    },
+    "costmap": {
+      "mean_ms": 0.47,
+      "p95_ms": 0.68,
+      "pct_of_total": 0.2
+    },
+    "dynamic_update": {
+      "mean_ms": 4.86,
+      "p95_ms": 7.99,
+      "pct_of_total": 1.9
+    },
+    "dwa": {
+      "mean_ms": 133.94,
+      "p95_ms": 157.34,
+      "pct_of_total": 52.0
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.05,
+      "p95_ms": 0.08,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 257.71,
+      "p95_ms": 314.49,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 3.88,
+    "command_publication_frequency_hz": 3.88
+  },
+  "with_native_cpp_dwa": {
+    "perception": {
+      "mean_ms": 118.38,
+      "p95_ms": 160.37,
+      "pct_of_total": 94.2
+    },
+    "costmap": {
+      "mean_ms": 0.47,
+      "p95_ms": 0.68,
+      "pct_of_total": 0.4
+    },
+    "dynamic_update": {
+      "mean_ms": 4.86,
+      "p95_ms": 7.99,
+      "pct_of_total": 3.9
+    },
+    "dwa": {
+      "mean_ms": 1.93,
+      "p95_ms": 2.5,
+      "pct_of_total": 1.5
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.06,
+      "p95_ms": 0.07,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 125.7,
+      "p95_ms": 171.0,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 7.96,
+    "command_publication_frequency_hz": 7.96
+  },
+  "with_intel_gpu_dwa": {
+    "perception": {
+      "mean_ms": 118.38,
+      "p95_ms": 160.37,
+      "pct_of_total": 27.3
+    },
+    "costmap": {
+      "mean_ms": 0.47,
+      "p95_ms": 0.68,
+      "pct_of_total": 0.1
+    },
+    "dynamic_update": {
+      "mean_ms": 4.86,
+      "p95_ms": 7.99,
+      "pct_of_total": 1.1
+    },
+    "dwa": {
+      "mean_ms": 310.06,
+      "p95_ms": 354.16,
+      "pct_of_total": 71.5
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.04,
+      "p95_ms": 0.06,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 433.82,
+      "p95_ms": 502.04,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 2.31,
+    "command_publication_frequency_hz": 2.31
+  },
+  "comparison": {
+    "reference_cpu_cycle_ms": 1676.61,
+    "vectorized_cpu_cycle_ms": 257.71,
+    "native_cpp_cycle_ms": 125.7,
+    "intel_gpu_cycle_ms": 433.82,
+    "cpp_speedup_over_cpu_ref": 13.34,
+    "cpp_speedup_over_vectorized": 2.05,
+    "dwa_isolated_cpp_latency_ms": 1.93,
+    "dwa_isolated_cpp_speedup_over_cpu_ref": 804.6,
+    "dwa_bottleneck_eliminated": true
+  }
+}

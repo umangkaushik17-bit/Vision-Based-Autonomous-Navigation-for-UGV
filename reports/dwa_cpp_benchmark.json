@@ -1,0 +1,357 @@
+{
+  "benchmark_name": "Phase 13.21 Native C++ DWA Local Planner Benchmark",
+  "date": "2026-09-30 04:49:04",
+  "hardware": {
+    "cpu": "Intel Core Ultra 7 155H (16 cores, 22 threads, Meteor Lake)",
+    "gpu": "Intel(R) Graphics",
+    "xpu_available": true,
+    "system": "Windows-10-10.0.26200-SP0"
+  },
+  "workload": {
+    "candidates": 375,
+    "v_samples": 15,
+    "omega_samples": 25,
+    "horizon_s": 1.5,
+    "timestep_s": 0.1,
+    "steps": 15
+  },
+  "benchmarks": {
+    "native_cpp_cpu": {
+      "backend": "Native C++ CPU",
+      "device": "Host CPU (Native C++ / AVX2 / OpenMP)",
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "latency_ms": {
+            "mean": 1.02,
+            "median": 0.96,
+            "p95": 1.47,
+            "min": 0.71,
+            "max": 1.66,
+            "std": 0.22
+          },
+          "candidates_per_second": 368527.6,
+          "effective_hz": 982.74
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "latency_ms": {
+            "mean": 0.79,
+            "median": 0.73,
+            "p95": 1.13,
+            "min": 0.59,
+            "max": 1.62,
+            "std": 0.19
+          },
+          "candidates_per_second": 474279.5,
+          "effective_hz": 1264.75
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "latency_ms": {
+            "mean": 1.04,
+            "median": 1.01,
+            "p95": 1.21,
+            "min": 0.91,
+            "max": 1.52,
+            "std": 0.1
+          },
+          "candidates_per_second": 360500.0,
+          "effective_hz": 961.33
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "latency_ms": {
+            "mean": 1.98,
+            "median": 1.96,
+            "p95": 2.2,
+            "min": 1.8,
+            "max": 2.33,
+            "std": 0.11
+          },
+          "candidates_per_second": 189055.9,
+          "effective_hz": 504.15
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Field",
+          "latency_ms": {
+            "mean": 0.68,
+            "median": 0.66,
+            "p95": 0.8,
+            "min": 0.56,
+            "max": 0.93,
+            "std": 0.07
+          },
+          "candidates_per_second": 552732.9,
+          "effective_hz": 1473.95
+        }
+      ],
+      "grand_summary": {
+        "mean_ms": 1.1,
+        "median_ms": 0.95,
+        "p95_ms": 2.07,
+        "min_ms": 0.56,
+        "max_ms": 2.33,
+        "std_ms": 0.49,
+        "candidates_per_second": 340262.9,
+        "effective_hz": 907.37
+      }
+    },
+    "vectorized_cpu": {
+      "backend": "Vectorized CPU (PyTorch SIMD)",
+      "device": "Host CPU (PyTorch SIMD Vectorized)",
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "latency_ms": {
+            "mean": 29.66,
+            "median": 29.28,
+            "p95": 33.91,
+            "min": 25.14,
+            "max": 38.01,
+            "std": 2.43
+          },
+          "candidates_per_second": 12645.1,
+          "effective_hz": 33.72
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "latency_ms": {
+            "mean": 37.42,
+            "median": 36.8,
+            "p95": 43.72,
+            "min": 32.56,
+            "max": 45.12,
+            "std": 3.3
+          },
+          "candidates_per_second": 10021.6,
+          "effective_hz": 26.72
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "latency_ms": {
+            "mean": 146.02,
+            "median": 146.66,
+            "p95": 168.21,
+            "min": 107.92,
+            "max": 187.5,
+            "std": 14.58
+          },
+          "candidates_per_second": 2568.2,
+          "effective_hz": 6.85
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "latency_ms": {
+            "mean": 206.61,
+            "median": 201.74,
+            "p95": 245.03,
+            "min": 182.22,
+            "max": 258.32,
+            "std": 17.97
+          },
+          "candidates_per_second": 1815.0,
+          "effective_hz": 4.84
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Field",
+          "latency_ms": {
+            "mean": 39.21,
+            "median": 38.1,
+            "p95": 48.22,
+            "min": 31.75,
+            "max": 54.72,
+            "std": 5.57
+          },
+          "candidates_per_second": 9564.0,
+          "effective_hz": 25.5
+        }
+      ],
+      "grand_summary": {
+        "mean_ms": 91.78,
+        "median_ms": 41.37,
+        "p95_ms": 214.84,
+        "min_ms": 25.14,
+        "max_ms": 258.32,
+        "std_ms": 72.51,
+        "candidates_per_second": 4085.8,
+        "effective_hz": 10.9
+      }
+    },
+    "intel_gpu_xpu": {
+      "backend": "Intel GPU (Arc Xe XPU)",
+      "device": "Intel XPU (Intel(R) Graphics)",
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "latency_ms": {
+            "mean": 81.94,
+            "median": 80.06,
+            "p95": 93.79,
+            "min": 76.09,
+            "max": 113.32,
+            "std": 6.48
+          },
+          "candidates_per_second": 4576.5,
+          "effective_hz": 12.2
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "latency_ms": {
+            "mean": 85.73,
+            "median": 84.9,
+            "p95": 95.21,
+            "min": 76.68,
+            "max": 97.08,
+            "std": 3.84
+          },
+          "candidates_per_second": 4374.4,
+          "effective_hz": 11.67
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "latency_ms": {
+            "mean": 309.68,
+            "median": 304.97,
+            "p95": 345.93,
+            "min": 295.63,
+            "max": 376.9,
+            "std": 16.67
+          },
+          "candidates_per_second": 1210.9,
+          "effective_hz": 3.23
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "latency_ms": {
+            "mean": 487.03,
+            "median": 480.98,
+            "p95": 548.36,
+            "min": 462.36,
+            "max": 559.26,
+            "std": 22.22
+          },
+          "candidates_per_second": 770.0,
+          "effective_hz": 2.05
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Field",
+          "latency_ms": {
+            "mean": 88.04,
+            "median": 87.17,
+            "p95": 95.73,
+            "min": 83.26,
+            "max": 107.68,
+            "std": 4.5
+          },
+          "candidates_per_second": 4259.3,
+          "effective_hz": 11.36
+        }
+      ],
+      "grand_summary": {
+        "mean_ms": 210.48,
+        "median_ms": 88.77,
+        "p95_ms": 491.64,
+        "min_ms": 76.09,
+        "max_ms": 559.26,
+        "std_ms": 163.86,
+        "candidates_per_second": 1781.6,
+        "effective_hz": 4.75
+      }
+    },
+    "python_cpu_reference_measured": {
+      "backend": "Python CPU Reference",
+      "device": "Host CPU (Reference Python/NumPy)",
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "latency_ms": {
+            "mean": 1667.22,
+            "median": 1575.74,
+            "p95": 1833.79,
+            "min": 1563.47,
+            "max": 1862.46,
+            "std": 138.14
+          },
+          "candidates_per_second": 224.9,
+          "effective_hz": 0.6
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "latency_ms": {
+            "mean": 1554.33,
+            "median": 1565.43,
+            "p95": 1566.87,
+            "min": 1530.54,
+            "max": 1567.03,
+            "std": 16.84
+          },
+          "candidates_per_second": 241.3,
+          "effective_hz": 0.64
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "latency_ms": {
+            "mean": 3607.06,
+            "median": 3547.71,
+            "p95": 3728.83,
+            "min": 3524.52,
+            "max": 3748.96,
+            "std": 100.78
+          },
+          "candidates_per_second": 104.0,
+          "effective_hz": 0.28
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "latency_ms": {
+            "mean": 5974.62,
+            "median": 5829.67,
+            "p95": 6255.12,
+            "min": 5791.79,
+            "max": 6302.4,
+            "std": 232.29
+          },
+          "candidates_per_second": 62.8,
+          "effective_hz": 0.17
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Field",
+          "latency_ms": {
+            "mean": 1562.14,
+            "median": 1560.54,
+            "p95": 1573.87,
+            "min": 1550.52,
+            "max": 1575.35,
+            "std": 10.2
+          },
+          "candidates_per_second": 240.1,
+          "effective_hz": 0.64
+        }
+      ],
+      "grand_summary": {
+        "mean_ms": 2873.08,
+        "median_ms": 1575.74,
+        "p95_ms": 5971.49,
+        "min_ms": 1530.54,
+        "max_ms": 6302.4,
+        "std_ms": 1740.9,
+        "candidates_per_second": 130.5,
+        "effective_hz": 0.35
+      }
+    }
+  },
+  "historical_baselines": {
+    "python_cpu_reference_mean_ms": 2587.08,
+    "vectorized_cpu_mean_ms": 65.99,
+    "intel_gpu_xpu_mean_ms": 204.72,
+    "nvidia_t4_cuda_mean_ms": 25.0
+  },
+  "comparison": {
+    "native_cpp_mean_ms": 1.1,
+    "native_cpp_hz": 907.37,
+    "speedup_vs_python_cpu_ref": 2351.89,
+    "speedup_vs_vectorized_cpu": 83.44,
+    "speedup_vs_intel_gpu": 191.35
+  }
+}
