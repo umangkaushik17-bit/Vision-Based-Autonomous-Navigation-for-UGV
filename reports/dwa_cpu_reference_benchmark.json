@@ -1,0 +1,1696 @@
+{
+  "benchmark_metadata": {
+    "target": "CPU Reference DWA",
+    "date": "2026-09-30 03:34:15",
+    "planner_class": "DWAPlanner",
+    "language": "Python 3.10 / CPython",
+    "candidate_count": 375,
+    "v_samples": 15,
+    "omega_samples": 25,
+    "horizon_s": 1.5,
+    "dt_s": 0.1,
+    "timesteps": 15
+  },
+  "overall_summary": {
+    "grand_mean_latency_ms": 3211.07,
+    "grand_median_latency_ms": 3239.63,
+    "grand_p95_latency_ms": 3659.03,
+    "mean_candidates_per_second": 138.9
+  },
+  "scenarios": [
+    {
+      "scenario_name": "Phase 12 Static Baseline",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 2165.816,
+        "median": 2185.376,
+        "p95": 2661.44,
+        "p99": 2727.103,
+        "max": 2743.519,
+        "raw_samples": [
+          2343.48,
+          2254.73,
+          2235.99,
+          2626.26,
+          2266.41,
+          2743.52,
+          1955.92,
+          1770.75,
+          1838.02,
+          2185.38,
+          1959.89,
+          2061.62,
+          2007.25,
+          2200.07,
+          2037.95
+        ]
+      },
+      "candidates_per_second": 173.1,
+      "cpu_utilization_percent": 92.35,
+      "ram_usage_mb": 303.86,
+      "selected_linear_velocity_mps": 0.45,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 0.9301,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 375,
+        "broad_phase_cleared": 0,
+        "expensive_checks": 0,
+        "dynamically_rejected": 0,
+        "dynamically_penalized": 0,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.045,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.09,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.135,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.18,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.225,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.27,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.315,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.36,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.405,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.45,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.495,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.54,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.585,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.63,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.675,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario A: No Dynamic Obstacles",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 2065.307,
+        "median": 2058.405,
+        "p95": 2225.875,
+        "p99": 2265.677,
+        "max": 2275.627,
+        "raw_samples": [
+          2275.63,
+          1931.67,
+          1882.38,
+          2097.52,
+          2015.22,
+          2069.18,
+          2114.01,
+          2058.41,
+          1961.97,
+          2204.55,
+          2137.32,
+          2031.54,
+          2023.43,
+          2155.95,
+          2020.83
+        ]
+      },
+      "candidates_per_second": 181.6,
+      "cpu_utilization_percent": 92.73,
+      "ram_usage_mb": 315.77,
+      "selected_linear_velocity_mps": 0.45,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 1.1801,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 375,
+        "broad_phase_cleared": 375,
+        "expensive_checks": 0,
+        "dynamically_rejected": 0,
+        "dynamically_penalized": 0,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.045,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.09,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.135,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.18,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.225,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.27,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.315,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.36,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.405,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.45,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.495,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.54,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.585,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.63,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.675,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario B: Moving Obstacle Outside Corridor",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 1931.777,
+        "median": 1888.51,
+        "p95": 2202.263,
+        "p99": 2228.645,
+        "max": 2235.241,
+        "raw_samples": [
+          1875.57,
+          2019.34,
+          1967.01,
+          2094.47,
+          2188.13,
+          1909.45,
+          1849.37,
+          1769.07,
+          1785.13,
+          1749.37,
+          1811.92,
+          1888.51,
+          1803.2,
+          2235.24,
+          2030.88
+        ]
+      },
+      "candidates_per_second": 194.1,
+      "cpu_utilization_percent": 92.81,
+      "ram_usage_mb": 327.5,
+      "selected_linear_velocity_mps": 0.45,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 1.1801,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 375,
+        "broad_phase_cleared": 375,
+        "expensive_checks": 0,
+        "dynamically_rejected": 0,
+        "dynamically_penalized": 0,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.045,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.09,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.135,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.18,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.225,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.27,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.315,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.36,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.405,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.45,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.495,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.54,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.585,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.63,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.675,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario C: Moving Obstacle Crossing Trajectory",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 3678.363,
+        "median": 3690.182,
+        "p95": 3764.028,
+        "p99": 3782.956,
+        "max": 3787.688,
+        "raw_samples": [
+          3753.89,
+          3637.43,
+          3542.32,
+          3623.06,
+          3744.02,
+          3749.02,
+          3729.78,
+          3566.27,
+          3673.22,
+          3540.94,
+          3787.69,
+          3730.81,
+          3656.45,
+          3690.18,
+          3750.36
+        ]
+      },
+      "candidates_per_second": 101.9,
+      "cpu_utilization_percent": 92.49,
+      "ram_usage_mb": 341.84,
+      "selected_linear_velocity_mps": 0.171,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 1.0953,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 375,
+        "broad_phase_cleared": 57,
+        "expensive_checks": 318,
+        "dynamically_rejected": 0,
+        "dynamically_penalized": 227,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.0171,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.0343,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.0514,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.0686,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.0857,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.1029,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.12,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.1371,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.1543,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.1714,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.1886,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.2057,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.2229,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.24,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.2571,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario D: Moving Obstacle Crossing Candidate Subset",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 4090.499,
+        "median": 4052.945,
+        "p95": 4324.162,
+        "p99": 4421.378,
+        "max": 4445.683,
+        "raw_samples": [
+          4064.71,
+          4139.12,
+          4052.95,
+          4154.29,
+          3931.18,
+          4026.38,
+          3853.95,
+          4022.17,
+          4230.36,
+          4216.41,
+          4445.68,
+          4272.08,
+          3998.93,
+          3978.23,
+          3971.04
+        ]
+      },
+      "candidates_per_second": 91.7,
+      "cpu_utilization_percent": 92.43,
+      "ram_usage_mb": 353.63,
+      "selected_linear_velocity_mps": 0.429,
+      "selected_angular_velocity_radps": -0.188,
+      "selected_trajectory_score": 0.9277,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 363,
+        "broad_phase_cleared": 0,
+        "expensive_checks": 375,
+        "dynamically_rejected": 12,
+        "dynamically_penalized": 267,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.0429,
+          "y": -0.0004,
+          "yaw": -0.0187,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.0857,
+          "y": -0.0016,
+          "yaw": -0.0375,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.1285,
+          "y": -0.0036,
+          "yaw": -0.0562,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.1713,
+          "y": -0.0064,
+          "yaw": -0.075,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.214,
+          "y": -0.01,
+          "yaw": -0.0937,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.2566,
+          "y": -0.0144,
+          "yaw": -0.1125,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.2991,
+          "y": -0.0197,
+          "yaw": -0.1312,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.3416,
+          "y": -0.0257,
+          "yaw": -0.15,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.3839,
+          "y": -0.0325,
+          "yaw": -0.1687,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.4261,
+          "y": -0.0401,
+          "yaw": -0.1875,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.4681,
+          "y": -0.0484,
+          "yaw": -0.2062,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.51,
+          "y": -0.0576,
+          "yaw": -0.225,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.5517,
+          "y": -0.0676,
+          "yaw": -0.2437,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.5931,
+          "y": -0.0783,
+          "yaw": -0.2625,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.6344,
+          "y": -0.0898,
+          "yaw": -0.2812,
+          "v": 0.429,
+          "omega": -0.188,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario E: Four Moving Obstacles",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 5920.204,
+        "median": 5766.258,
+        "p95": 6618.462,
+        "p99": 6866.375,
+        "max": 6928.353,
+        "raw_samples": [
+          5766.26,
+          5664.71,
+          5585.51,
+          5475.26,
+          5645.74,
+          5611.66,
+          5649.44,
+          5732.68,
+          6017.57,
+          5808.27,
+          6485.65,
+          6480.22,
+          5863.67,
+          6088.09,
+          6928.35
+        ]
+      },
+      "candidates_per_second": 63.3,
+      "cpu_utilization_percent": 92.63,
+      "ram_usage_mb": 365.61,
+      "selected_linear_velocity_mps": 0.15,
+      "selected_angular_velocity_radps": -0.208,
+      "selected_trajectory_score": 0.8684,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 370,
+        "broad_phase_cleared": 0,
+        "expensive_checks": 375,
+        "dynamically_rejected": 5,
+        "dynamically_penalized": 366,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.015,
+          "y": -0.0002,
+          "yaw": -0.0208,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.03,
+          "y": -0.0006,
+          "yaw": -0.0417,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.045,
+          "y": -0.0014,
+          "yaw": -0.0625,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.0599,
+          "y": -0.0025,
+          "yaw": -0.0833,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.0749,
+          "y": -0.0039,
+          "yaw": -0.1042,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.0898,
+          "y": -0.0056,
+          "yaw": -0.125,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.1046,
+          "y": -0.0076,
+          "yaw": -0.1458,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.1194,
+          "y": -0.01,
+          "yaw": -0.1667,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.1342,
+          "y": -0.0126,
+          "yaw": -0.1875,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.1489,
+          "y": -0.0156,
+          "yaw": -0.2083,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.1636,
+          "y": -0.0188,
+          "yaw": -0.2292,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.1781,
+          "y": -0.0224,
+          "yaw": -0.25,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.1926,
+          "y": -0.0262,
+          "yaw": -0.2708,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.207,
+          "y": -0.0304,
+          "yaw": -0.2917,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.2214,
+          "y": -0.0349,
+          "yaw": -0.3125,
+          "v": 0.15,
+          "omega": -0.208,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario F: Uncertain Obstacle",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 1559.113,
+        "median": 1554.109,
+        "p95": 1742.575,
+        "p99": 1790.294,
+        "max": 1802.223,
+        "raw_samples": [
+          1717.01,
+          1510.54,
+          1645.54,
+          1802.22,
+          1664.08,
+          1554.11,
+          1525.65,
+          1433.38,
+          1462.03,
+          1595.7,
+          1580.0,
+          1669.97,
+          1426.38,
+          1390.05,
+          1410.04
+        ]
+      },
+      "candidates_per_second": 240.5,
+      "cpu_utilization_percent": 92.55,
+      "ram_usage_mb": 375.31,
+      "selected_linear_velocity_mps": 0.45,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 1.1801,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 375,
+        "broad_phase_cleared": 375,
+        "expensive_checks": 0,
+        "dynamically_rejected": 0,
+        "dynamically_penalized": 0,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.045,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.09,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.135,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.18,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.225,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.27,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.315,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.36,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.405,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.45,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.495,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.54,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.585,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.63,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.675,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.45,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario G: Prediction Horizon Exceeded",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 4248.917,
+        "median": 3858.98,
+        "p95": 6044.907,
+        "p99": 6513.267,
+        "max": 6630.357,
+        "raw_samples": [
+          4798.13,
+          5794.0,
+          6630.36,
+          4154.23,
+          4663.59,
+          4357.53,
+          3887.59,
+          3751.11,
+          3590.3,
+          3699.59,
+          3858.98,
+          3793.08,
+          3416.08,
+          3604.75,
+          3734.44
+        ]
+      },
+      "candidates_per_second": 88.3,
+      "cpu_utilization_percent": 92.36,
+      "ram_usage_mb": 389.17,
+      "selected_linear_velocity_mps": 0.364,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 0.4548,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 375,
+        "valid_trajectories": 235,
+        "broad_phase_cleared": 0,
+        "expensive_checks": 375,
+        "dynamically_rejected": 140,
+        "dynamically_penalized": 235,
+        "min_clearance_m": 2.0
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.0364,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.2,
+          "x": 0.0729,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.3,
+          "x": 0.1093,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.4,
+          "x": 0.1457,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.5,
+          "x": 0.1821,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.6,
+          "x": 0.2186,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.7,
+          "x": 0.255,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.8,
+          "x": 0.2914,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 0.9,
+          "x": 0.3279,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.0,
+          "x": 0.3643,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.1,
+          "x": 0.4007,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.2,
+          "x": 0.4371,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.3,
+          "x": 0.4736,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.4,
+          "x": 0.51,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        },
+        {
+          "t": 1.5,
+          "x": 0.5464,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.364,
+          "omega": 0.0,
+          "clearance_m": 2.0
+        }
+      ]
+    },
+    {
+      "scenario_name": "Scenario H: Static + Dynamic Combination",
+      "n_iterations": 15,
+      "candidate_count": 375,
+      "trajectory_points_per_candidate": 15,
+      "simulation_horizon_s": 1.5,
+      "simulation_dt_s": 0.1,
+      "latency_ms": {
+        "mean": 3239.632,
+        "median": 3234.658,
+        "p95": 3347.52,
+        "p99": 3370.181,
+        "max": 3375.846,
+        "raw_samples": [
+          3228.22,
+          3163.98,
+          3193.79,
+          3198.67,
+          3225.11,
+          3238.85,
+          3234.66,
+          3375.85,
+          3250.0,
+          3233.75,
+          3328.6,
+          3262.79,
+          3335.38,
+          3264.34,
+          3060.49
+        ]
+      },
+      "candidates_per_second": 115.8,
+      "cpu_utilization_percent": 92.51,
+      "ram_usage_mb": 400.95,
+      "selected_linear_velocity_mps": 0.171,
+      "selected_angular_velocity_radps": 0.0,
+      "selected_trajectory_score": 0.5446,
+      "collision_result": false,
+      "planner_state": "SUCCESS",
+      "diagnostics": {
+        "statically_valid": 260,
+        "valid_trajectories": 162,
+        "broad_phase_cleared": 0,
+        "expensive_checks": 260,
+        "dynamically_rejected": 98,
+        "dynamically_penalized": 162,
+        "min_clearance_m": 0.447
+      },
+      "selected_trajectory_points": [
+        {
+          "t": 0.1,
+          "x": 0.0171,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5657
+        },
+        {
+          "t": 0.2,
+          "x": 0.0343,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5657
+        },
+        {
+          "t": 0.3,
+          "x": 0.0514,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5657
+        },
+        {
+          "t": 0.4,
+          "x": 0.0686,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5657
+        },
+        {
+          "t": 0.5,
+          "x": 0.0857,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5657
+        },
+        {
+          "t": 0.6,
+          "x": 0.1029,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 0.7,
+          "x": 0.12,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 0.8,
+          "x": 0.1371,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 0.9,
+          "x": 0.1543,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 1.0,
+          "x": 0.1714,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 1.1,
+          "x": 0.1886,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.5
+        },
+        {
+          "t": 1.2,
+          "x": 0.2057,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.4472
+        },
+        {
+          "t": 1.3,
+          "x": 0.2229,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.4472
+        },
+        {
+          "t": 1.4,
+          "x": 0.24,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.4472
+        },
+        {
+          "t": 1.5,
+          "x": 0.2571,
+          "y": 0.0,
+          "yaw": 0.0,
+          "v": 0.171,
+          "omega": 0.0,
+          "clearance_m": 0.4472
+        }
+      ]
+    }
+  ]
+}

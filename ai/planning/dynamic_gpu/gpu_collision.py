@@ -109,12 +109,24 @@ class GPUCollisionChecker:
 
         # Costmap metadata
         res = float(getattr(costmap, "resolution_m", getattr(costmap, "resolution", 0.10)))
-        x_bounds = getattr(costmap, "x_bounds_m", getattr(costmap, "x_range_m", (-20.0, 20.0)))
-        y_bounds = getattr(costmap, "y_bounds_m", getattr(costmap, "y_range_m", (-20.0, 20.0)))
-        x_min, x_max = float(x_bounds[0]), float(x_bounds[1])
-        y_min, y_max = float(y_bounds[0]), float(y_bounds[1])
+        x_bounds = getattr(costmap, "x_bounds_m", getattr(costmap, "x_range_m", None))
+        y_bounds = getattr(costmap, "y_bounds_m", getattr(costmap, "y_range_m", None))
         shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
         H, W = int(shape[0]), int(shape[1])
+
+        is_cartesian = False
+        if x_bounds is not None and y_bounds is not None:
+            x_min, x_max = float(x_bounds[0]), float(x_bounds[1])
+            y_min, y_max = float(y_bounds[0]), float(y_bounds[1])
+        elif hasattr(costmap, "origin_x") and hasattr(costmap, "origin_y"):
+            is_cartesian = True
+            x_min = float(costmap.origin_x)
+            y_min = float(costmap.origin_y)
+            x_max = x_min + W * res
+            y_max = y_min + H * res
+        else:
+            x_min, x_max = -20.0, 20.0
+            y_min, y_max = -20.0, 20.0
 
         # Extract map layers as tensors
         obs_tensor = torch.as_tensor(costmap.obstacle if hasattr(costmap, "obstacle") else np.zeros((H, W), dtype=bool), device=device)
@@ -141,10 +153,13 @@ class GPUCollisionChecker:
         px = x + dx * cos_yaw - dy * sin_yaw
         py = y + dx * sin_yaw + dy * cos_yaw
 
-        # Convert to grid indices (row, col) matching WorldTerrainMap / BEVTerrainCostmap convention:
-        # row = floor((x_max - x) / res), col = floor((y_max - y) / res)
-        grid_r = torch.floor((x_max - px) / res).to(torch.long)
-        grid_c = torch.floor((y_max - py) / res).to(torch.long)
+        # Convert to grid indices (row, col)
+        if is_cartesian:
+            grid_r = torch.floor((py - y_min) / res).to(torch.long)
+            grid_c = torch.floor((px - x_min) / res).to(torch.long)
+        else:
+            grid_r = torch.floor((x_max - px) / res).to(torch.long)
+            grid_c = torch.floor((y_max - py) / res).to(torch.long)
 
         # 1. Bounds check
         in_bounds = (px >= x_min) & (px < x_max) & (py >= y_min) & (py < y_max) & (grid_r >= 0) & (grid_r < H) & (grid_c >= 0) & (grid_c < W)
@@ -195,8 +210,12 @@ class GPUCollisionChecker:
 
         center_x = trajectories[:, :, 0]  # (K, S)
         center_y = trajectories[:, :, 1]  # (K, S)
-        center_r = torch.clamp(torch.floor((x_max - center_x) / res).to(torch.long), 0, H - 1)
-        center_c = torch.clamp(torch.floor((y_max - center_y) / res).to(torch.long), 0, W - 1)
+        if is_cartesian:
+            center_r = torch.clamp(torch.floor((center_y - y_min) / res).to(torch.long), 0, H - 1)
+            center_c = torch.clamp(torch.floor((center_x - x_min) / res).to(torch.long), 0, W - 1)
+        else:
+            center_r = torch.clamp(torch.floor((x_max - center_x) / res).to(torch.long), 0, H - 1)
+            center_c = torch.clamp(torch.floor((y_max - center_y) / res).to(torch.long), 0, W - 1)
 
         center_costs = terrain_cost_map[center_r, center_c]  # (K, S)
         inf_mask = torch.isinf(center_costs).any(dim=-1)
@@ -208,8 +227,12 @@ class GPUCollisionChecker:
         # If map has obstacles, compute distance to nearest obstacle cell
         if obs_tensor.any():
             obs_indices = obs_tensor.nonzero(as_tuple=False)  # (M, 2) [r, c]
-            obs_x = x_max - (obs_indices[:, 0].to(self.dtype) + 0.5) * res  # (M,)
-            obs_y = y_max - (obs_indices[:, 1].to(self.dtype) + 0.5) * res  # (M,)
+            if is_cartesian:
+                obs_x = x_min + (obs_indices[:, 1].to(self.dtype) + 0.5) * res
+                obs_y = y_min + (obs_indices[:, 0].to(self.dtype) + 0.5) * res
+            else:
+                obs_x = x_max - (obs_indices[:, 0].to(self.dtype) + 0.5) * res  # (M,)
+                obs_y = y_max - (obs_indices[:, 1].to(self.dtype) + 0.5) * res  # (M,)
             obs_pts = torch.stack([obs_x, obs_y], dim=-1)  # (M, 2)
 
             # Compute min distance for each trajectory center points
