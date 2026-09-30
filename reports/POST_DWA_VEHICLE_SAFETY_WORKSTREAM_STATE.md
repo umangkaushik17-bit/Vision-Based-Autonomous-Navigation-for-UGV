@@ -1,18 +1,15 @@
 # SIH2026 — Post-DWA Vehicle Safety & Recovery Workstream State Checkpoint
 
-CURRENT_STAGE: STAGE_1_CONTINUOUS_MOTION_COMPLETED
-CURRENT_SUBSTEP: STAGE_1_VERIFIED_AND_CHECKPOINTED
-STATUS: READY_FOR_STAGE_2
-LAST_SUCCESSFUL_TEST: tests/test_continuous_command_buffer.py & DWA regression suite (38 passed, 0 failed)
-LAST_COMMIT: 80d58c3 (pending Stage 1 commit)
+CURRENT_STAGE: STAGE_2_LOST_OBSTACLE_SAFETY_COMPLETED
+CURRENT_SUBSTEP: STAGE_2_VERIFIED_AND_CHECKPOINTED
+STATUS: READY_FOR_STAGE_3
+LAST_SUCCESSFUL_TEST: tests/test_lost_obstacle_safety.py & tests/test_continuous_command_buffer.py (17 passed, 0 failed)
+LAST_COMMIT: ab4d4ce (pending Stage 2 commit)
 FILES_CHANGED:
-  - ai/control/__init__.py
-  - ai/control/command_buffer.py
-  - configs/planning.yaml
+  - ai/planning/safety_governor.py
   - simulation/nodes/interactive_ugv_navigation_node.py
-  - tests/test_continuous_command_buffer.py
-  - reports/PHASE_13_22_CONTINUOUS_MOTION_REPORT.md
+  - tests/test_lost_obstacle_safety.py
+  - reports/PHASE_13_23_LOST_OBSTACLE_SAFETY_REPORT.md
 KNOWN_FAILURES:
-  - Obstacles directly in front of bumper can still be lost if out of camera FOV, leading to track expiration after 5 misses and free-space hallucination. (To be resolved in Stage 2).
-  - Reverse recovery not yet active when path is blocked. (To be resolved in Stage 3).
-NEXT_ACTION: Begin Stage 2 (Phase 13.23) Lost-Obstacle Safety Governor implementation.
+  - When route is completely blocked, UGV holds safe STOP without reversing or replanning around the obstruction. (To be resolved in Stage 3).
+NEXT_ACTION: Begin Stage 3 (Phase 13.24) Safe Reverse Recovery & Deadlock Replanning implementation.

@@ -85,6 +85,13 @@ from ai.planning.backends.unified_planner import UnifiedDWAPlanner
 from ai.planning.global_planners.astar import AStarPlanner
 from ai.planning.local_planners.dwa import DWAPlanner
 from ai.planning.path import Path as AIPath, PathPoint
+from ai.planning.safety_governor import (
+    LatchedHazard,
+    RecentHazardMemory,
+    RecentHazardMemoryConfig,
+    SafetyGovernor,
+    SafetyGovernorConfig,
+)
 from ai.spatial_fusion.world_map import WorldTerrainMap
 
 
@@ -183,6 +190,24 @@ class InteractiveUGVNavigationNode(Node):
         self.dwa_planner.enable_behavioral_arbitration = True
         self.behavior_machine = BehavioralStateMachine(BehavioralConfig())
         self.replanner = EventDrivenGlobalReplanner(GlobalReplannerConfig())
+
+        # Phase 13.23: Lost-Obstacle Hazard Latching & Authoritative Safety Governor
+        self.hazard_memory = RecentHazardMemory(
+            RecentHazardMemoryConfig(
+                proximity_threshold_m=2.50,
+                critical_proximity_m=1.20,
+                base_ttl_s=3.50,
+                close_ttl_s=5.00,
+            )
+        )
+        self.safety_governor = SafetyGovernor(
+            SafetyGovernorConfig(
+                stop_distance_m=0.40,
+                cautious_distance_m=0.95,
+                cautious_max_v_mps=0.15,
+                corridor_half_width_m=0.35,
+            )
+        )
 
         self.active_global_path: Optional[AIPath] = None
         self.last_behavior: Optional[BehavioralDecision] = None
@@ -366,6 +391,7 @@ class InteractiveUGVNavigationNode(Node):
         """Reset internal navigation state."""
         self.get_logger().info("Resetting navigation and tracker states.")
         self.command_buffer.reset()
+        self.hazard_memory.clear()
         self.cmd_pub.publish(Twist())
         self.ugv_v = 0.0
         self.ugv_w = 0.0
@@ -502,10 +528,17 @@ class InteractiveUGVNavigationNode(Node):
             ros_tracks.tracks.append(r_tr)
         self.track_pub.publish(ros_tracks)
 
-        # 3. Prediction
+        # 3. Prediction & Recent Hazard Latching (Phase 13.23 "Not Detected != Safe")
         t0 = time.perf_counter()
+        all_hazards = self.hazard_memory.update(confirmed_tracks, t_now, (self.ugv_x, self.ugv_y, self.ugv_yaw))
         pred_array = self.predictor.predict_tracks(confirmed_tracks)
         active_predictions = list(pred_array.predictions)
+
+        # Augment with dropped latched hazards so DWA evaluates them
+        dropped_hazards = self.hazard_memory.get_latched_dropped_hazards([t.track_id for t in confirmed_tracks])
+        for dh in dropped_hazards:
+            active_predictions.append(dh.to_predicted_trajectory(horizon_s=2.0, dt_s=0.25))
+
         t_pred = (time.perf_counter() - t0) * 1000.0
 
         # Publish Predictions
@@ -595,15 +628,27 @@ class InteractiveUGVNavigationNode(Node):
         behavior_msg.command_omega = float(cand_w)
         self.decision_pub.publish(behavior_msg)
 
-        # 8. Command Buffering for High-Frequency Publication
-        is_safe_cmd = (decision_str not in ("STOP", "EMERGENCY_STOP")) and (dist_to_goal > 0.35)
+        # 8. Authoritative Safety Governor & Command Buffering
+        governed_v, governed_w, gov_decision, gov_diag = self.safety_governor.evaluate(
+            requested_v=cand_v,
+            requested_w=cand_w,
+            robot_pose=(self.ugv_x, self.ugv_y, self.ugv_yaw),
+            hazards=all_hazards,
+            current_time_s=t_now,
+        )
+
+        is_safe_cmd = (
+            (decision_str not in ("STOP", "EMERGENCY_STOP"))
+            and ("STOP" not in gov_decision)
+            and (dist_to_goal > 0.35)
+        )
         self.command_buffer.set_command(
-            linear_v=cand_v,
-            angular_w=cand_w,
+            linear_v=governed_v,
+            angular_w=governed_w,
             timestamp_s=t_now,
             is_safe=is_safe_cmd,
-            source="DWA",
-            reason=decision_str,
+            source="SAFETY_GOVERNOR" if governed_v != cand_v else "DWA",
+            reason=f"{decision_str} | {gov_decision}",
         )
 
         # 9. Publish Selected Trajectory
