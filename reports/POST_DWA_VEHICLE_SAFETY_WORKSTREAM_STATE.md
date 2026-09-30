@@ -1,16 +1,18 @@
 # SIH2026 — Post-DWA Vehicle Safety & Recovery Workstream State Checkpoint
 
-CURRENT_STAGE: STAGE_0_AUDIT_AND_PLANNING
-CURRENT_SUBSTEP: INITIAL_AUDIT_COMPLETED
-STATUS: READY_FOR_STAGE_1
-LAST_SUCCESSFUL_TEST: tests/test_dwa_cpp_parity.py (commit fc7819a)
-LAST_COMMIT: fc7819a348aebea9f0b59d5e2288c92a6bceaeac
+CURRENT_STAGE: STAGE_1_CONTINUOUS_MOTION_COMPLETED
+CURRENT_SUBSTEP: STAGE_1_VERIFIED_AND_CHECKPOINTED
+STATUS: READY_FOR_STAGE_2
+LAST_SUCCESSFUL_TEST: tests/test_continuous_command_buffer.py & DWA regression suite (38 passed, 0 failed)
+LAST_COMMIT: 80d58c3 (pending Stage 1 commit)
 FILES_CHANGED:
-  - reports/POST_DWA_VEHICLE_SAFETY_WORKSTREAM_PLAN.md
-  - reports/POST_DWA_VEHICLE_SAFETY_WORKSTREAM_STATE.md
-  - reports/POST_DWA_INITIAL_AUDIT.md
+  - ai/control/__init__.py
+  - ai/control/command_buffer.py
+  - configs/planning.yaml
+  - simulation/nodes/interactive_ugv_navigation_node.py
+  - tests/test_continuous_command_buffer.py
+  - reports/PHASE_13_22_CONTINUOUS_MOTION_REPORT.md
 KNOWN_FAILURES:
-  - UGV motion in Gazebo crawls at 0.06–0.09 m/s due to 4 Hz synchronous control loop and diff-drive watchdog deceleration.
-  - When an obstacle is directly in front, loss of tracking leads to track pruning, free space hallucination, and obstacle pushing.
-  - No active reverse recovery exists when forward path is completely blocked; robot stays stopped in deadlock.
-NEXT_ACTION: Begin Stage 1 (Phase 13.22) Continuous Command Delivery & Vehicle Motion implementation.
+  - Obstacles directly in front of bumper can still be lost if out of camera FOV, leading to track expiration after 5 misses and free-space hallucination. (To be resolved in Stage 2).
+  - Reverse recovery not yet active when path is blocked. (To be resolved in Stage 3).
+NEXT_ACTION: Begin Stage 2 (Phase 13.23) Lost-Obstacle Safety Governor implementation.

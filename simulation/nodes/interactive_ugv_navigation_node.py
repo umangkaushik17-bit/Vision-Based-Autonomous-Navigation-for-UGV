@@ -79,7 +79,9 @@ from ai.planning.dynamic.occupancy_layer import (
     DynamicOccupancyLayer,
 )
 from ai.planning.dynamic.predictor import MotionPredictor, PredictorConfig
-from ai.planning.dynamic.tracker import MultiFrameTracker, TrackerConfig, TrackStatus
+from ai.control.command_buffer import SafeCommandBuffer, SafeCommandBufferConfig, DispatchStatus
+from ai.planning.backends.backend_interface import DWABackendType
+from ai.planning.backends.unified_planner import UnifiedDWAPlanner
 from ai.planning.global_planners.astar import AStarPlanner
 from ai.planning.local_planners.dwa import DWAPlanner
 from ai.planning.path import Path as AIPath, PathPoint
@@ -98,7 +100,8 @@ class InteractiveUGVNavigationNode(Node):
         self.declare_parameter("rock_x", 3.5)
         self.declare_parameter("rock_y", 0.15)
         self.declare_parameter("rock_radius", 0.65)
-        self.declare_parameter("control_rate_hz", 4.0)
+        self.declare_parameter("control_rate_hz", 10.0)
+        self.declare_parameter("cmd_publish_rate_hz", 20.0)
 
         self.goal_x = float(self.get_parameter("goal_x").value)
         self.goal_y = float(self.get_parameter("goal_y").value)
@@ -106,6 +109,15 @@ class InteractiveUGVNavigationNode(Node):
         self.rock_y = float(self.get_parameter("rock_y").value)
         self.rock_radius = float(self.get_parameter("rock_radius").value)
         self.control_rate_hz = float(self.get_parameter("control_rate_hz").value)
+        self.cmd_publish_rate_hz = float(self.get_parameter("cmd_publish_rate_hz").value)
+
+        # High-frequency continuous safe command buffer
+        self.command_buffer = SafeCommandBuffer(SafeCommandBufferConfig(
+            publish_rate_hz=self.cmd_publish_rate_hz,
+            freshness_timeout_s=0.35,
+            stale_timeout_s=0.50,
+            max_deceleration_mps2=1.50,
+        ))
 
         # 1. State Storage
         self.ugv_x: float = 0.0
@@ -166,9 +178,8 @@ class InteractiveUGVNavigationNode(Node):
             PredictiveCollisionConfig(vehicle_length_m=0.65, vehicle_width_m=0.45, collision_margin_m=0.08)
         )
         self.global_planner = AStarPlanner()
-        self.dwa_planner = DWAPlanner()
-        self.dwa_planner.v_samples = 5
-        self.dwa_planner.omega_samples = 9
+        # Hardware-independent DWA (defaults to native C++ AVX2 backend in AUTO mode)
+        self.dwa_planner = UnifiedDWAPlanner(backend=DWABackendType.AUTO)
         self.dwa_planner.enable_behavioral_arbitration = True
         self.behavior_machine = BehavioralStateMachine(BehavioralConfig())
         self.replanner = EventDrivenGlobalReplanner(GlobalReplannerConfig())
@@ -221,11 +232,19 @@ class InteractiveUGVNavigationNode(Node):
         self.marker_pub = self.create_publisher(MarkerArray, "/visualization_marker_array", state_qos)
         self.overlay_pub = self.create_publisher(RosImage, "/perception/traversability_overlay", sensor_qos)
 
-        # 8. Control Loop Timer
-        dt = 1.0 / self.control_rate_hz
-        self.control_timer = self.create_timer(dt, self._control_loop)
+        # 8. Decoupled Planning & Actuation Timers
+        # 8a. Planning loop runs at control_rate_hz (default 10 Hz)
+        dt_plan = 1.0 / self.control_rate_hz
+        self.control_timer = self.create_timer(dt_plan, self._control_loop)
 
-        self.get_logger().info("InteractiveUGVNavigationNode initialized. Waiting for odometry...")
+        # 8b. High-frequency command dispatcher runs at cmd_publish_rate_hz (default 20 Hz)
+        dt_cmd = 1.0 / self.cmd_publish_rate_hz
+        self.cmd_timer = self.create_timer(dt_cmd, self._dispatch_cmd_vel_loop)
+
+        self.get_logger().info(
+            f"InteractiveUGVNavigationNode initialized (Planner: {self.control_rate_hz}Hz, "
+            f"Actuator: {self.cmd_publish_rate_hz}Hz). Waiting for odometry..."
+        )
 
     def _publish_static_transforms(self) -> None:
         """Broadcasts static camera transforms base_link -> camera_link -> camera_optical."""
@@ -346,6 +365,7 @@ class InteractiveUGVNavigationNode(Node):
     def _on_reset_requested(self, _: Empty) -> None:
         """Reset internal navigation state."""
         self.get_logger().info("Resetting navigation and tracker states.")
+        self.command_buffer.reset()
         self.cmd_pub.publish(Twist())
         self.ugv_v = 0.0
         self.ugv_w = 0.0
@@ -411,6 +431,18 @@ class InteractiveUGVNavigationNode(Node):
 
         return [det]
 
+    def _dispatch_cmd_vel_loop(self) -> None:
+        """High-frequency continuous command dispatcher (default 20 Hz) to Gazebo diff-drive."""
+        if not self.odom_received:
+            return
+        now_s = self.last_odom_time if self.last_odom_time > 0 else time.time()
+        dispatched_v, dispatched_w, status, diag = self.command_buffer.get_dispatch_command(now_s)
+
+        cmd_twist = Twist()
+        cmd_twist.linear.x = float(dispatched_v)
+        cmd_twist.angular.z = float(dispatched_w)
+        self.cmd_pub.publish(cmd_twist)
+
     def _control_loop(self) -> None:
         """Main periodic navigation execution step."""
         if not self.odom_received:
@@ -428,7 +460,8 @@ class InteractiveUGVNavigationNode(Node):
             if not self.mission_completed:
                 self.get_logger().info("GOAL REACHED! Mission successful.")
                 self.mission_completed = True
-            # Command stop
+            # Command stop immediately via command buffer
+            self.command_buffer.emergency_stop(t_now, reason="GOAL_REACHED")
             stop_twist = Twist()
             self.cmd_pub.publish(stop_twist)
             self._publish_visualizations(None, [], [], [], "GOAL REACHED", dist_to_goal)
@@ -562,11 +595,16 @@ class InteractiveUGVNavigationNode(Node):
         behavior_msg.command_omega = float(cand_w)
         self.decision_pub.publish(behavior_msg)
 
-        # 8. Command Publication to Gazebo UGV
-        cmd_twist = Twist()
-        cmd_twist.linear.x = float(cand_v)
-        cmd_twist.angular.z = float(cand_w)
-        self.cmd_pub.publish(cmd_twist)
+        # 8. Command Buffering for High-Frequency Publication
+        is_safe_cmd = (decision_str not in ("STOP", "EMERGENCY_STOP")) and (dist_to_goal > 0.35)
+        self.command_buffer.set_command(
+            linear_v=cand_v,
+            angular_w=cand_w,
+            timestamp_s=t_now,
+            is_safe=is_safe_cmd,
+            source="DWA",
+            reason=decision_str,
+        )
 
         # 9. Publish Selected Trajectory
         if cand_traj is not None and len(cand_traj.points) > 0:
