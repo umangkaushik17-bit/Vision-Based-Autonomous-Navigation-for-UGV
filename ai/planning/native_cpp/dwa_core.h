@@ -66,6 +66,15 @@ public:
         const std::array<std::pair<double, double>, 4>& poly2
     );
 
+    // Fast static footprint collision check at a single pose (x, y, yaw)
+    bool is_footprint_collision(
+        double x, double y, double yaw,
+        const CostmapMeta& costmap_meta,
+        const uint8_t* obstacle_grid,
+        const float* cost_grid,
+        const float* hazard_grid
+    ) const;
+
 private:
     VehicleConfig vehicle_;
     DWAConfig dwa_cfg_;

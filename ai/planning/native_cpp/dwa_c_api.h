@@ -53,4 +53,13 @@ DWA_EXPORT double dwa_polygon_distance_c(
     const double* poly2_y
 );
 
+DWA_EXPORT int dwa_footprint_collision_c(
+    double x, double y, double yaw,
+    const dwa::VehicleConfig* vehicle,
+    const dwa::CostmapMeta* costmap_meta,
+    const uint8_t* obstacle_grid,
+    const float* cost_grid,
+    const float* hazard_grid
+);
+
 }

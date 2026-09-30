@@ -243,6 +243,18 @@ def _load_dwa_cpp_lib():
         ]
         lib.dwa_polygon_distance_c.restype = c_double
 
+        lib.dwa_footprint_collision_c.argtypes = [
+            c_double,
+            c_double,
+            c_double,
+            POINTER(C_VehicleConfig),
+            POINTER(C_CostmapMeta),
+            POINTER(c_uint8),
+            POINTER(c_float),
+            POINTER(c_float),
+        ]
+        lib.dwa_footprint_collision_c.restype = c_int32
+
         _DLL_HANDLE = lib
         return lib
     except Exception:
@@ -327,6 +339,58 @@ class CPPDWABackend(DWABackend):
             benchmark_latency_ms=10.0 if avail else None,
             error_message=None if avail else "Native C++ library not compiled (run: python scripts/build_dwa_cpp.py)",
         )
+
+    def is_footprint_collision(self, x: float, y: float, yaw: float, costmap: Any) -> bool:
+        """Evaluate static footprint collision at a single pose in native C++."""
+        res = float(getattr(costmap, "resolution_m", getattr(costmap, "resolution", 0.10)))
+        x_bounds = getattr(costmap, "x_bounds_m", getattr(costmap, "x_range_m", None))
+        y_bounds = getattr(costmap, "y_bounds_m", getattr(costmap, "y_range_m", None))
+        shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
+        n_rows, n_cols = int(shape[0]), int(shape[1])
+
+        is_cartesian = False
+        if x_bounds is not None and y_bounds is not None:
+            x_min, x_max = float(x_bounds[0]), float(x_bounds[1])
+            y_min, y_max = float(y_bounds[0]), float(y_bounds[1])
+        elif hasattr(costmap, "origin_x") and hasattr(costmap, "origin_y"):
+            is_cartesian = True
+            x_min = float(costmap.origin_x)
+            y_min = float(costmap.origin_y)
+            x_max = x_min + n_cols * res
+            y_max = y_min + n_rows * res
+        else:
+            x_min, x_max = -20.0, 20.0
+            y_min, y_max = -20.0, 20.0
+
+        c_meta = C_CostmapMeta(
+            resolution_m=res,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            n_rows=n_rows,
+            n_cols=n_cols,
+            is_cartesian=is_cartesian,
+        )
+
+        obs_arr = np.ascontiguousarray(costmap.obstacle, dtype=np.uint8) if hasattr(costmap, "obstacle") else None
+        obs_ptr = obs_arr.ctypes.data_as(POINTER(c_uint8)) if obs_arr is not None else None
+
+        cost_arr = np.ascontiguousarray(costmap.cost, dtype=np.float32) if hasattr(costmap, "cost") else None
+        cost_ptr = cost_arr.ctypes.data_as(POINTER(c_float)) if cost_arr is not None else None
+
+        haz_arr = np.ascontiguousarray(costmap.hazard, dtype=np.float32) if hasattr(costmap, "hazard") else None
+        haz_ptr = haz_arr.ctypes.data_as(POINTER(c_float)) if haz_arr is not None else None
+
+        ret = self.lib.dwa_footprint_collision_c(
+            float(x), float(y), float(yaw),
+            ctypes.byref(self.c_vehicle),
+            ctypes.byref(c_meta),
+            obs_ptr,
+            cost_ptr,
+            haz_ptr,
+        )
+        return ret == 1
 
     def _find_local_target(
         self,

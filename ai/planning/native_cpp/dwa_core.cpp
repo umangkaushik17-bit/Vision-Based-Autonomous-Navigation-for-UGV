@@ -181,6 +181,53 @@ double DWAPlannerCore::polygon_polygon_distance(
     return min_d;
 }
 
+bool DWAPlannerCore::is_footprint_collision(
+    double x, double y, double yaw,
+    const CostmapMeta& costmap_meta,
+    const uint8_t* obstacle_grid,
+    const float* cost_grid,
+    const float* hazard_grid
+) const {
+    double c_yaw = std::cos(yaw);
+    double s_yaw = std::sin(yaw);
+
+    for (const auto& offset : footprint_offsets_) {
+        double px = x + offset.first * c_yaw - offset.second * s_yaw;
+        double py = y + offset.first * s_yaw + offset.second * c_yaw;
+
+        // Bounds check
+        if (px < costmap_meta.x_min || px >= costmap_meta.x_max ||
+            py < costmap_meta.y_min || py >= costmap_meta.y_max) {
+            return true;
+        }
+
+        int32_t r, c;
+        if (costmap_meta.is_cartesian) {
+            r = static_cast<int32_t>(std::floor((py - costmap_meta.y_min) / costmap_meta.resolution_m));
+            c = static_cast<int32_t>(std::floor((px - costmap_meta.x_min) / costmap_meta.resolution_m));
+        } else {
+            r = static_cast<int32_t>(std::floor((costmap_meta.x_max - px) / costmap_meta.resolution_m));
+            c = static_cast<int32_t>(std::floor((costmap_meta.y_max - py) / costmap_meta.resolution_m));
+        }
+
+        if (r < 0 || r >= costmap_meta.n_rows || c < 0 || c >= costmap_meta.n_cols) {
+            return true;
+        }
+
+        int32_t cell_idx = r * costmap_meta.n_cols + c;
+        if (obstacle_grid != nullptr && obstacle_grid[cell_idx] != 0) {
+            return true;
+        }
+        if (hazard_grid != nullptr && hazard_grid[cell_idx] >= 0.70f) {
+            return true;
+        }
+        if (cost_grid != nullptr && cost_grid[cell_idx] > 0.65f) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool DWAPlannerCore::interpolate_track_pose(
     const ObstacleTrack& track,
     double query_t,
@@ -359,47 +406,8 @@ void DWAPlannerCore::plan(
             }
 
             // Footprint check against costmap
-            double c_yaw = std::cos(curr_yaw);
-            double s_yaw = std::sin(curr_yaw);
-
-            for (const auto& offset : footprint_offsets_) {
-                double px = curr_x + offset.first * c_yaw - offset.second * s_yaw;
-                double py = curr_y + offset.first * s_yaw + offset.second * c_yaw;
-
-                // Bounds check
-                if (px < costmap_meta.x_min || px >= costmap_meta.x_max ||
-                    py < costmap_meta.y_min || py >= costmap_meta.y_max) {
-                    static_collision = true;
-                    break;
-                }
-
-                int32_t r, c;
-                if (costmap_meta.is_cartesian) {
-                    r = static_cast<int32_t>(std::floor((py - costmap_meta.y_min) / costmap_meta.resolution_m));
-                    c = static_cast<int32_t>(std::floor((px - costmap_meta.x_min) / costmap_meta.resolution_m));
-                } else {
-                    r = static_cast<int32_t>(std::floor((costmap_meta.x_max - px) / costmap_meta.resolution_m));
-                    c = static_cast<int32_t>(std::floor((costmap_meta.y_max - py) / costmap_meta.resolution_m));
-                }
-
-                if (r < 0 || r >= costmap_meta.n_rows || c < 0 || c >= costmap_meta.n_cols) {
-                    static_collision = true;
-                    break;
-                }
-
-                int32_t cell_idx = r * costmap_meta.n_cols + c;
-                if (obstacle_grid != nullptr && obstacle_grid[cell_idx] != 0) {
-                    static_collision = true;
-                    break;
-                }
-                if (hazard_grid != nullptr && hazard_grid[cell_idx] >= 0.70f) {
-                    static_collision = true;
-                    break;
-                }
-                if (cost_grid != nullptr && cost_grid[cell_idx] > 0.65f) {
-                    static_collision = true;
-                    break;
-                }
+            if (is_footprint_collision(curr_x, curr_y, curr_yaw, costmap_meta, obstacle_grid, cost_grid, hazard_grid)) {
+                static_collision = true;
             }
 
             // Cell terrain cost at center
@@ -522,20 +530,22 @@ void DWAPlannerCore::plan(
                     double clr = polygon_polygon_distance(ugv_obb, obs_obb);
                     dyn_clearance = std::min(dyn_clearance, clr);
 
-                    // Risk evaluation matching PredictiveCollisionChecker
-                    double eff_clr = std::max(0.0, clr - or_unc);
+                    // Risk evaluation matching PredictiveCollisionChecker (lines 700-729)
                     int32_t risk_level = 0;
                     double risk_cost = 0.0;
 
-                    if (eff_clr < 0.20) {
-                        risk_level = 3; // HIGH
-                        risk_cost = 0.85;
-                    } else if (eff_clr < 0.50) {
-                        risk_level = 2; // MEDIUM
-                        risk_cost = 0.55;
-                    } else if (eff_clr < 1.00) {
-                        risk_level = 1; // LOW
-                        risk_cost = 0.25;
+                    if (clr <= or_unc) {
+                        double sigma_pos = std::max(1e-4, or_unc / 3.0);
+                        if (clr <= sigma_pos) {
+                            risk_level = 3; // HIGH
+                            risk_cost = 0.95 - 0.25 * (clr / sigma_pos);
+                        } else if (clr <= 2.0 * sigma_pos) {
+                            risk_level = 2; // MEDIUM
+                            risk_cost = 0.70 - 0.30 * ((clr - sigma_pos) / sigma_pos);
+                        } else {
+                            risk_level = 1; // LOW
+                            risk_cost = 0.40 - 0.25 * ((clr - 2.0 * sigma_pos) / sigma_pos);
+                        }
                     }
 
                     diag.dyn_risk_level = std::max(diag.dyn_risk_level, risk_level);

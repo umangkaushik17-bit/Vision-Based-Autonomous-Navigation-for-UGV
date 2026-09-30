@@ -128,4 +128,26 @@ DWA_EXPORT double dwa_polygon_distance_c(
     return dwa::DWAPlannerCore::polygon_polygon_distance(p1, p2);
 }
 
+DWA_EXPORT int dwa_footprint_collision_c(
+    double x, double y, double yaw,
+    const dwa::VehicleConfig* vehicle,
+    const dwa::CostmapMeta* costmap_meta,
+    const uint8_t* obstacle_grid,
+    const float* cost_grid,
+    const float* hazard_grid
+) {
+    if (!vehicle || !costmap_meta) {
+        return -1;
+    }
+    try {
+        dwa::DWAConfig dwa_cfg{};
+        dwa::ScoringWeights weights{};
+        dwa::DWAPlannerCore planner(*vehicle, dwa_cfg, weights);
+        bool col = planner.is_footprint_collision(x, y, yaw, *costmap_meta, obstacle_grid, cost_grid, hazard_grid);
+        return col ? 1 : 0;
+    } catch (...) {
+        return -2;
+    }
+}
+
 }
