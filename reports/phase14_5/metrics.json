@@ -1,0 +1,37 @@
+{
+  "benchmark_name": "Phase 14.5 Long-Horizon Multi-Waypoint Benchmark",
+  "commit_hash": "70daf09a6fad762345cee7511d444cc1425e030f",
+  "timestamp": "2026-10-01 03:28:44",
+  "total_runs": 12,
+  "successful_runs": 11,
+  "mission_success_rate_pct": 91.7,
+  "waypoint_success_rates": {
+    "W1": 100.0,
+    "W2": 100.0,
+    "W3": 100.0,
+    "W4": 100.0,
+    "W5": 100.0
+  },
+  "total_collisions": 0,
+  "collision_rate_pct": 0.0,
+  "average_traveled_distance_m": 106.68,
+  "average_duration_s": 199.47,
+  "average_drift_percentage": 0.01,
+  "average_perception_fps": 18.9,
+  "aggregate_p95_loop_ms": 175.32,
+  "aggregate_p95_dwa_ms": 7.76,
+  "total_replans": 48,
+  "total_recoveries": 82,
+  "gate_verdicts": {
+    "GATE_A_MISSION_EXECUTION": "PASS",
+    "GATE_B_SAFETY": "PASS",
+    "GATE_C_LOCALIZATION": "PASS",
+    "GATE_D_PERCEPTION": "PASS",
+    "GATE_E_LONG_HORIZON": "PASS",
+    "GATE_F_DYNAMIC_OBSTACLES": "PASS",
+    "GATE_G_DEGRADATION": "PASS",
+    "GATE_H_REPRODUCIBILITY": "PASS"
+  },
+  "phase_14_5_decision": "PASS",
+  "phase_14_6_unlocked": true
+}

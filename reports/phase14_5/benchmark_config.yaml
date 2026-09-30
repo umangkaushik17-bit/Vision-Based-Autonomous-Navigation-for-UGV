@@ -1,0 +1,21 @@
+benchmark:
+  phase: 14.5
+  name: long_horizon_multi_waypoint_benchmark
+  commit: 70daf09a6fad762345cee7511d444cc1425e030f
+  total_runs: 12
+  target_distance_m: 104.65
+  control_rate_hz: 10.0
+  command_publish_rate_hz: 20.0
+  scenarios:
+    - id: SCENARIO_A_NOMINAL
+      runs: 3
+    - id: SCENARIO_B_STATIC_OBSTACLES
+      runs: 3
+    - id: SCENARIO_C_DYNAMIC_OBSTACLES
+      runs: 3
+    - id: SCENARIO_D_PERCEPTION_DEGRADATION
+      runs: 1
+    - id: SCENARIO_E_LOCALIZATION_DEGRADATION
+      runs: 1
+    - id: SCENARIO_F_COMBINED_STRESS
+      runs: 1

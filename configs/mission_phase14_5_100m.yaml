@@ -1,0 +1,57 @@
+# ==============================================================================
+# PHASE 14.5 CANONICAL 100-METER 5-WAYPOINT OUTDOOR BENCHMARK MISSION
+# ==============================================================================
+
+mission:
+  name: "phase14_5_100m_benchmark"
+  frame_id: "odom"
+  default_xy_tolerance_m: 0.50
+  max_recovery_attempts: 3
+  progress_window_s: 3.50
+  min_progress_displacement_m: 0.15
+
+  waypoints:
+    - id: "W1"
+      x: 20.0
+      y: 0.0
+      xy_tolerance_m: 0.50
+      metadata:
+        description: "Initial straight approach corridor"
+        segment_length_m: 20.00
+
+    - id: "W2"
+      x: 40.0
+      y: 6.0
+      xy_tolerance_m: 0.50
+      metadata:
+        description: "Lateral left detour avoiding granite rock cluster"
+        segment_length_m: 20.88
+
+    - id: "W3"
+      x: 60.0
+      y: -4.0
+      xy_tolerance_m: 0.50
+      metadata:
+        description: "Right diagonal crossing through dynamic obstacle zone"
+        segment_length_m: 22.36
+
+    - id: "W4"
+      x: 80.0
+      y: 3.0
+      xy_tolerance_m: 0.50
+      metadata:
+        description: "Chicane maneuver through narrow forest passage"
+        segment_length_m: 21.19
+
+    - id: "W5"
+      x: 100.0
+      y: 0.0
+      xy_tolerance_m: 0.50
+      metadata:
+        description: "Final mission destination and convergence beacon"
+        segment_length_m: 20.22
+
+metadata:
+  total_nominal_distance_m: 104.65
+  environment: "Outdoor trail terrain with dynamic crossing & rock fields"
+  target_speed_mps: 0.55
