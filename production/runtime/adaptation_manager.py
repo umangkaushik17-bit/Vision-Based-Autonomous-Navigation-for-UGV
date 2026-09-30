@@ -31,7 +31,14 @@ class OperationalState(str, Enum):
 
 @dataclass
 class AdaptationConfig:
-    """Computational and safety envelope configuration."""
+    """PROVISIONAL COMPUTATIONAL SAFETY THRESHOLDS.
+
+    NOTE: These thresholds are provisional engineering configurations derived from
+    nominal measured cycle budgets and command freshness timeouts.
+    They are NOT vehicle-specific dynamically certified braking limits on physical outdoor terrain;
+    vehicle-specific physical braking-distance and closed-loop field validation remain required before
+    physical outdoor deployment at higher velocities.
+    """
     nominal_control_freq_hz: float = 20.0
     nominal_max_linear_v_mps: float = 0.50
     nominal_planning_budget_ms: float = 15.0     # C++ DWA nominal budget (~1-5 ms)

@@ -17,6 +17,9 @@ Executes the formal 12-step selection process:
 Enforces:
 - AUTO mode uses empirical benchmark + safety verification (never assumes GPU > CPU).
 - Explicit backend requests FAIL CLEARLY if unavailable (zero silent fallback).
+- Current AUTO selection is backend-local; whole-system joint optimization of perception + planning
+  is not yet implemented. DWA backend selection and perception backend selection are currently
+  separate decisions.
 """
 
 from __future__ import annotations

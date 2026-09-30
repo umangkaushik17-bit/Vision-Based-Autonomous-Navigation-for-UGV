@@ -285,29 +285,30 @@ def _load_dwa_cpp_lib(variant: str = "auto") -> Tuple[Optional[ctypes.CDLL], str
             chosen = "simd"
         elif os.path.exists(scalar_path):
             chosen = "scalar"
-        elif os.path.exists(simd_path):
-            chosen = "simd"
         else:
             return None, "NONE"
 
     if chosen == "simd":
+        # Strict hardware guard: NEVER attempt to load or execute AVX2 binary on a CPU without AVX2!
+        if not has_avx2_support():
+            return None, "NONE"
         if _DLL_HANDLE_SIMD is not None:
             return _DLL_HANDLE_SIMD, "SIMD"
         if not os.path.exists(simd_path):
-            return None, "SIMD"
+            return None, "NONE"
         try:
             lib = ctypes.CDLL(simd_path)
             _configure_prototypes(lib)
             _DLL_HANDLE_SIMD = lib
             return lib, "SIMD"
         except Exception:
-            return None, "SIMD"
+            return None, "NONE"
 
     elif chosen == "scalar":
         if _DLL_HANDLE_SCALAR is not None:
             return _DLL_HANDLE_SCALAR, "SCALAR"
         if not os.path.exists(scalar_path):
-            return None, "SCALAR"
+            return None, "NONE"
         try:
             lib = ctypes.CDLL(scalar_path)
             _configure_prototypes(lib)
