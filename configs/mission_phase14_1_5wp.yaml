@@ -1,0 +1,45 @@
+# ==============================================================================
+# PHASE 14.1 DEFAULT 5-WAYPOINT OUTDOOR TEST MISSION
+# ==============================================================================
+
+mission:
+  name: "phase14_1_5waypoint_benchmark"
+  frame_id: "odom"
+  default_xy_tolerance_m: 0.35
+  max_recovery_attempts: 3
+
+  waypoints:
+    - id: "W1"
+      x: 2.0
+      y: 0.0
+      xy_tolerance_m: 0.35
+      metadata:
+        description: "Initial straight approach"
+
+    - id: "W2"
+      x: 4.0
+      y: 0.5
+      xy_tolerance_m: 0.35
+      metadata:
+        description: "Gentle left offset"
+
+    - id: "W3"
+      x: 6.0
+      y: 0.0
+      xy_tolerance_m: 0.35
+      metadata:
+        description: "Mid-course convergence point"
+
+    - id: "W4"
+      x: 8.0
+      y: -0.5
+      xy_tolerance_m: 0.35
+      metadata:
+        description: "Gentle right offset"
+
+    - id: "W5"
+      x: 10.0
+      y: 0.0
+      xy_tolerance_m: 0.35
+      metadata:
+        description: "Final mission destination"

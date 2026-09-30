@@ -120,6 +120,7 @@ class InteractiveUGVNavigationNode(Node):
         self.declare_parameter("rock_radius", 0.65)
         self.declare_parameter("control_rate_hz", 10.0)
         self.declare_parameter("cmd_publish_rate_hz", 20.0)
+        self.declare_parameter("mission_file", "")
 
         self.goal_x = float(self.get_parameter("goal_x").value)
         self.goal_y = float(self.get_parameter("goal_y").value)
@@ -128,6 +129,7 @@ class InteractiveUGVNavigationNode(Node):
         self.rock_radius = float(self.get_parameter("rock_radius").value)
         self.control_rate_hz = float(self.get_parameter("control_rate_hz").value)
         self.cmd_publish_rate_hz = float(self.get_parameter("cmd_publish_rate_hz").value)
+        self.mission_file = str(self.get_parameter("mission_file").value)
 
         # High-frequency continuous safe command buffer
         self.command_buffer = SafeCommandBuffer(SafeCommandBufferConfig(
@@ -238,6 +240,31 @@ class InteractiveUGVNavigationNode(Node):
         self.mission_completed: bool = False
         # Rolling pose history for spatial progress monitoring (detecting chattering/limit-cycles)
         self._pose_history: List[Tuple[float, float, float]] = []
+
+        # Optional Phase 14.1 Multi-Waypoint Mission Executive
+        self.mission_executive = None
+        if self.mission_file:
+            try:
+                from ugv_mission import MissionExecutive, MissionExecutiveConfig
+                self.mission_executive = MissionExecutive(
+                    config=MissionExecutiveConfig(mission_name="demo_01_multi_waypoint"),
+                    global_planner=self.replanner,
+                    safety_governor=self.safety_governor,
+                    command_buffer=self.command_buffer,
+                )
+                ok, reason = self.mission_executive.load_from_yaml(self.mission_file)
+                if ok and self.mission_executive.active_waypoint is not None:
+                    self.goal_x = self.mission_executive.active_waypoint.x
+                    self.goal_y = self.mission_executive.active_waypoint.y
+                    self.get_logger().info(
+                        f"[MISSION] Loaded multi-waypoint mission '{self.mission_file}' "
+                        f"({self.mission_executive.total_waypoints} waypoints). "
+                        f"First waypoint: ({self.goal_x:.2f}, {self.goal_y:.2f})"
+                    )
+                else:
+                    self.get_logger().error(f"[MISSION] Failed to load mission file: {reason}")
+            except Exception as e:
+                self.get_logger().warn(f"[MISSION] Could not initialize MissionExecutive: {e}")
 
         # 4. TF Broadcasters
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
@@ -515,6 +542,20 @@ class InteractiveUGVNavigationNode(Node):
         # 1. Check Goal Arrival
         dist_to_goal = math.hypot(self.ugv_x - self.goal_x, self.ugv_y - self.goal_y)
         if dist_to_goal <= 0.35:
+            if self.mission_executive is not None and not self.mission_executive.waypoint_manager.is_final_waypoint:
+                curr_wp = self.mission_executive.active_waypoint
+                self.get_logger().info(f"[MISSION] Waypoint {curr_wp.id if curr_wp else ''} reached! Advancing to next waypoint.")
+                self.mission_executive.waypoint_manager.mark_active_reached((self.ugv_x, self.ugv_y, self.ugv_yaw))
+                next_wp = self.mission_executive.waypoint_manager.advance()
+                if next_wp is not None:
+                    self.goal_x = next_wp.x
+                    self.goal_y = next_wp.y
+                    self.active_global_path = None
+                    self._pose_history.clear()
+                    self.recovery_controller.reset()
+                    self.get_logger().info(f"[MISSION] Now targeting waypoint {next_wp.id} at ({self.goal_x:.2f}, {self.goal_y:.2f})")
+                    return
+
             if not self.mission_completed:
                 self.get_logger().info("GOAL REACHED! Mission successful.")
                 self.mission_completed = True
