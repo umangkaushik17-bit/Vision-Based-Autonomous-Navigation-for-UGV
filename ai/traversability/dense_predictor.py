@@ -51,11 +51,36 @@ class DenseTraversabilityPredictor(TraversabilityPredictorBase):
         target_wh: Tuple[int, int] = (640, 400),
         overlay_alpha: float = 0.45
     ) -> None:
-        """Initialize Dense Traversability Predictor with trained weights."""
-        if device is None:
-            self._device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        # Safe, additive, backward-compatible device selection
+        if device is None or str(device).lower().strip() == "auto":
+            if torch.cuda.is_available():
+                self._device = "cuda:0"
+            elif hasattr(torch, "xpu") and getattr(torch.xpu, "is_available", lambda: False)():
+                self._device = "xpu:0"
+            else:
+                self._device = "cpu"
         else:
-            self._device = device
+            dev_str = str(device).lower().strip()
+            if dev_str in ("xpu", "xpu:0"):
+                has_xpu = hasattr(torch, "xpu") and getattr(torch.xpu, "is_available", lambda: False)()
+                if not has_xpu:
+                    raise RuntimeError(
+                        f"XPU device '{device}' explicitly requested, but PyTorch XPU runtime "
+                        "(torch.xpu.is_available()) is unavailable on this environment. "
+                        "System will NOT silently fall back to CPU."
+                    )
+                self._device = "xpu:0" if dev_str == "xpu" else dev_str
+            elif dev_str.startswith("cuda"):
+                if not torch.cuda.is_available():
+                    raise RuntimeError(
+                        f"CUDA device '{device}' explicitly requested, but NVIDIA CUDA is unavailable "
+                        "(torch.cuda.is_available() returned False). System will NOT silently fall back to CPU."
+                    )
+                self._device = dev_str
+            elif dev_str == "cpu":
+                self._device = "cpu"
+            else:
+                self._device = dev_str
 
         self._torch_device = torch.device(self._device)
         self.target_wh = target_wh
@@ -137,7 +162,9 @@ class DenseTraversabilityPredictor(TraversabilityPredictorBase):
             probs_tensor = F.softmax(logits_tensor, dim=1).squeeze(0)
 
             if self._torch_device.type == "cuda":
-                torch.cuda.synchronize()
+                torch.cuda.synchronize(self._torch_device)
+            elif self._torch_device.type == "xpu":
+                torch.xpu.synchronize(self._torch_device)
         dt = time.perf_counter() - t0
 
         probs_np = probs_tensor.cpu().numpy()  # shape: (3, H_tgt, W_tgt)
@@ -184,11 +211,15 @@ class DenseTraversabilityPredictor(TraversabilityPredictorBase):
         )
 
     def warmup(self, num_passes: int = 3) -> float:
-        """Run dummy inference passes to prime computation graphs and CUDA context."""
+        """Run dummy inference passes to prime computation graphs and GPU/XPU context."""
         dummy = np.zeros((self.target_wh[1], self.target_wh[0], 3), dtype=np.uint8)
         last_dt = 0.0
         for _ in range(num_passes):
             res = self.predict(dummy)
             last_dt = res.inference_s
+        if self._torch_device.type == "cuda":
+            torch.cuda.synchronize(self._torch_device)
+        elif self._torch_device.type == "xpu":
+            torch.xpu.synchronize(self._torch_device)
         return last_dt
 

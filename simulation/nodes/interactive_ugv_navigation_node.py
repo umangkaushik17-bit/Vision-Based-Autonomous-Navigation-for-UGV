@@ -253,7 +253,10 @@ class InteractiveUGVNavigationNode(Node):
                 self.traversability_predictor = DenseTraversabilityPredictor(
                     checkpoint="outputs/rellis3d/checkpoints/best.pt"
                 )
-                self.get_logger().info(f"Loaded Dense Traversability Model: {self.traversability_predictor.model_name}")
+                self.get_logger().info(
+                    f"Loaded Dense Traversability Model: {self.traversability_predictor.model_name} | "
+                    f"PERCEPTION DEVICE: {self.traversability_predictor.device.upper()}"
+                )
             except Exception as e:
                 self.get_logger().warn(f"Could not initialize dense traversability predictor: {e}")
         else:
