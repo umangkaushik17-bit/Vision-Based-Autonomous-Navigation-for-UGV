@@ -43,13 +43,13 @@ class TraversabilityResult:
     """
 
     mask: np.ndarray
-    logits: np.ndarray
-    overlay: np.ndarray
-    image: np.ndarray
-    input_shape: Tuple[int, int]
-    inference_s: float
-    device: str
-    model_name: str
+    logits: Optional[np.ndarray] = None
+    overlay: Optional[np.ndarray] = None
+    image: Optional[np.ndarray] = None
+    input_shape: Tuple[int, int] = (0, 0)
+    inference_s: float = 0.0
+    device: str = "cpu"
+    model_name: str = "lightweight_traversability"
     confidence: Optional[np.ndarray] = None
     unknown_mask: Optional[np.ndarray] = None
     timestamp: float = 0.0
@@ -59,6 +59,7 @@ class TraversabilityResult:
     total_ms: float = 0.0
     valid: bool = True
     status_message: str = "OK"
+
 
     def get_binary_mask(self, threshold: float = 0.5) -> np.ndarray:
         """Threshold continuous traversability score into a boolean binary navigable mask."""

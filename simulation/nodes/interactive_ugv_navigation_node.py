@@ -301,6 +301,15 @@ class InteractiveUGVNavigationNode(Node):
         else:
             self.get_logger().info("Dense Traversability: Running in core geometric/obstacle mode (PyTorch optional).")
 
+        # 6c. Vision-in-the-Loop Metric Projection & Costmap Fusion (Phase 14.3)
+        self.vision_costmap_integrator = None
+        try:
+            from production.perception.vision_costmap_integrator import VisionCostmapIntegrator
+            self.vision_costmap_integrator = VisionCostmapIntegrator.create_simulation_default()
+            self.get_logger().info("Loaded VisionCostmapIntegrator (calibrated for Gazebo demo_outdoor camera).")
+        except Exception as e:
+            self.get_logger().warn(f"Could not initialize VisionCostmapIntegrator: {e}")
+
         # 7. Publishers
         self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", cmd_qos)
         self.path_pub = self.create_publisher(Path, "/planning/global_path", state_qos)
@@ -423,6 +432,16 @@ class InteractiveUGVNavigationNode(Node):
             dt_ms = (time.perf_counter() - t0) * 1000.0
             self.last_trav_ms = dt_ms
             self.last_trav_fps = 1000.0 / max(dt_ms, 1e-3)
+
+            # Phase 14.3 Vision-in-the-Loop: Metric Ground Projection & Costmap Fusion
+            if self.vision_costmap_integrator is not None and self.odom_received:
+                t_img_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+                bev_costmap = self.vision_costmap_integrator.project_traversability(res, current_time_s=t_img_s)
+                self.vision_costmap_integrator.fuse_into_world_map(
+                    bev_costmap,
+                    (self.ugv_x, self.ugv_y, self.ugv_yaw),
+                    self.world_map,
+                )
 
             if res.overlay is not None:
                 out_msg = RosImage()

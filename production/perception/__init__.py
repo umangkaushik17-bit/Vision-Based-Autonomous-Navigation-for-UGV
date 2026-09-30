@@ -21,6 +21,11 @@ from production.perception.camera_interface import (
 )
 from production.perception.realtime_pipeline import RealtimeTraversabilityPipeline
 from production.perception.temporal_filter import TemporalStabilityFilter
+from production.perception.vision_costmap_integrator import (
+    LocalBEVCostmap,
+    VisionCostmapConfig,
+    VisionCostmapIntegrator,
+)
 
 __all__ = [
     "AdaptiveTraversabilityPredictor",
@@ -35,4 +40,8 @@ __all__ = [
     "PerceptionFrameInput",
     "TraversabilityPredictorBase",
     "TraversabilityResult",
+    "LocalBEVCostmap",
+    "VisionCostmapConfig",
+    "VisionCostmapIntegrator",
 ]
+
