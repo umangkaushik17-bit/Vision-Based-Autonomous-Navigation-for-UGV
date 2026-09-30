@@ -79,6 +79,11 @@ from ai.planning.dynamic.occupancy_layer import (
     DynamicOccupancyLayer,
 )
 from ai.planning.dynamic.predictor import MotionPredictor, PredictorConfig
+from ai.planning.dynamic.tracker import (
+    MultiFrameTracker,
+    TrackerConfig,
+    TrackStatus,
+)
 from ai.control.command_buffer import SafeCommandBuffer, SafeCommandBufferConfig, DispatchStatus
 from ai.planning.backends.backend_interface import DWABackendType
 from ai.planning.backends.unified_planner import UnifiedDWAPlanner
