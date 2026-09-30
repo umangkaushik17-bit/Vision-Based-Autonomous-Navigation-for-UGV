@@ -25,7 +25,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
 from geometry_msgs.msg import Point, PoseStamped, Quaternion, TransformStamped, Twist, Vector3
 from nav_msgs.msg import Odometry, Path
-from sensor_msgs.msg import Image as RosImage
+from sensor_msgs.msg import Image as RosImage, Imu as RosImu
 from std_msgs.msg import ColorRGBA, Empty, Header
 from visualization_msgs.msg import Marker, MarkerArray
 import tf2_ros
@@ -36,6 +36,18 @@ try:
 except (ImportError, ModuleNotFoundError):
     DenseTraversabilityPredictor = None
     TORCH_AVAILABLE = False
+
+try:
+    from production.localization import (
+        MultiSensorEKF,
+        WheelOdometryMeasurement,
+        IMUMeasurement,
+        StereoVIOMeasurement,
+    )
+    EKF_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    MultiSensorEKF = None
+    EKF_AVAILABLE = False
 
 # Custom ROS2 Messages
 from ugv_navigation_msgs.msg import (
@@ -121,6 +133,7 @@ class InteractiveUGVNavigationNode(Node):
         self.declare_parameter("control_rate_hz", 10.0)
         self.declare_parameter("cmd_publish_rate_hz", 20.0)
         self.declare_parameter("mission_file", "")
+        self.declare_parameter("use_ekf_fusion", True)
 
         self.goal_x = float(self.get_parameter("goal_x").value)
         self.goal_y = float(self.get_parameter("goal_y").value)
@@ -130,6 +143,7 @@ class InteractiveUGVNavigationNode(Node):
         self.control_rate_hz = float(self.get_parameter("control_rate_hz").value)
         self.cmd_publish_rate_hz = float(self.get_parameter("cmd_publish_rate_hz").value)
         self.mission_file = str(self.get_parameter("mission_file").value)
+        self.use_ekf_fusion = bool(self.get_parameter("use_ekf_fusion").value)
 
         # High-frequency continuous safe command buffer
         self.command_buffer = SafeCommandBuffer(SafeCommandBufferConfig(
@@ -147,6 +161,12 @@ class InteractiveUGVNavigationNode(Node):
         self.ugv_w: float = 0.0
         self.last_odom_time: float = 0.0
         self.odom_received: bool = False
+
+        # 1b. Multi-Sensor EKF Localization Fusion (Phase 14.4)
+        self.ekf = None
+        if EKF_AVAILABLE and self.use_ekf_fusion:
+            self.ekf = MultiSensorEKF()
+            self.get_logger().info("MultiSensorEKF initialized for 15D GPS-denied localization fusion.")
 
         # Dynamic obstacle raw state (for observation adapter)
         self.obs_x: float = 2.5
@@ -282,6 +302,7 @@ class InteractiveUGVNavigationNode(Node):
         self.create_subscription(PoseStamped, "/goal_pose", self._on_goal_pose, state_qos)
         self.create_subscription(Empty, "/demo/reset", self._on_reset_requested, state_qos)
         self.create_subscription(RosImage, "/camera/image_raw", self._on_camera_image, sensor_qos)
+        self.create_subscription(RosImu, "/imu", self._on_imu_data, sensor_qos)
 
         # 6b. Live Traversability Model (RELLIS-3D Dense Net)
         self.traversability_predictor = None
@@ -361,19 +382,76 @@ class InteractiveUGVNavigationNode(Node):
         t2.transform.rotation.z = -0.5
         t2.transform.rotation.w = 0.5
 
-        self.static_tf_broadcaster.sendTransform([t1, t2])
+        t3 = TransformStamped()
+        t3.header.stamp = now
+        t3.header.frame_id = "base_link"
+        t3.child_frame_id = "imu_link"
+        t3.transform.translation.x = 0.0
+        t3.transform.translation.y = 0.0
+        t3.transform.translation.z = 0.275
+        t3.transform.rotation.w = 1.0
+
+        self.static_tf_broadcaster.sendTransform([t1, t2, t3])
+
+    def _on_imu_data(self, msg: RosImu) -> None:
+        """Processes 6-axis IMU angular velocities and accelerations for EKF fusion."""
+        if self.ekf is None:
+            return
+        meas = IMUMeasurement(
+            timestamp=msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9,
+            angular_velocity=np.array([msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z], dtype=np.float64),
+            linear_acceleration=np.array([msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z], dtype=np.float64),
+            frame_id=msg.header.frame_id or "imu_link",
+        )
+        self.ekf.update_imu(meas)
 
     def _on_ugv_odom(self, msg: Odometry) -> None:
         """Processes UGV odometry, tracks state, and broadcasts dynamic TF."""
-        self.ugv_x = msg.pose.pose.position.x
-        self.ugv_y = msg.pose.pose.position.y
+        t_now = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         q = msg.pose.pose.orientation
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
         cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
-        self.ugv_yaw = math.atan2(siny_cosp, cosy_cosp)
-        self.ugv_v = msg.twist.twist.linear.x
-        self.ugv_w = msg.twist.twist.angular.z
-        self.last_odom_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        raw_yaw = math.atan2(siny_cosp, cosy_cosp)
+
+        if self.ekf is not None:
+            # Update wheel odometry in EKF
+            wheel_meas = WheelOdometryMeasurement(
+                timestamp=t_now,
+                vx=msg.twist.twist.linear.x,
+                vyaw=msg.twist.twist.angular.z,
+                pose_x=msg.pose.pose.position.x,
+                pose_y=msg.pose.pose.position.y,
+                pose_yaw=raw_yaw,
+            )
+            self.ekf.update_wheel_odom(wheel_meas)
+            fused = self.ekf.get_state(t_now)
+            self.ugv_x = fused.x
+            self.ugv_y = fused.y
+            self.ugv_yaw = fused.yaw
+            self.ugv_v = fused.vx
+            self.ugv_w = fused.vyaw
+            confidence = fused.confidence
+            tracking_state_val = 2 if fused.tracking_state == "FUSED_TRACKING_OK" else 1
+
+            # Update orientation quaternion from fused yaw
+            qw = math.cos(self.ugv_yaw / 2.0)
+            qz = math.sin(self.ugv_yaw / 2.0)
+            q_out = Quaternion()
+            q_out.x = 0.0
+            q_out.y = 0.0
+            q_out.z = qz
+            q_out.w = qw
+        else:
+            self.ugv_x = msg.pose.pose.position.x
+            self.ugv_y = msg.pose.pose.position.y
+            self.ugv_yaw = raw_yaw
+            self.ugv_v = msg.twist.twist.linear.x
+            self.ugv_w = msg.twist.twist.angular.z
+            confidence = 1.0
+            tracking_state_val = 2
+            q_out = q
+
+        self.last_odom_time = t_now
         self.odom_received = True
 
         # Broadcast odom -> base_link
@@ -384,7 +462,7 @@ class InteractiveUGVNavigationNode(Node):
         tf_msg.transform.translation.x = self.ugv_x
         tf_msg.transform.translation.y = self.ugv_y
         tf_msg.transform.translation.z = msg.pose.pose.position.z
-        tf_msg.transform.rotation = q
+        tf_msg.transform.rotation = q_out
         self.tf_broadcaster.sendTransform(tf_msg)
 
         # Publish localization status
@@ -392,12 +470,17 @@ class InteractiveUGVNavigationNode(Node):
         loc_msg.header = msg.header
         loc_msg.header.frame_id = "odom"
         loc_msg.child_frame_id = "base_link"
-        loc_msg.tracking_state = 2  # TRACKING_OK
-        loc_msg.confidence = 1.0
+        loc_msg.tracking_state = tracking_state_val
+        loc_msg.confidence = confidence
         loc_msg.is_pose_valid = True
         loc_msg.allows_spatial_fusion = True
         loc_msg.pose = msg.pose
+        loc_msg.pose.pose.position.x = self.ugv_x
+        loc_msg.pose.pose.position.y = self.ugv_y
+        loc_msg.pose.pose.orientation = q_out
         loc_msg.twist = msg.twist
+        loc_msg.twist.twist.linear.x = self.ugv_v
+        loc_msg.twist.twist.angular.z = self.ugv_w
         self.loc_pub.publish(loc_msg)
 
     def _on_obs_odom(self, msg: Odometry) -> None:
@@ -697,6 +780,16 @@ class InteractiveUGVNavigationNode(Node):
             self.path_pub.publish(ros_path)
 
         # 6. DWA Local Trajectory Evaluation
+        # Computational Safety Invariant (Phase 14.4): Localization uncertainty constrains vehicle speed
+        if self.ekf is not None:
+            safe_v_limit = self.ekf.get_safe_speed_limit(nominal_max_speed=0.55)
+            self.dwa_planner.config.vehicle.max_linear_velocity_mps = min(0.55, safe_v_limit)
+            if safe_v_limit <= 0.0:
+                self.command_buffer.emergency_stop(t_now, reason="LOCALIZATION_LOST_BLACKOUT")
+                stop_twist = Twist()
+                self.cmd_pub.publish(stop_twist)
+                return
+
         t0 = time.perf_counter()
         cand_traj, cand_v, cand_w, planner_status, dwa_diag = self.dwa_planner.compute_trajectory(
             current_state=robot_state,

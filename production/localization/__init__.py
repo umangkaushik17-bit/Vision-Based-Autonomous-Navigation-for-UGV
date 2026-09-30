@@ -1,7 +1,23 @@
-"""Production Localization Package."""
+"""Production localization and multi-sensor fusion package for GPS-denied navigation (Phase 14.4)."""
 
-from __future__ import annotations
+from production.localization.types import (
+    FusedLocalizationState,
+    IMUMeasurement,
+    PoseWithCovariance,
+    StereoVIOMeasurement,
+    TwistWithCovariance,
+    WheelOdometryMeasurement,
+)
+from production.localization.stereo_vio_adapter import StereoVIOAdapter
+from production.localization.ekf_fusion import MultiSensorEKF
 
-from ai.localization.odometry_estimator import OdometryEstimator
-
-__all__ = ["OdometryEstimator"]
+__all__ = [
+    "FusedLocalizationState",
+    "IMUMeasurement",
+    "PoseWithCovariance",
+    "StereoVIOMeasurement",
+    "TwistWithCovariance",
+    "WheelOdometryMeasurement",
+    "StereoVIOAdapter",
+    "MultiSensorEKF",
+]
