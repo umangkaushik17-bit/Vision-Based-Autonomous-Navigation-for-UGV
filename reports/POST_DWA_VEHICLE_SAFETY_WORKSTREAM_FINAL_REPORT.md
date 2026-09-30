@@ -18,7 +18,7 @@ Prior to this workstream, despite DWA core planning running at ~1.5 ms on native
 3. **Deadlock paralysis** where blocked corridors caused the vehicle to stall indefinitely without reverse capability or route recovery.
 
 Through Stages 1–4 (Phases 13.22–13.25), we engineered and strictly validated:
-- **Continuous Command Delivery (Phase 13.22):** Decoupled the 10 Hz DWA planning cycle from a dedicated 20 Hz safe command buffer, eliminating actuator starvation and watchdog braking. Vehicle velocity increased to **~0.49 m/s nominal continuous travel**.
+- **Continuous Command Delivery (Phase 13.22):** Decoupled the 10 Hz DWA planning cycle from a dedicated 20 Hz safe command buffer, eliminating actuator starvation and watchdog braking. Vehicle velocity reached **0.493 m/s in closed-loop Python SIL simulation** (and 0.50 m/s commanded continuous profile).
 - **Lost-Obstacle Safety Governor (Phase 13.23):** Built a spatiotemporal recent-hazard memory latch (3.5–5.0s TTL) enforcing **"NOT DETECTED != SAFE"** and a downstream physical Safety Governor that overrides unsafe planner commands to 0.0 m/s before dispatch.
 - **Safe Reverse Recovery & Deadlock Replanning (Phase 13.24):** Implemented multi-signal deadlock detection, rear-corridor clearance validation, bounded reverse recovery (-0.15 m/s for 0.45m), and post-recovery global A* replanning. Blind reverse is architecturally prohibited.
 - **Integrated Validation (Phase 13.25):** Evaluated closed-loop performance across a bounded 10-scenario matrix (B01–B10). Achieved **0 collisions, 0 unsafe STOP→PROCEED transitions, 0 unsafe reverse events, and 0 stale command violations**, with 100% test pass rate across 39 unit/regression/integration tests.
@@ -152,9 +152,9 @@ Deadlock is confirmed only when multiple independent signals concur for $\ge 4$ 
 
 ---
 
-## 7. Stage 4 — Integrated Validation (Phase 13.25)
+## 7. Stage 4 — Integrated Validation Matrix (Phase 13.25 — Python SIL Simulation)
 
-Closed-loop simulation executed across the comprehensive benchmark matrix **B01–B10**:
+Closed-loop simulation executed across the comprehensive benchmark matrix **B01–B10** in `scripts/validate_integrated_safety_workstream.py`. Evaluates the full algorithmic stack (`SafeCommandBuffer`, `UnifiedDWAPlanner` via native C++ `libdwa_core.dll`, `RecentHazardMemory`, `SafetyGovernor`, `RecoveryController`, and `EventDrivenGlobalReplanner`) under a 2D unicycle kinematic simulation with analytical obstacle trajectories:
 
 | Scenario | Description | Key Conditions | Goal Reached | Collisions | Unsafe Transitions | Unsafe Reverse | Replan Count | Min Clearance | Max V (m/s) | Mean Gap (ms) |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -181,21 +181,26 @@ Closed-loop simulation executed across the comprehensive benchmark matrix **B01�
 | **Unsafe Reverse Events** | Exactly 0 | **0** (rear blocked abort verified in B09 & B10) | **PASS** |
 | **Rear Clearance Violations** | Exactly 0 | **0** | **PASS** |
 | **Stale Command Violations** | Exactly 0 | **0** (safety governor halt verified on timeout) | **PASS** |
-| **Command Publication Continuity** | 20 Hz (50 ms gap) | **50.0 ms mean, 50.0 ms max** | **PASS** |
+| **Command Publication Continuity** | 20 Hz (50 ms gap) | **50.0 ms mean, 50.0 ms max** (SIL telemetry) | **PASS** |
 | **Recent Hazard Violations (Anti-pushing)**| Exactly 0 | **0** (UGV halted/reversed; 0 pushing) | **PASS** |
 
 ---
 
-## 9. Performance Metrics Summary
+## 9. Performance Metrics Summary (Algorithmic SIL Benchmark)
 
-| Component | Target Budget | Measured Mean | Measured P95 |
-|---|---|---|---|
-| **Perception & Tracking Update** | $\le 10.0\text{ ms}$ | 2.14 ms | 3.80 ms |
-| **Dynamic Obstacle Prediction** | $\le 5.0\text{ ms}$ | 0.85 ms | 1.20 ms |
-| **DWA Trajectory Evaluation (C++ CPU)** | $\le 15.0\text{ ms}$ | **0.65 ms** | **0.88 ms** |
-| **Safety Governor & Recovery Step** | $\le 2.0\text{ ms}$ | 0.18 ms | 0.35 ms |
-| **Total Navigation Planning Cycle** | $\le 100.0\text{ ms}$ (10 Hz) | **2.85 ms** | **7.50 ms** |
-| **Actuator Command Dispatch Rate** | 20.0 Hz | **20.0 Hz** | **20.0 Hz** |
+| Component | Target Budget | Measured Mean | Measured P95 | Notes |
+|---|---|---|---|---|
+| **Synthetic Dynamic Tracking & Occupancy Update** | $\le 10.0\text{ ms}$ | 2.14 ms | 3.80 ms | Python Kalman tracker + dynamic grid rasterization (no DNN) |
+| **Dynamic Obstacle Prediction** | $\le 5.0\text{ ms}$ | 0.85 ms | 1.20 ms | Spatiotemporal extrapolation |
+| **DWA Trajectory Evaluation (Native C++ CPU)** | $\le 15.0\text{ ms}$ | **0.65 ms** | **0.88 ms** | Real host execution of `libdwa_core.dll` (375 candidates) |
+| **Safety Governor & Recovery Step** | $\le 2.0\text{ ms}$ | 0.18 ms | 0.35 ms | Asymmetric physical constraint validation |
+| **Algorithmic Planning Cycle (SIL, no DNN)** | $\le 100.0\text{ ms}$ (10 Hz) | **2.85 ms** | **7.50 ms** | Real CPU wall-clock time for algorithmic pipeline |
+| **Command Dispatch Rate (SIL Telemetry)** | 20.0 Hz | **20.0 Hz** | **20.0 Hz** | Measured via `SafeCommandBuffer` dispatch timer |
+
+> [!NOTE]
+> **Neural Perception Latency Distinction:**  
+> The 2.85 ms cycle and 2.14 ms tracking metrics evaluate algorithmic components on synthetic maps and do NOT include neural network forward inference.
+> Actual end-to-end navigation latency incorporating the frozen `LightweightTraversabilityNet` neural network is **~125.7 ms** (~8.0 Hz, with 118.4 ms DNN inference on CPU), as measured in Phase 13.21 (`reports/dwa_end_to_end_cpp_validation.json`).
 
 ---
 
@@ -215,13 +220,14 @@ Rule 1 and Rule 2 ("DO NOT DESTROY EXISTING BACKENDS", "DWA IS FROZEN AS AN ALGO
 
 ---
 
-## 11. Gazebo Validation
+## 11. Gazebo Node Integration
 
-The complete decoupled navigation node (`simulation/nodes/interactive_ugv_navigation_node.py`) integrates all Phase 13.22–13.24 improvements:
+The complete decoupled navigation node (`simulation/nodes/interactive_ugv_navigation_node.py`) integrates all Phase 13.22–13.24 improvements into ROS2:
+- Decouples 10 Hz planning from 20 Hz `/cmd_vel` publication timer.
+- Integrates native C++ DWA engine via `UnifiedDWAPlanner(backend=AUTO)`.
+- Eliminates the previous pulsed, 0.06 m/s locomotion in Gazebo Sim Harmonic by continuously feeding the DiffDrive controller watchdog.
 - Subscribes to `/camera/depth/points`, `/model/ugv/odometry`, `/ground_truth_obstacles`.
-- Publishes `/cmd_vel` at 20 Hz through `SafeCommandBuffer`.
 - Publishes `/planning/active_hazards`, `/planning/recovery_state`, `/planning/governor_markers` for RViz visualization.
-- Eliminates the previous pulsed, 0.06 m/s locomotion in Gazebo Sim Harmonic; UGV cruises at commanded speed (up to 0.50 m/s).
 
 ---
 
@@ -279,7 +285,7 @@ Get-Content reports/integrated_safety_workstream_measurements.json | ConvertFrom
 
 | Capability | Status | Evidence |
 |---|---|---|
-| **Continuous cmd_vel** | **PASS** | 20.0 Hz measured publication rate; 50.0 ms mean/max gap; nominal velocity 0.493 m/s. |
+| **Continuous cmd_vel** | **PASS** | 20.0 Hz dispatch rate (50.0 ms mean/max gap) in SIL simulation; 0.493 m/s simulated velocity; ROS2 node timer integrated. |
 | **Command freshness** | **PASS** | 0 stale command violations; 0.35s freshness window & 0.50s stale zero override. |
 | **Lost-obstacle safety** | **PASS** | 0 collisions, 0 unsafe STOP→PROCEED transitions under 0.8s dropouts & tracker loss. |
 | **Safety governor** | **PASS** | Downstream override halts vehicle at 0.40m forward and 0.45m rearward hazards. |
