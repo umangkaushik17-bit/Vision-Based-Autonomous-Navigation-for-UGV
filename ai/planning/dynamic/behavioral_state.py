@@ -226,7 +226,7 @@ class BehavioralStateMachine:
         if len(self.pose_history) >= 5 and (current_time - self.pose_history[0][0]) >= (self.config.deadlock_progress_window_s * 0.8):
             start_x, start_y = self.pose_history[0][1], self.pose_history[0][2]
             net_disp = math.hypot(current_x - start_x, current_y - start_y)
-            if net_disp < self.config.deadlock_progress_threshold_m and self.current_state in (BehavioralState.STOP, BehavioralState.WAIT):
+            if net_disp < self.config.deadlock_progress_threshold_m and self.current_state in (BehavioralState.STOP, BehavioralState.WAIT, BehavioralState.AVOID):
                 return True, f"Insufficient progress ({net_disp:.3f}m < {self.config.deadlock_progress_threshold_m}m) over {self.config.deadlock_progress_window_s}s"
 
         return False, "NONE"
@@ -453,6 +453,11 @@ class BehavioralStateMachine:
         # ---------------------------------------------------------------------
         is_deadlock, deadlock_reason = self._evaluate_deadlock(now, current_state.x, current_state.y)
         deadlock_event_str = DeadlockEvent.DYNAMIC_DEADLOCK.value if is_deadlock else DeadlockEvent.NONE.value
+        if is_deadlock and next_state == BehavioralState.AVOID:
+            # Persistent deadlock in avoidance: force tactical halt to break limit cycle
+            next_state = BehavioralState.STOP
+            self.current_state = BehavioralState.STOP
+            final_reason = f"Deadlock: {deadlock_reason}"
 
         # ---------------------------------------------------------------------
         # Step 6: Command Arbitration (Safety Invariants B & C)

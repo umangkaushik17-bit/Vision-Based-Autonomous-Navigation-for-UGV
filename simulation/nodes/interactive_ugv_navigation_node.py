@@ -87,6 +87,7 @@ from ai.planning.dynamic.tracker import (
 from ai.control.command_buffer import SafeCommandBuffer, SafeCommandBufferConfig, DispatchStatus
 from ai.planning.backends.backend_interface import DWABackendType
 from ai.planning.backends.unified_planner import UnifiedDWAPlanner
+from ai.planning.base import PlanningConfig
 from ai.planning.global_planners.astar import AStarPlanner
 from ai.planning.local_planners.dwa import DWAPlanner
 from ai.planning.path import Path as AIPath, PathPoint
@@ -196,7 +197,11 @@ class InteractiveUGVNavigationNode(Node):
         )
         self.global_planner = AStarPlanner()
         # Hardware-independent DWA (defaults to native C++ AVX2 backend in AUTO mode)
-        self.dwa_planner = UnifiedDWAPlanner(backend=DWABackendType.AUTO)
+        dwa_cfg = PlanningConfig.load()
+        # Restrict nominal DWA local velocity sampling to forward-only (v >= 0.0).
+        # Reverse maneuvers are deterministically governed by RecoveryController (Phase 13.24)
+        dwa_cfg.vehicle.min_linear_velocity_mps = 0.0
+        self.dwa_planner = UnifiedDWAPlanner(config=dwa_cfg, backend=DWABackendType.AUTO)
         self.dwa_planner.enable_behavioral_arbitration = True
         self.behavior_machine = BehavioralStateMachine(BehavioralConfig())
         self.replanner = EventDrivenGlobalReplanner(GlobalReplannerConfig())
@@ -231,6 +236,8 @@ class InteractiveUGVNavigationNode(Node):
         self.active_global_path: Optional[AIPath] = None
         self.last_behavior: Optional[BehavioralDecision] = None
         self.mission_completed: bool = False
+        # Rolling pose history for spatial progress monitoring (detecting chattering/limit-cycles)
+        self._pose_history: List[Tuple[float, float, float]] = []
 
         # 4. TF Broadcasters
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
@@ -407,6 +414,7 @@ class InteractiveUGVNavigationNode(Node):
         self.goal_y = msg.pose.position.y
         self.active_global_path = None  # Trigger replan
         self.mission_completed = False
+        self._pose_history.clear()
         self.get_logger().info(f"New goal set: ({self.goal_x:.2f}, {self.goal_y:.2f})")
 
     def _on_reset_requested(self, _: Empty) -> None:
@@ -419,6 +427,7 @@ class InteractiveUGVNavigationNode(Node):
         self.ugv_v = 0.0
         self.ugv_w = 0.0
         self.active_global_path = None
+        self._pose_history.clear()
         self.tracker = MultiFrameTracker(TrackerConfig(target_frame="odom", use_kalman_filter=True))
         self.predictor = MotionPredictor(PredictorConfig(default_horizon_s=2.0, default_dt_s=0.25))
         self.occupancy_layer = DynamicOccupancyLayer(DynamicOccupancyConfig(frame_id="odom", resolution_m=0.10))
@@ -644,12 +653,30 @@ class InteractiveUGVNavigationNode(Node):
         # 7. Behavioral Decision
         decision_str = dwa_diag.get("behavioral_state", "PROCEED")
 
-        # Phase 13.24: Multi-signal Deadlock Detection
+        # Phase 13.24: Multi-signal Deadlock & Spatial Progress Monitoring
         dist_to_goal = math.hypot(self.ugv_x - self.goal_x, self.ugv_y - self.goal_y)
+
+        # Rolling pose history for spatial progress monitoring (detecting chattering/limit-cycles)
+        self._pose_history.append((t_now, self.ugv_x, self.ugv_y))
+        progress_window_s = 2.50
+        cutoff_t = t_now - progress_window_s
+        self._pose_history = [p for p in self._pose_history if p[0] >= cutoff_t]
+
+        lack_of_progress = False
+        if len(self._pose_history) >= 8 and (t_now - self._pose_history[0][0]) >= (progress_window_s * 0.75):
+            start_x, start_y = self._pose_history[0][1], self._pose_history[0][2]
+            net_disp = math.hypot(self.ugv_x - start_x, self.ugv_y - start_y)
+            if net_disp < 0.15 and dist_to_goal > 0.50:
+                lack_of_progress = True
+
+        is_dynamic_deadlock = (dwa_diag.get("deadlock_event") == "DYNAMIC_DEADLOCK" and dist_to_goal > 0.50)
+
         is_deadlocked = (
             decision_str in ("STOP", "EMERGENCY_STOP")
             or planner_status in (PlannerStatus.LOCAL_NO_SAFE_TRAJECTORY, PlannerStatus.NO_SAFE_TRAJECTORY)
             or (cand_v <= 0.01 and dist_to_goal > 0.5 and abs(robot_state.v) <= 0.05)
+            or is_dynamic_deadlock
+            or lack_of_progress
         )
         rec_v, rec_w, rec_state, rec_reason = self.recovery_controller.step(
             current_time_s=t_now,
@@ -672,6 +699,7 @@ class InteractiveUGVNavigationNode(Node):
                 self.replanner.set_global_path(self.active_global_path)
                 self.get_logger().info(f"Replan succeeded! New path has {len(self.active_global_path.points)} waypoints.")
                 self.recovery_controller.mark_replan_completed()
+                self._pose_history.clear()
             else:
                 self.get_logger().warn(f"Replan failed: {replan_res.reason}. Holding safe stop.")
 
