@@ -27,6 +27,7 @@ from ai.planning.dynamic.data_model import (
     PredictedObstacleTrajectory,
     TrackedObstacleState,
     TrajectoryWaypoint,
+    compute_obb_corners,
 )
 
 
@@ -54,45 +55,59 @@ class LatchedHazard:
 
     def to_predicted_trajectory(self, horizon_s: float = 2.0, dt_s: float = 0.25) -> PredictedObstacleTrajectory:
         """Convert latched hazard into a conservative stationary prediction for DWA consumption."""
+        track_id_val = self.source_track_id if self.source_track_id is not None else 999
+        track_state = TrackedObstacleState(
+            track_id=track_id_val,
+            timestamp=self.last_observed_time_s,
+            frame_id="odom",
+            x=self.x,
+            y=self.y,
+            vx=0.0,
+            vy=0.0,
+            covariance=np.eye(4, dtype=np.float64) * 0.10,
+            bbox_size=self.bbox_size,
+            bbox_yaw=self.bbox_yaw,
+            track_age=10,
+            coast_cycles=1,
+            is_confirmed=True,
+            status="TRACKING",
+        )
+
         steps = int(round(horizon_s / dt_s))
         waypoints: List[TrajectoryWaypoint] = []
+        bounding_polygons: List[np.ndarray] = []
+        cov_2d = np.eye(2, dtype=np.float64) * 0.05
+
         for i in range(steps + 1):
             t_offset = i * dt_s
-            # Conservative stationary hold or slight decay coast
+            unc_radius = 0.10 + 0.05 * t_offset
             waypoints.append(
                 TrajectoryWaypoint(
+                    time_offset=t_offset,
+                    timestamp=self.last_observed_time_s + t_offset,
                     x=self.x,
                     y=self.y,
-                    timestamp=self.last_observed_time_s + t_offset,
-                    time_offset=t_offset,
                     vx=0.0,
                     vy=0.0,
-                    confidence=max(0.1, self.confidence * (1.0 - t_offset / (horizon_s * 2.0))),
+                    covariance_2d=cov_2d,
+                    uncertainty_radius=unc_radius,
                 )
             )
+            poly = compute_obb_corners(
+                (self.x, self.y),
+                self.bbox_size,
+                self.bbox_yaw,
+                margin_m=unc_radius,
+            )
+            bounding_polygons.append(poly)
 
-        track_id_val = self.source_track_id if self.source_track_id is not None else 999
         return PredictedObstacleTrajectory(
             track_id=track_id_val,
+            current_state=track_state,
+            horizon_s=horizon_s,
+            dt=dt_s,
             waypoints=waypoints,
-            prediction_horizon_s=horizon_s,
-            confidence=self.confidence,
-            current_state=TrackedObstacleState(
-                track_id=track_id_val,
-                timestamp=self.last_observed_time_s,
-                frame_id="odom",
-                x=self.x,
-                y=self.y,
-                vx=0.0,
-                vy=0.0,
-                covariance=np.eye(4, dtype=np.float64) * 0.10,
-                bbox_size=self.bbox_size,
-                bbox_yaw=self.bbox_yaw,
-                track_age=10,
-                coast_cycles=1,
-                is_confirmed=True,
-                status="TRACKING",
-            ),
+            bounding_polygon_per_step=bounding_polygons,
         )
 
 

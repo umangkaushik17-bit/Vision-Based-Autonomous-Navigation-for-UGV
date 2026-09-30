@@ -636,8 +636,13 @@ class InteractiveUGVNavigationNode(Node):
         # 7. Behavioral Decision
         decision_str = dwa_diag.get("behavioral_state", "PROCEED")
 
-        # Phase 13.24: Reverse Recovery & Deadlock Replanning State Machine
-        is_deadlocked = (decision_str in ("STOP", "EMERGENCY_STOP"))
+        # Phase 13.24: Multi-signal Deadlock Detection
+        dist_to_goal = math.hypot(self.ugv_x - self.goal_x, self.ugv_y - self.goal_y)
+        is_deadlocked = (
+            decision_str in ("STOP", "EMERGENCY_STOP")
+            or planner_status in (PlannerStatus.LOCAL_NO_SAFE_TRAJECTORY, PlannerStatus.NO_SAFE_TRAJECTORY)
+            or (cand_v <= 0.01 and dist_to_goal > 0.5 and abs(robot_state.v) <= 0.05)
+        )
         rec_v, rec_w, rec_state, rec_reason = self.recovery_controller.step(
             current_time_s=t_now,
             robot_pose=(self.ugv_x, self.ugv_y, self.ugv_yaw),
