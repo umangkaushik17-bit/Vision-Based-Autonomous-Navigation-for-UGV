@@ -6,10 +6,33 @@ Exposes AdaptiveTraversabilityPredictor (using LightweightTraversabilityNet) and
 from __future__ import annotations
 
 from production.perception.adaptive_predictor import AdaptiveTraversabilityPredictor
-from production.perception.base import TraversabilityPredictorBase, TraversabilityResult
+from production.perception.base import (
+    PerceptionFrameInput,
+    TraversabilityPredictorBase,
+    TraversabilityResult,
+)
+from production.perception.camera_interface import (
+    BaseCameraSource,
+    CameraConfig,
+    OpenCVCameraSource,
+    ROS2CameraSource,
+    SequenceCameraSource,
+    SyntheticCameraSource,
+)
+from production.perception.realtime_pipeline import RealtimeTraversabilityPipeline
+from production.perception.temporal_filter import TemporalStabilityFilter
 
 __all__ = [
     "AdaptiveTraversabilityPredictor",
+    "RealtimeTraversabilityPipeline",
+    "TemporalStabilityFilter",
+    "CameraConfig",
+    "BaseCameraSource",
+    "SyntheticCameraSource",
+    "SequenceCameraSource",
+    "OpenCVCameraSource",
+    "ROS2CameraSource",
+    "PerceptionFrameInput",
     "TraversabilityPredictorBase",
     "TraversabilityResult",
 ]
