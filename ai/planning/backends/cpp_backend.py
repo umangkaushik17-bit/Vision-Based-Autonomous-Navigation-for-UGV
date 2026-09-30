@@ -175,105 +175,168 @@ class C_DWAResult(Structure):
     ]
 
 
-_DLL_HANDLE = None
+_DLL_HANDLE_SIMD = None
+_DLL_HANDLE_SCALAR = None
 
 
-def _load_dwa_cpp_lib():
-    global _DLL_HANDLE
-    if _DLL_HANDLE is not None:
-        return _DLL_HANDLE
+def has_avx2_support() -> bool:
+    """Detect whether host CPU supports AVX2 vector instructions."""
+    system = platform.system()
+    if system == "Windows":
+        try:
+            # PF_AVX2_INSTRUCTIONS_AVAILABLE = 40 in Windows WinNT.h
+            return bool(ctypes.windll.kernel32.IsProcessorFeaturePresent(40))
+        except Exception:
+            return False
+    elif system == "Linux":
+        try:
+            with open("/proc/cpuinfo", "r") as f:
+                content = f.read()
+            return "avx2" in content
+        except Exception:
+            return False
+    return False
+
+
+def _configure_prototypes(lib: ctypes.CDLL) -> None:
+    """Set argument and return types for the native C++ C-linkage entry points."""
+    lib.dwa_plan_c.argtypes = [
+        POINTER(C_RobotState),
+        POINTER(C_VehicleConfig),
+        POINTER(C_DWAConfig),
+        POINTER(C_ScoringWeights),
+        POINTER(c_double),
+        POINTER(c_double),
+        c_int32,
+        c_double,
+        c_double,
+        c_double,
+        POINTER(C_CostmapMeta),
+        POINTER(c_uint8),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_uint8),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(C_DynamicConfig),
+        POINTER(C_ObstacleTrack),
+        c_int32,
+        c_int32,
+        POINTER(C_DWAResult),
+        POINTER(C_CandidateDiagnostic),
+        POINTER(c_double),
+    ]
+    lib.dwa_plan_c.restype = c_int32
+
+    lib.dwa_sat_intersect_c.argtypes = [
+        POINTER(c_double),
+        POINTER(c_double),
+        POINTER(c_double),
+        POINTER(c_double),
+    ]
+    lib.dwa_sat_intersect_c.restype = c_int32
+
+    lib.dwa_polygon_distance_c.argtypes = [
+        POINTER(c_double),
+        POINTER(c_double),
+        POINTER(c_double),
+        POINTER(c_double),
+    ]
+    lib.dwa_polygon_distance_c.restype = c_double
+
+    lib.dwa_footprint_collision_c.argtypes = [
+        c_double,
+        c_double,
+        c_double,
+        POINTER(C_VehicleConfig),
+        POINTER(C_CostmapMeta),
+        POINTER(c_uint8),
+        POINTER(c_float),
+        POINTER(c_float),
+    ]
+    lib.dwa_footprint_collision_c.restype = c_int32
+
+
+def _load_dwa_cpp_lib(variant: str = "auto") -> Tuple[Optional[ctypes.CDLL], str]:
+    """Load native C++ DWA library with target variant selection.
+
+    Args:
+        variant: 'simd' (AVX2), 'scalar' (generic x86/ARM), or 'auto' (hardware detected).
+
+    Returns:
+        Tuple of (cdll_handle or None, actual_variant_loaded)
+    """
+    global _DLL_HANDLE_SIMD, _DLL_HANDLE_SCALAR
 
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "native_cpp"))
     system = platform.system()
-    if system == "Windows":
-        dll_name = "dwa_cpp.dll"
-    else:
-        dll_name = "libdwa_cpp.so"
 
-    dll_path = os.path.join(base_dir, dll_name)
-    if not os.path.exists(dll_path):
-        return None
+    simd_name = "dwa_cpp.dll" if system == "Windows" else "libdwa_cpp.so"
+    scalar_name = "dwa_cpp_scalar.dll" if system == "Windows" else "libdwa_cpp_scalar.so"
 
-    try:
-        lib = ctypes.CDLL(dll_path)
-        # Configure function prototypes
-        lib.dwa_plan_c.argtypes = [
-            POINTER(C_RobotState),
-            POINTER(C_VehicleConfig),
-            POINTER(C_DWAConfig),
-            POINTER(C_ScoringWeights),
-            POINTER(c_double),
-            POINTER(c_double),
-            c_int32,
-            c_double,
-            c_double,
-            c_double,
-            POINTER(C_CostmapMeta),
-            POINTER(c_uint8),
-            POINTER(c_float),
-            POINTER(c_float),
-            POINTER(c_uint8),
-            POINTER(c_float),
-            POINTER(c_float),
-            POINTER(c_float),
-            POINTER(c_float),
-            POINTER(C_DynamicConfig),
-            POINTER(C_ObstacleTrack),
-            c_int32,
-            c_int32,
-            POINTER(C_DWAResult),
-            POINTER(C_CandidateDiagnostic),
-            POINTER(c_double),
-        ]
-        lib.dwa_plan_c.restype = c_int32
+    simd_path = os.path.join(base_dir, simd_name)
+    scalar_path = os.path.join(base_dir, scalar_name)
 
-        lib.dwa_sat_intersect_c.argtypes = [
-            POINTER(c_double),
-            POINTER(c_double),
-            POINTER(c_double),
-            POINTER(c_double),
-        ]
-        lib.dwa_sat_intersect_c.restype = c_int32
+    chosen = variant.lower().strip()
+    if chosen == "auto":
+        if has_avx2_support() and os.path.exists(simd_path):
+            chosen = "simd"
+        elif os.path.exists(scalar_path):
+            chosen = "scalar"
+        elif os.path.exists(simd_path):
+            chosen = "simd"
+        else:
+            return None, "NONE"
 
-        lib.dwa_polygon_distance_c.argtypes = [
-            POINTER(c_double),
-            POINTER(c_double),
-            POINTER(c_double),
-            POINTER(c_double),
-        ]
-        lib.dwa_polygon_distance_c.restype = c_double
+    if chosen == "simd":
+        if _DLL_HANDLE_SIMD is not None:
+            return _DLL_HANDLE_SIMD, "SIMD"
+        if not os.path.exists(simd_path):
+            return None, "SIMD"
+        try:
+            lib = ctypes.CDLL(simd_path)
+            _configure_prototypes(lib)
+            _DLL_HANDLE_SIMD = lib
+            return lib, "SIMD"
+        except Exception:
+            return None, "SIMD"
 
-        lib.dwa_footprint_collision_c.argtypes = [
-            c_double,
-            c_double,
-            c_double,
-            POINTER(C_VehicleConfig),
-            POINTER(C_CostmapMeta),
-            POINTER(c_uint8),
-            POINTER(c_float),
-            POINTER(c_float),
-        ]
-        lib.dwa_footprint_collision_c.restype = c_int32
+    elif chosen == "scalar":
+        if _DLL_HANDLE_SCALAR is not None:
+            return _DLL_HANDLE_SCALAR, "SCALAR"
+        if not os.path.exists(scalar_path):
+            return None, "SCALAR"
+        try:
+            lib = ctypes.CDLL(scalar_path)
+            _configure_prototypes(lib)
+            _DLL_HANDLE_SCALAR = lib
+            return lib, "SCALAR"
+        except Exception:
+            return None, "SCALAR"
 
-        _DLL_HANDLE = lib
-        return lib
-    except Exception:
-        return None
+    return None, "UNKNOWN"
 
 
 class CPPDWABackend(DWABackend):
-    """Native C++ CPU accelerated batched DWA local planner backend."""
+    """Native C++ CPU accelerated batched DWA local planner backend (auto-selecting SIMD vs Scalar)."""
 
-    def __init__(self, config: Optional[PlanningConfig] = None) -> None:
-        super().__init__(DWABackendType.CPP_CPU)
+    def __init__(
+        self,
+        config: Optional[PlanningConfig] = None,
+        variant: str = "auto",
+        backend_type: DWABackendType = DWABackendType.CPP_CPU,
+    ) -> None:
+        super().__init__(backend_type)
         self.config = config or PlanningConfig()
+        self.requested_variant = variant
 
-        self.lib = _load_dwa_cpp_lib()
+        self.lib, self.active_variant = _load_dwa_cpp_lib(variant=variant)
         if self.lib is None:
             raise RuntimeError(
-                "CPP_CPU backend explicitly requested, but compiled native C++ library "
-                "(dwa_cpp.dll or libdwa_cpp.so) was not found or failed to load. "
-                "Compile it using: python scripts/build_dwa_cpp.py"
+                f"{backend_type.value} backend ({variant}) explicitly requested, but compiled native C++ library "
+                f"was not found or failed to load. Compile using: python scripts/build_dwa_cpp.py"
             )
 
         # Vehicle Kinematics
@@ -319,15 +382,17 @@ class CPPDWABackend(DWABackend):
 
     @property
     def name(self) -> str:
-        return "Native C++ CPU"
+        return f"Native C++ CPU ({self.active_variant})"
 
     @property
     def device_name(self) -> str:
-        return "Host CPU (Native C++ / AVX2 / OpenMP)"
+        simd_info = "AVX2 / OpenMP" if self.active_variant == "SIMD" else "Scalar Portable"
+        return f"Host CPU (Native C++ / {simd_info})"
 
     @classmethod
     def is_available(cls) -> bool:
-        return _load_dwa_cpp_lib() is not None
+        lib, _ = _load_dwa_cpp_lib(variant="auto")
+        return lib is not None
 
     def check_health(self) -> BackendHealth:
         avail = self.is_available()
@@ -336,7 +401,7 @@ class CPPDWABackend(DWABackend):
             is_available=avail,
             device_name=self.device_name,
             safety_validated=avail,
-            benchmark_latency_ms=10.0 if avail else None,
+            benchmark_latency_ms=1.5 if avail and self.active_variant == "SIMD" else (4.5 if avail else None),
             error_message=None if avail else "Native C++ library not compiled (run: python scripts/build_dwa_cpp.py)",
         )
 
@@ -724,3 +789,35 @@ class CPPDWABackend(DWABackend):
         cmd_w = decision.command_omega if self.enable_behavioral_arbitration else float(c_result.best_w)
 
         return best_trajectory, cmd_v, cmd_w, PlannerStatus.SUCCESS, diag
+
+
+class CPPSimdDWABackend(CPPDWABackend):
+    """Explicit Native C++ SIMD (AVX2) DWA local planner backend."""
+
+    def __init__(self, config: Optional[PlanningConfig] = None) -> None:
+        if not has_avx2_support():
+            raise RuntimeError(
+                "CPP_SIMD backend explicitly requested, but AVX2 SIMD vector instructions are "
+                "unsupported on this CPU hardware. System will NOT silently switch to scalar or CPU."
+            )
+        super().__init__(config=config, variant="simd", backend_type=DWABackendType.CPP_SIMD)
+
+    @classmethod
+    def is_available(cls) -> bool:
+        if not has_avx2_support():
+            return False
+        lib, var = _load_dwa_cpp_lib(variant="simd")
+        return lib is not None and var == "SIMD"
+
+
+class CPPScalarDWABackend(CPPDWABackend):
+    """Explicit Native C++ Scalar (Portable, no vector instruction requirements) DWA backend."""
+
+    def __init__(self, config: Optional[PlanningConfig] = None) -> None:
+        super().__init__(config=config, variant="scalar", backend_type=DWABackendType.CPP_SCALAR)
+
+    @classmethod
+    def is_available(cls) -> bool:
+        lib, var = _load_dwa_cpp_lib(variant="scalar")
+        return lib is not None and var == "SCALAR"
+

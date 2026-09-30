@@ -63,27 +63,30 @@ def build_cpp_backend():
     print("=" * 70)
 
     if system == "Windows":
-        target_dll = os.path.join(cpp_dir, "dwa_cpp.dll")
         vcvarsall = find_vcvarsall()
         if not vcvarsall:
             print("[ERROR] MSVC vcvarsall.bat could not be found.")
             sys.exit(1)
 
         print(f"[*] Found MSVC Environment Tool: {vcvarsall}")
-        # Build command:
-        # /O2 : Max speed
-        # /std:c++17 : Modern C++17
-        # /openmp : Multithreaded candidate evaluation
-        # /arch:AVX2 : AVX2 vector instructions
-        # /fp:fast : Fast floating-point math
-        # /EHsc : C++ exception handling
-        # /LD : Create DLL
-        cmd = f'call "{vcvarsall}" x64 && cl.exe /O2 /std:c++17 /openmp /arch:AVX2 /fp:fast /EHsc /LD /Fe:"{target_dll}" "{src_core}" "{src_api}"'
-        print(f"[*] Executing MSVC compilation...")
-        res = subprocess.run(cmd, shell=True, cwd=cpp_dir)
-        if res.returncode != 0:
-            print("[ERROR] MSVC compilation failed!")
-            sys.exit(res.returncode)
+
+        # 1. Build SIMD target (AVX2 + OpenMP)
+        target_simd = os.path.join(cpp_dir, "dwa_cpp.dll")
+        cmd_simd = f'call "{vcvarsall}" x64 && cl.exe /O2 /std:c++17 /openmp /arch:AVX2 /fp:fast /EHsc /LD /Fe:"{target_simd}" "{src_core}" "{src_api}"'
+        print(f"[*] Compiling C++ SIMD (AVX2) target: {target_simd}")
+        res_simd = subprocess.run(cmd_simd, shell=True, cwd=cpp_dir)
+        if res_simd.returncode != 0:
+            print("[ERROR] MSVC SIMD compilation failed!")
+            sys.exit(res_simd.returncode)
+
+        # 2. Build Scalar target (Portable standard C++, no AVX vector flags)
+        target_scalar = os.path.join(cpp_dir, "dwa_cpp_scalar.dll")
+        cmd_scalar = f'call "{vcvarsall}" x64 && cl.exe /O2 /std:c++17 /fp:fast /EHsc /LD /Fe:"{target_scalar}" "{src_core}" "{src_api}"'
+        print(f"[*] Compiling C++ Scalar (Portable) target: {target_scalar}")
+        res_scalar = subprocess.run(cmd_scalar, shell=True, cwd=cpp_dir)
+        if res_scalar.returncode != 0:
+            print("[ERROR] MSVC Scalar compilation failed!")
+            sys.exit(res_scalar.returncode)
 
         # Cleanup intermediate .obj and .exp files
         for ext in [".obj", ".exp", ".lib"]:
@@ -94,34 +97,49 @@ def build_cpp_backend():
                     except Exception:
                         pass
 
-        if os.path.exists(target_dll):
-            size_kb = os.path.getsize(target_dll) / 1024.0
-            print(f"[SUCCESS] Built {target_dll} ({size_kb:.1f} KB)")
-        else:
-            print("[ERROR] Target DLL was not created!")
-            sys.exit(1)
+        for target in [target_simd, target_scalar]:
+            if os.path.exists(target):
+                size_kb = os.path.getsize(target) / 1024.0
+                print(f"[SUCCESS] Built {os.path.basename(target)} ({size_kb:.1f} KB)")
+            else:
+                print(f"[ERROR] Target {target} was not created!")
+                sys.exit(1)
 
     else:  # Linux / Unix
-        target_so = os.path.join(cpp_dir, "libdwa_cpp.so")
-        cmd = [
+        # 1. Build SIMD target (AVX2 + OpenMP)
+        target_simd = os.path.join(cpp_dir, "libdwa_cpp.so")
+        cmd_simd = [
             "g++", "-O3", "-std=c++17", "-fopenmp", "-mavx2", "-ffast-math",
-            "-fPIC", "-shared", "-o", target_so, src_core, src_api
+            "-fPIC", "-shared", "-o", target_simd, src_core, src_api
         ]
-        print(f"[*] Executing GCC compilation: {' '.join(cmd)}")
-        res = subprocess.run(cmd, cwd=cpp_dir)
-        if res.returncode != 0:
-            print("[ERROR] GCC compilation failed!")
-            sys.exit(res.returncode)
+        print(f"[*] Compiling C++ SIMD (AVX2) target: {' '.join(cmd_simd)}")
+        res_simd = subprocess.run(cmd_simd, cwd=cpp_dir)
+        if res_simd.returncode != 0:
+            print("[ERROR] GCC SIMD compilation failed!")
+            sys.exit(res_simd.returncode)
 
-        if os.path.exists(target_so):
-            size_kb = os.path.getsize(target_so) / 1024.0
-            print(f"[SUCCESS] Built {target_so} ({size_kb:.1f} KB)")
-        else:
-            print("[ERROR] Target shared library was not created!")
-            sys.exit(1)
+        # 2. Build Scalar target (Portable standard C++, no -mavx2)
+        target_scalar = os.path.join(cpp_dir, "libdwa_cpp_scalar.so")
+        cmd_scalar = [
+            "g++", "-O3", "-std=c++17", "-ffast-math",
+            "-fPIC", "-shared", "-o", target_scalar, src_core, src_api
+        ]
+        print(f"[*] Compiling C++ Scalar target: {' '.join(cmd_scalar)}")
+        res_scalar = subprocess.run(cmd_scalar, cwd=cpp_dir)
+        if res_scalar.returncode != 0:
+            print("[ERROR] GCC Scalar compilation failed!")
+            sys.exit(res_scalar.returncode)
+
+        for target in [target_simd, target_scalar]:
+            if os.path.exists(target):
+                size_kb = os.path.getsize(target) / 1024.0
+                print(f"[SUCCESS] Built {os.path.basename(target)} ({size_kb:.1f} KB)")
+            else:
+                print(f"[ERROR] Target {target} was not created!")
+                sys.exit(1)
 
     print("=" * 70)
-    print("NATIVE C++ DWA BUILD COMPLETE")
+    print("NATIVE C++ DWA DUAL-TARGET BUILD COMPLETE (SIMD + SCALAR)")
     print("=" * 70)
 
 

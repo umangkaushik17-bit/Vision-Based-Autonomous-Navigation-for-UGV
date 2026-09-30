@@ -17,7 +17,11 @@ from ai.planning.backends.backend_interface import (
     DWABackendType,
 )
 from ai.planning.backends.cpu_backend import CPUDWABackend
-from ai.planning.backends.cpp_backend import CPPDWABackend
+from ai.planning.backends.cpp_backend import (
+    CPPDWABackend,
+    CPPSimdDWABackend,
+    CPPScalarDWABackend,
+)
 from ai.planning.backends.cuda_backend import CUDADWABackend
 from ai.planning.backends.intel_gpu_backend import IntelGPUDWABackend
 from ai.planning.backends.npu_backend import NPUDWABackend
@@ -90,6 +94,22 @@ class UnifiedDWAPlanner(LocalPlanner):
                 )
             return IntelGPUDWABackend(self.config)
 
+        elif requested == DWABackendType.CPP_SIMD:
+            if not CPPSimdDWABackend.is_available():
+                raise RuntimeError(
+                    "CPP_SIMD backend explicitly requested, but compiled native C++ SIMD library "
+                    "(AVX2) is unavailable or unsupported on this CPU. System will NOT silently switch to CPU."
+                )
+            return CPPSimdDWABackend(self.config)
+
+        elif requested == DWABackendType.CPP_SCALAR:
+            if not CPPScalarDWABackend.is_available():
+                raise RuntimeError(
+                    "CPP_SCALAR backend explicitly requested, but compiled native C++ scalar library "
+                    "(dwa_cpp_scalar.dll or libdwa_cpp_scalar.so) is unavailable. System will NOT silently switch to CPU."
+                )
+            return CPPScalarDWABackend(self.config)
+
         elif requested == DWABackendType.CPP_CPU:
             if not CPPDWABackend.is_available():
                 raise RuntimeError(
@@ -124,16 +144,26 @@ class UnifiedDWAPlanner(LocalPlanner):
             except Exception as e:
                 logger.warning("CUDA available but initialization health check failed: %s", e)
 
-        # 2. Native C++ CPU: compiled AVX2 / OpenMP CPU backend (1.10 ms measured, 191x faster than iGPU)
-        if CPPDWABackend.is_available():
+        # 2. Native C++ SIMD (AVX2/OpenMP) or Scalar Fallback
+        if CPPSimdDWABackend.is_available():
             try:
-                cpp_be = CPPDWABackend(self.config)
-                health = cpp_be.check_health()
+                cpp_simd_be = CPPSimdDWABackend(self.config)
+                health = cpp_simd_be.check_health()
                 if health.is_available and health.safety_validated:
-                    logger.info("AUTO mode selected validated Native C++ CPU backend (AVX2/OpenMP).")
-                    return cpp_be
+                    logger.info("AUTO mode selected validated Native C++ SIMD backend (AVX2/OpenMP).")
+                    return cpp_simd_be
             except Exception as e:
-                logger.warning("Native C++ CPU backend check failed: %s", e)
+                logger.warning("Native C++ SIMD backend check failed: %s", e)
+
+        if CPPScalarDWABackend.is_available():
+            try:
+                cpp_scalar_be = CPPScalarDWABackend(self.config)
+                health = cpp_scalar_be.check_health()
+                if health.is_available and health.safety_validated:
+                    logger.info("AUTO mode selected validated Native C++ Scalar backend (Portable).")
+                    return cpp_scalar_be
+            except Exception as e:
+                logger.warning("Native C++ Scalar backend check failed: %s", e)
 
         # 3. Intel GPU: accelerated iGPU/Arc if runtime available and validated
         if IntelGPUDWABackend.is_available():

@@ -6,7 +6,11 @@ from ai.planning.backends.backend_interface import (
     DWABackendType,
 )
 from ai.planning.backends.cpu_backend import CPUDWABackend
-from ai.planning.backends.cpp_backend import CPPDWABackend
+from ai.planning.backends.cpp_backend import (
+    CPPDWABackend,
+    CPPSimdDWABackend,
+    CPPScalarDWABackend,
+)
 from ai.planning.backends.cuda_backend import CUDADWABackend
 from ai.planning.backends.intel_gpu_backend import IntelGPUDWABackend
 from ai.planning.backends.npu_backend import NPUDWABackend
@@ -19,6 +23,8 @@ __all__ = [
     "DWABackend",
     "CPUDWABackend",
     "CPPDWABackend",
+    "CPPSimdDWABackend",
+    "CPPScalarDWABackend",
     "CUDADWABackend",
     "IntelGPUDWABackend",
     "NPUDWABackend",
