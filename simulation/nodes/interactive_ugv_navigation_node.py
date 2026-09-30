@@ -85,6 +85,11 @@ from ai.planning.backends.unified_planner import UnifiedDWAPlanner
 from ai.planning.global_planners.astar import AStarPlanner
 from ai.planning.local_planners.dwa import DWAPlanner
 from ai.planning.path import Path as AIPath, PathPoint
+from ai.planning.recovery_controller import (
+    RecoveryConfig,
+    RecoveryController,
+    RecoveryState,
+)
 from ai.planning.safety_governor import (
     LatchedHazard,
     RecentHazardMemory,
@@ -206,6 +211,15 @@ class InteractiveUGVNavigationNode(Node):
                 cautious_distance_m=0.95,
                 cautious_max_v_mps=0.15,
                 corridor_half_width_m=0.35,
+            )
+        )
+
+        # Phase 13.24: Safe Reverse Recovery & Deadlock Replanner
+        self.recovery_controller = RecoveryController(
+            RecoveryConfig(
+                reverse_velocity_mps=-0.15,
+                target_reverse_distance_m=0.45,
+                deadlock_stop_cycles=4,
             )
         )
 
@@ -392,6 +406,7 @@ class InteractiveUGVNavigationNode(Node):
         self.get_logger().info("Resetting navigation and tracker states.")
         self.command_buffer.reset()
         self.hazard_memory.clear()
+        self.recovery_controller.reset()
         self.cmd_pub.publish(Twist())
         self.ugv_v = 0.0
         self.ugv_w = 0.0
@@ -620,6 +635,38 @@ class InteractiveUGVNavigationNode(Node):
 
         # 7. Behavioral Decision
         decision_str = dwa_diag.get("behavioral_state", "PROCEED")
+
+        # Phase 13.24: Reverse Recovery & Deadlock Replanning State Machine
+        is_deadlocked = (decision_str in ("STOP", "EMERGENCY_STOP"))
+        rec_v, rec_w, rec_state, rec_reason = self.recovery_controller.step(
+            current_time_s=t_now,
+            robot_pose=(self.ugv_x, self.ugv_y, self.ugv_yaw),
+            is_deadlocked=is_deadlocked,
+            hazards=all_hazards,
+            costmap=self.world_map,
+        )
+
+        if rec_state == RecoveryState.REPLAN_READY:
+            self.get_logger().info("Recovery complete: Triggering global A* replan around obstacle...")
+            replan_res = self.replanner.execute_replan(
+                current_pose=(self.ugv_x, self.ugv_y, self.ugv_yaw),
+                goal=(self.goal_x, self.goal_y),
+                base_map=self.world_map,
+                dynamic_obstacles=confirmed_tracks,
+            )
+            if replan_res.success and replan_res.path is not None:
+                self.active_global_path = replan_res.path
+                self.replanner.set_global_path(self.active_global_path)
+                self.get_logger().info(f"Replan succeeded! New path has {len(self.active_global_path.points)} waypoints.")
+                self.recovery_controller.mark_replan_completed()
+            else:
+                self.get_logger().warn(f"Replan failed: {replan_res.reason}. Holding safe stop.")
+
+        if rec_state == RecoveryState.REVERSING and rec_v is not None:
+            cand_v = rec_v
+            cand_w = rec_w or 0.0
+            decision_str = f"RECOVERY_REVERSE"
+
         behavior_msg = RosBehavioralDecision()
         behavior_msg.header.stamp = self.get_clock().now().to_msg()
         behavior_msg.header.frame_id = "odom"
