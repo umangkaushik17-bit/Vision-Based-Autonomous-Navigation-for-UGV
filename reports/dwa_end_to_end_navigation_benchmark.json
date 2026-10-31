@@ -1,0 +1,88 @@
+{
+  "benchmark_name": "End-to-End Navigation Pipeline Benchmark",
+  "date": "2026-09-30 03:44:30",
+  "hardware": "Intel Core Ultra 7 155H (16 cores, 22 threads)",
+  "traversability_model": "LightweightTraversabilityNet (FROZEN)",
+  "pipeline_stages": [
+    "Perception (LightweightTraversabilityNet)",
+    "Costmap (BEV Projection & Aggregation)",
+    "Dynamic Obstacle Tracking & Predictor",
+    "DWA Local Trajectory Search",
+    "Behavioral State Machine & Command Publishing"
+  ],
+  "with_reference_cpu_dwa": {
+    "perception": {
+      "mean_ms": 139.81,
+      "p95_ms": 157.52,
+      "pct_of_total": 7.9
+    },
+    "costmap": {
+      "mean_ms": 0.67,
+      "p95_ms": 1.24,
+      "pct_of_total": 0.0
+    },
+    "dynamic_update": {
+      "mean_ms": 9.13,
+      "p95_ms": 12.63,
+      "pct_of_total": 0.5
+    },
+    "dwa": {
+      "mean_ms": 1613.71,
+      "p95_ms": 1839.06,
+      "pct_of_total": 91.5
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.02,
+      "p95_ms": 0.03,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 1763.34,
+      "p95_ms": 1999.67,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 0.57,
+    "command_publication_frequency_hz": 0.57
+  },
+  "with_vectorized_cpu_dwa": {
+    "perception": {
+      "mean_ms": 139.81,
+      "p95_ms": 157.52,
+      "pct_of_total": 51.1
+    },
+    "costmap": {
+      "mean_ms": 0.67,
+      "p95_ms": 1.24,
+      "pct_of_total": 0.2
+    },
+    "dynamic_update": {
+      "mean_ms": 9.13,
+      "p95_ms": 12.63,
+      "pct_of_total": 3.3
+    },
+    "dwa": {
+      "mean_ms": 123.82,
+      "p95_ms": 142.37,
+      "pct_of_total": 45.3
+    },
+    "behavior_arbitration": {
+      "mean_ms": 0.04,
+      "p95_ms": 0.07,
+      "pct_of_total": 0.0
+    },
+    "total_cycle": {
+      "mean_ms": 273.48,
+      "p95_ms": 305.19,
+      "pct_of_total": 100.0
+    },
+    "effective_planner_frequency_hz": 3.66,
+    "command_publication_frequency_hz": 3.66
+  },
+  "bottleneck_analysis": {
+    "reference_cpu_bottleneck": "DWA Local Planner",
+    "reference_cpu_dwa_share_pct": 91.5,
+    "vectorized_dwa_share_pct": 45.3,
+    "perception_share_pct_with_vectorized": 51.1,
+    "navigation_loop_speedup": 6.4
+  }
+}

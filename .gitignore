@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.obj
+*.o
+*.exp
+*.lib
 .Python
 build/
 develop-eggs/
@@ -23,6 +27,7 @@ wheels/
 # Virtual Environments
 venv/
 .venv/
+.venv*/
 env/
 .env
 .env.*
@@ -56,11 +61,20 @@ logs/
 *.log
 runs/
 wandb/
+output/
+outputs/
 /outputs/
+tmp/
+.codex-build/
+.codex-finalizer/
+*.tmp
+*.bak
 simulation/outputs/*
 !simulation/outputs/phase16/
 tools/kaggle/dataset/*.zip
 models/
+!simulation/models/
+!simulation/models/**/*.obj
 scratch/
 references/
 frame.jpg
@@ -71,3 +85,13 @@ gpu_results.zip
 Thumbs.db
 .DS_Store
 *.tar
+*.tar.gz
+artifacts/
+tools/kaggle/eval_dataset/
+
+# ROS2 build artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+notebooks/
+

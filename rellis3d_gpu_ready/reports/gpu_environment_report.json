@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-09-18T05:55:00Z",
+  "operating_system": {
+    "system": "Windows",
+    "release": "10",
+    "version": "10.0.26200-SP0",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "architecture": "AMD64"
+  },
+  "python_environment": {
+    "python_version": "3.10.10",
+    "executable": "python",
+    "pytorch_version": "2.6.0+cpu",
+    "cuda_runtime_version": null,
+    "cudnn_version": null
+  },
+  "gpu_hardware": {
+    "cuda_available": false,
+    "visible_devices": 0,
+    "active_device_index": null,
+    "device_name": null,
+    "compute_capability": null,
+    "vram_total_gb": 0.0,
+    "vram_free_gb": 0.0,
+    "physical_video_controller": {
+      "name": "Intel(R) Graphics",
+      "video_processor": "Intel(R) Graphics Family",
+      "driver_version": "32.0.101.8831",
+      "adapter_ram_bytes": 2147479552,
+      "adapter_ram_gb": 2.0
+    },
+    "discrete_nvidia_gpu_present": false
+  },
+  "subsystem_checks": {
+    "wsl_installed": true,
+    "wsl_distribution": "Ubuntu-22.04",
+    "wsl_nvidia_smi_available": false,
+    "wsl_cuda_available": false,
+    "wsl_status": "NO NVIDIA GPU pass-through detected in WSL"
+  },
+  "system_resources": {
+    "system_ram_total_gb": 15.47,
+    "system_ram_available_gb": 5.82,
+    "disk_total_gb": 500.0,
+    "disk_free_gb": 459.28
+  },
+  "model_execution_capability": {
+    "mixed_precision_supported": false,
+    "bfloat16_supported": false,
+    "model_fits_in_vram": false,
+    "tensor_verification_test": {
+      "command": "torch.tensor([1.0]).cuda()",
+      "result": "FAILED",
+      "error": "AssertionError: Torch not compiled with CUDA enabled"
+    }
+  },
+  "execution_decision": {
+    "status": "BLOCKED \u2014 GPU UNAVAILABLE",
+    "reason": "Host environment lacks an NVIDIA GPU and CUDA runtime. PyTorch 2.6.0+cpu is installed. Per Section 2 strict execution restrictions, training on CPU or CPU fallback is strictly prohibited. Kaggle execution is also prohibited per rule. GPU-only training is halted cleanly."
+  }
+}

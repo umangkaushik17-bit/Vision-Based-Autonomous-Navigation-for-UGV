@@ -1,0 +1,232 @@
+{
+  "world_name": "outdoor_presentation_100m",
+  "coordinate_frame": "odom",
+  "description": "Ground truth physical geometry and landmark registry for Phase 14.7.1 100m Presentation World and Phase 15 preparation",
+  "mission_reference": "configs/mission_phase14_5_100m.yaml",
+  "obstacles": [
+    {
+      "id": "obs_boulder_01",
+      "name": "W2 Detour Granite Boulder",
+      "type": "rock",
+      "position": [36.0, 1.8, 0.0],
+      "dimensions": [1.5, 1.4, 0.9],
+      "rotation_yaw_rad": 0.35,
+      "bounding_radius_m": 0.75,
+      "traversable": false,
+      "ground_truth_class": "critical_obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.95
+    },
+    {
+      "id": "obs_boulder_02",
+      "name": "W2 Outer Flank Boulder",
+      "type": "rock",
+      "position": [42.5, 8.5, 0.0],
+      "dimensions": [1.2, 1.1, 0.7],
+      "rotation_yaw_rad": 1.10,
+      "bounding_radius_m": 0.60,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.90
+    },
+    {
+      "id": "obs_boulder_03",
+      "name": "W1 South Boundary Outcrop",
+      "type": "rock",
+      "position": [26.0, -2.5, 0.0],
+      "dimensions": [1.1, 1.0, 0.6],
+      "rotation_yaw_rad": 0.75,
+      "bounding_radius_m": 0.55,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.85
+    },
+    {
+      "id": "obs_boulder_04",
+      "name": "Dynamic Zone Staging Rock",
+      "type": "rock",
+      "position": [54.0, -6.8, 0.0],
+      "dimensions": [1.3, 1.2, 0.8],
+      "rotation_yaw_rad": 2.20,
+      "bounding_radius_m": 0.65,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.90
+    },
+    {
+      "id": "obs_boulder_05",
+      "name": "W4 Chicane North Boulder",
+      "type": "rock",
+      "position": [76.0, 5.2, 0.0],
+      "dimensions": [1.4, 1.3, 0.9],
+      "rotation_yaw_rad": 0.45,
+      "bounding_radius_m": 0.70,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.90
+    },
+    {
+      "id": "obs_boulder_06",
+      "name": "W4 Chicane South Boulder",
+      "type": "rock",
+      "position": [83.5, 1.0, 0.0],
+      "dimensions": [1.3, 1.1, 0.8],
+      "rotation_yaw_rad": 1.85,
+      "bounding_radius_m": 0.65,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.90
+    },
+    {
+      "id": "obs_boulder_07",
+      "name": "Goal Gateway Rock South",
+      "type": "rock",
+      "position": [97.5, -3.2, 0.0],
+      "dimensions": [1.2, 1.2, 0.7],
+      "rotation_yaw_rad": 0.90,
+      "bounding_radius_m": 0.60,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.85
+    },
+    {
+      "id": "obs_boulder_08",
+      "name": "Goal Gateway Rock North",
+      "type": "rock",
+      "position": [97.5, 3.2, 0.0],
+      "dimensions": [1.2, 1.2, 0.7],
+      "rotation_yaw_rad": 2.70,
+      "bounding_radius_m": 0.60,
+      "traversable": false,
+      "ground_truth_class": "obstacle",
+      "expected_cost": 1.0,
+      "expected_hazard": 0.85
+    }
+  ],
+  "dynamic_obstacles": [
+    {
+      "id": "dynamic_obs_w1",
+      "name": "W1 Oncoming Head-On Rover",
+      "standby_position": [16.0, 3.2, 0.35],
+      "standby_yaw_rad": -1.570796,
+      "orientation_type": "head_on_oncoming",
+      "dimensions": [0.8, 0.8, 0.6],
+      "traversable": false,
+      "crossing_zone": "W1 corridor x in [10.0, 18.0], y in [-1.5, 3.5]",
+      "command_topic": "/dynamic_obs_w1/cmd_vel",
+      "odometry_topic": "/dynamic_obs_w1/odom"
+    },
+    {
+      "id": "dynamic_obs_w2",
+      "name": "W2 Lateral Left Crossing Rover",
+      "standby_position": [32.0, 7.5, 0.35],
+      "standby_yaw_rad": -1.570796,
+      "orientation_type": "lateral_from_left",
+      "dimensions": [0.8, 0.8, 0.6],
+      "traversable": false,
+      "crossing_zone": "W2 corridor x in [30.0, 35.0], y in [1.0, 7.5]",
+      "command_topic": "/dynamic_obs_w2/cmd_vel",
+      "odometry_topic": "/dynamic_obs_w2/odom"
+    },
+    {
+      "id": "dynamic_obs_w3",
+      "name": "W3 Lateral Right Crossing Rover",
+      "standby_position": [55.0, -7.5, 0.35],
+      "standby_yaw_rad": 1.570796,
+      "orientation_type": "lateral_from_right",
+      "dimensions": [0.8, 0.8, 0.6],
+      "traversable": false,
+      "crossing_zone": "W3 corridor x in [52.0, 58.0], y in [-7.5, 1.5]",
+      "command_topic": "/dynamic_obs_w3/cmd_vel",
+      "odometry_topic": "/dynamic_obs_w3/odom"
+    },
+    {
+      "id": "dynamic_obs_w4",
+      "name": "W4 Diagonal Intercept Rover",
+      "standby_position": [73.0, 5.5, 0.35],
+      "standby_yaw_rad": -2.356194,
+      "orientation_type": "diagonal_oncoming_intercept",
+      "dimensions": [0.8, 0.8, 0.6],
+      "traversable": false,
+      "crossing_zone": "W4 corridor x in [70.0, 76.0], y in [-1.0, 5.5]",
+      "command_topic": "/dynamic_obs_w4/cmd_vel",
+      "odometry_topic": "/dynamic_obs_w4/odom"
+    },
+    {
+      "id": "dynamic_obs_w5",
+      "name": "W5 Gateway Sentinel Rover",
+      "standby_position": [94.0, 2.5, 0.35],
+      "standby_yaw_rad": -1.570796,
+      "orientation_type": "gateway_oncoming_sentinel",
+      "dimensions": [0.8, 0.8, 0.6],
+      "traversable": false,
+      "crossing_zone": "W5 corridor x in [91.0, 97.0], y in [-2.5, 2.5]",
+      "command_topic": "/dynamic_obs_w5/cmd_vel",
+      "odometry_topic": "/dynamic_obs_w5/odom"
+    }
+  ],
+  "waypoints": [
+    {
+      "id": "W1",
+      "name": "Initial Straight Corridor",
+      "position": [20.0, 0.0, 0.0],
+      "xy_tolerance_m": 0.50,
+      "visual_beacon": "waypoint_beacon_w1",
+      "indicator_rings": 1,
+      "beacon_color_rgb": [0.0, 0.85, 1.0]
+    },
+    {
+      "id": "W2",
+      "name": "Lateral Left Detour",
+      "position": [40.0, 6.0, 0.0],
+      "xy_tolerance_m": 0.50,
+      "visual_beacon": "waypoint_beacon_w2",
+      "indicator_rings": 2,
+      "beacon_color_rgb": [1.0, 0.60, 0.0]
+    },
+    {
+      "id": "W3",
+      "name": "Dynamic Crossing Zone",
+      "position": [60.0, -4.0, 0.0],
+      "xy_tolerance_m": 0.50,
+      "visual_beacon": "waypoint_beacon_w3",
+      "indicator_rings": 3,
+      "beacon_color_rgb": [0.95, 0.15, 0.85]
+    },
+    {
+      "id": "W4",
+      "name": "Forest Chicane Passage",
+      "position": [80.0, 3.0, 0.0],
+      "xy_tolerance_m": 0.50,
+      "visual_beacon": "waypoint_beacon_w4",
+      "indicator_rings": 4,
+      "beacon_color_rgb": [1.0, 0.90, 0.05]
+    },
+    {
+      "id": "W5",
+      "name": "Final Mission Destination",
+      "position": [100.0, 0.0, 0.0],
+      "xy_tolerance_m": 0.50,
+      "visual_beacon": "waypoint_beacon_w5",
+      "indicator_rings": 5,
+      "beacon_color_rgb": [0.05, 1.0, 0.35]
+    }
+  ],
+  "reserved_regions": [
+    {
+      "id": "phase15_proving_ground_reservation",
+      "name": "Phase 15 Proving Ground Isolation Area",
+      "bounds_x": [30.0, 70.0],
+      "bounds_y": [-25.0, -10.0],
+      "z_elevation": 0.0,
+      "status": "reserved_for_future_phase_15_terrain_testing",
+      "active_in_phase14": false
+    }
+  ]
+}

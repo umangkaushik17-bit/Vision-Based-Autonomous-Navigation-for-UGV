@@ -1,13 +1,13 @@
 {
-  "timestamp": 1788521968.0773907,
+  "timestamp": 1789212052.252549,
   "scenarios": {
     "A_open": {
       "name": "Open Flat Terrain",
       "status": "FOLLOWING",
       "cmd_vel_x": 0.15000000000000002,
       "cmd_vel_z": 0.0,
-      "astar_latency_ms": 89.47,
-      "dwa_latency_ms": 2857.52,
+      "astar_latency_ms": 53.9,
+      "dwa_latency_ms": 1868.6,
       "path_length_m": 6.0,
       "emergency_stopped": false
     },
@@ -16,8 +16,8 @@
       "status": "FOLLOWING",
       "cmd_vel_x": 0.15000000000000002,
       "cmd_vel_z": 0.16666666666666663,
-      "astar_latency_ms": 197.58,
-      "dwa_latency_ms": 2982.48,
+      "astar_latency_ms": 359.37,
+      "dwa_latency_ms": 1892.95,
       "path_length_m": 6.45,
       "emergency_stopped": false
     },
@@ -26,8 +26,8 @@
       "status": "FOLLOWING",
       "cmd_vel_x": 0.15000000000000002,
       "cmd_vel_z": 0.16666666666666663,
-      "astar_latency_ms": 127.58,
-      "dwa_latency_ms": 2779.67,
+      "astar_latency_ms": 87.62,
+      "dwa_latency_ms": 2169.65,
       "path_length_m": 6.51,
       "emergency_stopped": false
     },
@@ -36,8 +36,8 @@
       "status": "FOLLOWING",
       "cmd_vel_x": 0.15000000000000002,
       "cmd_vel_z": -0.16666666666666669,
-      "astar_latency_ms": 133.9,
-      "dwa_latency_ms": 3024.29,
+      "astar_latency_ms": 84.92,
+      "dwa_latency_ms": 1858.95,
       "path_length_m": 6.54,
       "emergency_stopped": false
     },
@@ -46,7 +46,7 @@
       "status": "NO_PATH",
       "cmd_vel_x": 0.0,
       "cmd_vel_z": 0.0,
-      "astar_latency_ms": 1288.62,
+      "astar_latency_ms": 992.22,
       "dwa_latency_ms": 0.0,
       "path_length_m": 0.0,
       "emergency_stopped": true
@@ -85,36 +85,36 @@
   "map_scaling": {
     "50x50": {
       "dimension": "50x50",
-      "mean_latency_ms": 3.7,
-      "p50_latency_ms": 3.75,
-      "p95_latency_ms": 4.35,
+      "mean_latency_ms": 2.81,
+      "p50_latency_ms": 2.4,
+      "p95_latency_ms": 4.17,
       "mean_nodes_expanded": 0,
       "mean_path_length_m": 0.0,
       "ram_footprint_mb": 0.1
     },
     "100x100": {
       "dimension": "100x100",
-      "mean_latency_ms": 4.54,
-      "p50_latency_ms": 4.68,
-      "p95_latency_ms": 4.87,
+      "mean_latency_ms": 2.97,
+      "p50_latency_ms": 2.85,
+      "p95_latency_ms": 3.38,
       "mean_nodes_expanded": 0,
       "mean_path_length_m": 0.0,
       "ram_footprint_mb": 0.4
     },
     "200x200": {
       "dimension": "200x200",
-      "mean_latency_ms": 6.21,
-      "p50_latency_ms": 5.48,
-      "p95_latency_ms": 7.91,
+      "mean_latency_ms": 3.35,
+      "p50_latency_ms": 2.98,
+      "p95_latency_ms": 4.54,
       "mean_nodes_expanded": 0,
       "mean_path_length_m": 0.0,
       "ram_footprint_mb": 1.6
     },
     "400x400": {
       "dimension": "400x400",
-      "mean_latency_ms": 11.32,
-      "p50_latency_ms": 11.66,
-      "p95_latency_ms": 12.42,
+      "mean_latency_ms": 7.77,
+      "p50_latency_ms": 6.4,
+      "p95_latency_ms": 11.06,
       "mean_nodes_expanded": 0,
       "mean_path_length_m": 0.0,
       "ram_footprint_mb": 6.41
@@ -4777,19 +4777,19 @@
   },
   "latency_summary": {
     "astar_planning_ms": {
-      "mean": 6.44,
-      "p50": 5.11,
-      "p95": 12.05
+      "mean": 4.23,
+      "p50": 3.01,
+      "p95": 10.16
     },
     "dwa_cycle_ms": {
-      "mean": 1771.3,
-      "p50": 1425.27,
-      "p95": 2849.49
+      "mean": 2146.32,
+      "p50": 2161.24,
+      "p95": 2460.66
     },
     "collision_check_ms": {
-      "mean": 0.229,
-      "p50": 0.206,
-      "p95": 0.482
+      "mean": 0.135,
+      "p50": 0.118,
+      "p95": 0.218
     }
   }
 }

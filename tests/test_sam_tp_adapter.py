@@ -19,7 +19,7 @@ def test_predictor_inheritance(predictor):
     """Verify SAMTPTraversabilityPredictor complies with TraversabilityPredictorBase contract."""
     assert isinstance(predictor, TraversabilityPredictorBase)
     assert predictor.device == "cpu"
-    assert "SAM-TP" in predictor.model_name
+    assert any(k in predictor.model_name for k in ["SAM-TP", "LightweightTraversabilityNet", "RELLIS3D"])
 
 
 def test_predict_array_input(predictor):

@@ -63,7 +63,11 @@ def package_code() -> str:
     """Create a lean zip package of local code (ai, simulation, tests, validation, configs)."""
     os.makedirs(DATASET_DIR, exist_ok=True)
     zip_path = os.path.join(DATASET_DIR, "code.zip")
-    include_dirs = ["ai", "simulation", "tests", "validation", "config", "scripts", "docs", "ros2_ws"]
+    include_dirs = [
+        "ai", "simulation", "tests", "validation", "config", "configs",
+        "scripts", "docs", "ros2_ws", "models", "rellis3d_gpu_ready", "reports",
+        "data/benchmark_test"
+    ]
 
     print(f"[*] Packaging local code into {zip_path} ...")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -71,7 +75,10 @@ def package_code() -> str:
             if not os.path.exists(d):
                 continue
             for root, _, files in os.walk(d):
-                if any(p in root for p in ["__pycache__", "outputs", ".pytest_cache", ".venv"]):
+                parts = root.split(os.sep)
+                if any(p in parts for p in ["__pycache__", ".pytest_cache", ".venv", "build", "install", "log", "kaggle"]):
+                    continue
+                if "outputs" in parts and not any(k in parts for k in ["performance", "phase16", "phase16_r2", "checkpoints", "exports", "reports"]):
                     continue
                 for f in files:
                     if f.endswith((".pyc", ".pyo")):
@@ -113,7 +120,7 @@ def sync_code(notes: str = "Sync local code changes") -> bool:
     cur_dir = os.getcwd()
     try:
         os.chdir(DATASET_DIR)
-        api.dataset_create_version(".", version_notes=notes, quiet=False)
+        api.dataset_create_version(".", version_notes=notes, quiet=True)
         print("[+] Code dataset uploaded. Waiting for Kaggle processing...")
         for _ in range(30):
             time.sleep(3)
@@ -144,6 +151,7 @@ def sync_kernel_metadata(username: str, kernel_slug: str = "sih2026-ugv-gpu-runn
         "enable_tpu": "false",
         "enable_internet": "true",
         "dataset_sources": [
+            f"{username}/sih2026-traversability-eval",
             f"{username}/sih2026-ugv-code"
         ],
         "competition_sources": [],
@@ -171,6 +179,42 @@ def setup_token(username: str, token_key: str) -> bool:
         return False
 
 
+def push_kernel_with_t4(api, folder: str, machine_shape: str = "NvidiaTeslaT4"):
+    """Push kernel to Kaggle with explicit accelerator machineShape specification."""
+    from kagglesdk.kernels.types.kernels_api_service import ApiSaveKernelRequest
+    from kagglesdk.kaggle_object import FieldMetadata, PredefinedSerializer
+
+    if not any(f.field_name == "machine_shape" for f in ApiSaveKernelRequest._fields):
+        f = FieldMetadata("machineShape", "machine_shape", "_machine_shape", str, None, PredefinedSerializer(), optional=True)
+        ApiSaveKernelRequest._fields.append(f)
+        ApiSaveKernelRequest.machine_shape = property(
+            lambda self: getattr(self, "_machine_shape", None),
+            lambda self, v: object.__setattr__(self, "_machine_shape", v),
+        )
+
+    with open(os.path.join(folder, "kernel-metadata.json"), "r", encoding="utf-8") as f:
+        meta_data = json.load(f)
+    code_path = meta_data.get("code_file", "ugv_gpu_runner.py")
+    with open(os.path.join(folder, code_path), "r", encoding="utf-8") as f:
+        script_body = f.read()
+
+    client = api.build_kaggle_client()
+    request = ApiSaveKernelRequest()
+    request.slug = meta_data.get("id")
+    request.new_title = meta_data.get("title")
+    request.text = script_body
+    request.language = meta_data.get("language", "python")
+    request.kernel_type = meta_data.get("kernel_type", "script")
+    request.is_private = True
+    request.enable_gpu = True
+    request.enable_tpu = False
+    request.enable_internet = True
+    request.dataset_data_sources = meta_data.get("dataset_sources", [])
+    request.machine_shape = machine_shape
+
+    return client.kernels.kernels_api_client.save_kernel(request)
+
+
 def submit_kernel(custom_cmd: str | None = None) -> bool:
     """Push kernel to Kaggle cloud GPU."""
     username, _ = init_credentials()
@@ -189,10 +233,10 @@ def submit_kernel(custom_cmd: str | None = None) -> bool:
             f.write(code)
         print(f"[*] Configured execution command: {custom_cmd}")
 
-    print(f"[*] Submitting kernel {kernel_id} to Kaggle Cloud GPU...")
+    print(f"[*] Submitting kernel {kernel_id} to Kaggle Cloud GPU (Target: Tesla T4)...")
     api = get_kaggle_api()
     try:
-        res = api.kernels_push(TOOLS_DIR)
+        res = push_kernel_with_t4(api, TOOLS_DIR, "NvidiaTeslaT4")
         url = getattr(res, "url", f"/code/{kernel_id}")
         version = getattr(res, "version_number", getattr(res, "versionNumber", 1))
         print(f"[+] Kernel submitted successfully!")
@@ -232,15 +276,105 @@ def check_status() -> dict:
 
 def download_outputs() -> bool:
     """Download generated output artifacts from Kaggle to local simulation/outputs/kaggle/."""
+    import builtins
+    _orig_open = builtins.open
+
+    def _utf8_open(file, mode="r", *args, **kwargs):
+        if "b" not in mode and "encoding" not in kwargs:
+            kwargs["encoding"] = "utf-8"
+            kwargs["errors"] = "replace"
+        return _orig_open(file, mode, *args, **kwargs)
+
+    builtins.open = _utf8_open
+
     username, _ = init_credentials()
     kernel_id = f"{username}/sih2026-ugv-gpu-runner"
+    shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     print(f"[*] Downloading outputs from {kernel_id} to {OUTPUT_DIR} ...")
     api = get_kaggle_api()
     for attempt in range(1, 4):
         try:
-            res = api.kernels_output(kernel_id, OUTPUT_DIR)
+            res = api.kernels_output(kernel_id, OUTPUT_DIR, force=True)
             print(f"[+] Output download finished. Artifacts saved in {OUTPUT_DIR}")
+
+            # Propagate all performance, phase16_r2, reports, outputs, data, artifacts, logs
+            perf_dest = os.path.join("simulation", "outputs", "performance")
+            r2_dest = os.path.join("simulation", "outputs", "phase16_r2")
+            os.makedirs(perf_dest, exist_ok=True)
+            os.makedirs(r2_dest, exist_ok=True)
+
+            # Sync directories directly if present in OUTPUT_DIR
+            for dir_name in ["reports", "outputs", "artifacts", "logs"]:
+                src_d = os.path.join(OUTPUT_DIR, dir_name)
+                if os.path.exists(src_d):
+                    shutil.copytree(src_d, dir_name, dirs_exist_ok=True)
+                    print(f"    [+] Synced directory: {src_d} -> {dir_name}")
+
+            # Also check if data/rellis3d exists in OUTPUT_DIR
+            src_data = os.path.join(OUTPUT_DIR, "data", "rellis3d")
+            if os.path.exists(src_data):
+                dst_data = os.path.join("data", "rellis3d")
+                shutil.copytree(src_data, dst_data, dirs_exist_ok=True)
+                print(f"    [+] Synced data directory: {src_data} -> {dst_data}")
+            elif os.path.exists(os.path.join(OUTPUT_DIR, "rellis3d")):
+                dst_data = os.path.join("data", "rellis3d")
+                os.makedirs(dst_data, exist_ok=True)
+                for item in os.listdir(os.path.join(OUTPUT_DIR, "rellis3d")):
+                    sp = os.path.join(OUTPUT_DIR, "rellis3d", item)
+                    dp = os.path.join(dst_data, item)
+                    if os.path.isfile(sp):
+                        shutil.copy2(sp, dp)
+                        print(f"    [+] Synced rellis3d item: {sp} -> {dp}")
+
+            for root, dirs, files in os.walk(OUTPUT_DIR):
+                root_lower = root.lower()
+                # Check for t4_environment.json or kaggle_t4_environment.json anywhere
+                for f in files:
+                    if f in ("t4_environment.json", "kaggle_t4_environment.json"):
+                        dst_f = os.path.join("reports", f)
+                        os.makedirs("reports", exist_ok=True)
+                        shutil.copy2(os.path.join(root, f), dst_f)
+                        print(f"    [+] Synced environment report: {dst_f}")
+                    elif f.endswith((".md", ".json", ".csv", ".pt", ".zip")) and any(k in root_lower for k in ["reports", "rellis3d", "outputs"]):
+                        rel = os.path.relpath(root, OUTPUT_DIR)
+                        dst_target = os.path.join(rel, f)
+                        os.makedirs(os.path.dirname(dst_target), exist_ok=True)
+                        shutil.copy2(os.path.join(root, f), dst_target)
+                        print(f"    [+] Synced artifact: {dst_target}")
+
+                if "phase16_r2" in root_lower:
+                    rel = os.path.relpath(root, OUTPUT_DIR)
+                    rel_parts = rel.split(os.sep)
+                    idx = -1
+                    for i, p in enumerate(rel_parts):
+                        if p.lower() == "phase16_r2":
+                            idx = i
+                            break
+                    subpath = os.sep.join(rel_parts[idx + 1:]) if idx != -1 else ""
+                    target_dir = os.path.join(r2_dest, subpath)
+                    os.makedirs(target_dir, exist_ok=True)
+                    for f in files:
+                        src_file = os.path.join(root, f)
+                        dst_file = os.path.join(target_dir, f)
+                        shutil.copy2(src_file, dst_file)
+                        print(f"    [+] Synced Phase16-R2 artifact: {dst_file}")
+                elif "performance" in root_lower:
+                    for f in files:
+                        if f.endswith((".json", ".csv", ".png")):
+                            src_file = os.path.join(root, f)
+                            if "parity" in root_lower:
+                                target_dir = os.path.join(perf_dest, "parity")
+                            elif "cuda" in root_lower:
+                                target_dir = os.path.join(perf_dest, "cuda")
+                            elif "stability" in root_lower:
+                                target_dir = os.path.join(perf_dest, "stability")
+                            else:
+                                target_dir = perf_dest
+                            os.makedirs(target_dir, exist_ok=True)
+                            dst_file = os.path.join(target_dir, f)
+                            shutil.copy2(src_file, dst_file)
+                            print(f"    [+] Synced performance artifact: {dst_file}")
             return True
         except Exception as e:
             print(f"[-] Download attempt {attempt}/3 failed: {e}")

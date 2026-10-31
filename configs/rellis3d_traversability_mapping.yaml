@@ -1,0 +1,121 @@
+# RELLIS-3D Traversability Class Mapping Configuration
+# Authoritative mapping between RELLIS-3D class IDs, names, traversability categories, model output categories, and safety interpretations.
+
+dataset_name: "RELLIS-3D"
+version: "1.0.0"
+
+# Target Categories:
+# - TRAVERSABLE (SAFE): Output index 0
+# - RISKY / UNKNOWN: Output index 1
+# - NON_TRAVERSABLE / OBSTACLE (UNSAFE): Output index 2
+# - UNKNOWN / IGNORE (VOID): Output index 255 (masked in loss)
+
+classes:
+  0:
+    name: "void"
+    traversability_category: "UNKNOWN/IGNORE"
+    model_output_category: 255
+    safety_interpretation: "Unannotated background or noise. Masked from loss and costmap."
+  1:
+    name: "dirt"
+    traversability_category: "TRAVERSABLE"
+    model_output_category: 0
+    safety_interpretation: "Compacted earthen dirt road/trail. Safe for high velocity navigation."
+  3:
+    name: "grass"
+    traversability_category: "TRAVERSABLE"
+    model_output_category: 0
+    safety_interpretation: "Benign low/medium vegetation. Fully traversable with minor traction reduction."
+  4:
+    name: "tree"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Rigid vertical trunk structure. Non-traversable lethal obstacle."
+  5:
+    name: "pole"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Vertical pole/post. Non-traversable collision hazard."
+  6:
+    name: "water"
+    traversability_category: "NON_TRAVERSABLE"
+    model_output_category: 2
+    safety_interpretation: "Deep or flowing water body. Extreme drowning/electronics hazard. Impassable."
+  7:
+    name: "sky"
+    traversability_category: "UNKNOWN/IGNORE"
+    model_output_category: 255
+    safety_interpretation: "Overhead atmosphere. Ignored during traversability loss computation."
+  8:
+    name: "vehicle"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Automobile or mobile equipment. Collision hazard; non-traversable."
+  9:
+    name: "object"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Unspecified manmade rigid object. Lethal collision risk."
+  10:
+    name: "asphalt"
+    traversability_category: "TRAVERSABLE"
+    model_output_category: 0
+    safety_interpretation: "Paved road surface. Highest friction coefficient; fully traversable."
+  12:
+    name: "building"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Architectural structure. Impassable boundary."
+  15:
+    name: "log"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Fallen tree trunk/large wood debris. High risk of high-centering. Non-traversable."
+  17:
+    name: "person"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Human pedestrian. Safety-critical collision avoidance mandatory."
+  18:
+    name: "fence"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Perimeter fence barrier. Impassable barrier."
+  19:
+    name: "bush"
+    traversability_category: "RISKY"
+    model_output_category: 1
+    safety_interpretation: "Dense shrub/undergrowth. Reduced speed required, uncertain obstacle concealment."
+  23:
+    name: "concrete"
+    traversability_category: "TRAVERSABLE"
+    model_output_category: 0
+    safety_interpretation: "Rigid paved pathway/platform. High traction; fully traversable."
+  27:
+    name: "barrier"
+    traversability_category: "OBSTACLE"
+    model_output_category: 2
+    safety_interpretation: "Roadside crash barrier or concrete divider. Non-traversable obstacle."
+  31:
+    name: "puddle"
+    traversability_category: "RISKY"
+    model_output_category: 1
+    safety_interpretation: "Standing surface water of indeterminate depth. Speed reduction required."
+  33:
+    name: "mud"
+    traversability_category: "RISKY"
+    model_output_category: 1
+    safety_interpretation: "Soft saturated soil with high wheel-slip and entrapment hazard."
+  34:
+    name: "rubble"
+    traversability_category: "NON_TRAVERSABLE"
+    model_output_category: 2
+    safety_interpretation: "Rough jagged rock/concrete debris. Severe puncture and chassis damage hazard."
+
+model_contract:
+  num_classes: 3
+  class_labels:
+    0: "TRAVERSABLE"
+    1: "RISKY_UNKNOWN"
+    2: "NON_TRAVERSABLE_OBSTACLE"
+  ignore_index: 255

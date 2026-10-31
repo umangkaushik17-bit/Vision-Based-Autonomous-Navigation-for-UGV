@@ -1,0 +1,85 @@
+=== STATIC DWA PROFILE (cumulative time) ===
+         15905077 function calls (15901918 primitive calls) in 8.233 seconds
+
+   Ordered by: cumulative time
+   List reduced from 104 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        3    0.012    0.004    8.247    2.749 C:\Users\shres\Desktop\SIH2026\ai\planning\local_planners\dwa.py:192(compute_trajectory)
+     1125    0.141    0.000    8.216    0.007 C:\Users\shres\Desktop\SIH2026\ai\planning\local_planners\dwa.py:128(_predict_trajectory)
+    15468    1.056    0.000    7.108    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:153(is_footprint_collision)
+  1209738    1.855    0.000    4.228    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:42(is_point_collision)
+    15468    0.400    0.000    1.201    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:77(is_circle_collision)
+  1240338    0.424    0.000    1.054    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:23(_grid_coords)
+    15132    0.368    0.000    0.814    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:245(get_clearance)
+  1224870    0.422    0.000    0.763    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:35(_is_grid_in_bounds)
+    15468    0.078    0.000    0.586    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_function_base_impl.py:5117(meshgrid)
+  6367134    0.546    0.000    0.546    0.000 {built-in method builtins.hasattr}
+  1255470    0.502    0.000    0.502    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:83(world_to_grid)
+    15468    0.034    0.000    0.408    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:481(broadcast_arrays)
+    30270    0.257    0.000    0.371    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\function_base.py:25(linspace)
+  1240338    0.345    0.000    0.345    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:101(is_in_bounds)
+    15468    0.027    0.000    0.312    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:546(<listcomp>)
+    30936    0.211    0.000    0.285    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:340(_broadcast_to)
+    15132    0.037    0.000    0.267    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\numeric.py:591(argwhere)
+    15468    0.173    0.000    0.232    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:126(get_footprint_corners)
+  1224870    0.218    0.000    0.218    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:105(is_grid_in_bounds)
+    30267    0.032    0.000    0.202    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:51(_wrapfunc)
+    61536    0.127    0.000    0.127    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+    15132    0.009    0.000    0.124    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:2018(nonzero)
+    46404    0.022    0.000    0.123    0.000 {method 'any' of 'numpy.ndarray' objects}
+    15132    0.022    0.000    0.113    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:3190(min)
+    15132    0.081    0.000    0.109    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\costs.py:44(evaluate_cell_cost)
+    46404    0.019    0.000    0.100    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\_methods.py:58(_any)
+    15132    0.098    0.000    0.098    0.000 {method 'nonzero' of 'numpy.ndarray' objects}
+    15132    0.007    0.000    0.094    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:630(transpose)
+    15132    0.032    0.000    0.090    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:69(_wrapreduction)
+    93600    0.074    0.000    0.074    0.000 {built-in method numpy.array}
+
+
+
+
+=== DYNAMIC DWA PROFILE (cumulative time) ===
+         29808349 function calls (29803846 primitive calls) in 18.349 seconds
+
+   Ordered by: cumulative time
+   List reduced from 137 to 35 due to restriction <35>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        3    0.028    0.009   18.382    6.127 C:\Users\shres\Desktop\SIH2026\ai\planning\local_planners\dwa.py:192(compute_trajectory)
+      954    2.370    0.002    9.306    0.010 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\collision_checker.py:462(check_trajectory)
+     1125    0.151    0.000    8.943    0.008 C:\Users\shres\Desktop\SIH2026\ai\planning\local_planners\dwa.py:128(_predict_trajectory)
+    16875    1.164    0.000    8.019    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:153(is_footprint_collision)
+  1344711    2.066    0.000    4.723    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:42(is_point_collision)
+    14310    0.781    0.000    1.620    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\collision_checker.py:246(sample_ugv_footprint_points)
+    16875    0.467    0.000    1.454    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:77(is_circle_collision)
+    14310    1.300    0.000    1.334    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\occupancy_layer.py:395(get_slice)
+    14310    0.483    0.000    1.199    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\collision_checker.py:197(compute_polygon_clearance)
+  1378461    0.478    0.000    1.179    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:23(_grid_coords)
+    28620    0.321    0.000    1.016    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\data_model.py:68(polygon_intersection_sat)
+  1361586    0.481    0.000    0.858    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:35(_is_grid_in_bounds)
+  1253181    0.641    0.000    0.797    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\occupancy_layer.py:158(world_to_grid)
+    62376    0.524    0.000    0.757    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\function_base.py:25(linspace)
+    16875    0.090    0.000    0.742    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_function_base_impl.py:5117(meshgrid)
+  1253181    0.415    0.000    0.685    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\enum.py:359(__call__)
+  7077930    0.606    0.000    0.606    0.000 {built-in method builtins.hasattr}
+    16875    0.238    0.000    0.600    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:245(get_clearance)
+  1395336    0.560    0.000    0.560    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:83(world_to_grid)
+    16875    0.038    0.000    0.540    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:481(broadcast_arrays)
+    42930    0.341    0.000    0.471    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\data_model.py:27(compute_obb_corners)
+   232152    0.451    0.000    0.451    0.000 {built-in method numpy.array}
+    16875    0.030    0.000    0.429    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:546(<listcomp>)
+    33750    0.318    0.000    0.399    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\lib\_stride_tricks_impl.py:340(_broadcast_to)
+  1378461    0.387    0.000    0.387    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:101(is_in_bounds)
+   118416    0.135    0.000    0.375    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:69(_wrapreduction)
+    16875    0.042    0.000    0.291    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\numeric.py:591(argwhere)
+   457920    0.239    0.000    0.287    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\collision_checker.py:171(point_to_segment_distance)
+    59208    0.057    0.000    0.274    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:3190(min)
+   169041    0.272    0.000    0.272    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+  1253181    0.270    0.000    0.270    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\enum.py:678(__new__)
+    16875    0.188    0.000    0.253    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\collision.py:126(get_footprint_corners)
+  1361586    0.240    0.000    0.240    0.000 C:\Users\shres\Desktop\SIH2026\ai\spatial_fusion\world_map.py:105(is_grid_in_bounds)
+    33753    0.035    0.000    0.218    0.000 C:\Users\shres\AppData\Local\Programs\Python\Python310\lib\site-packages\numpy\_core\fromnumeric.py:51(_wrapfunc)
+  1253181    0.212    0.000    0.212    0.000 C:\Users\shres\Desktop\SIH2026\ai\planning\dynamic\occupancy_layer.py:176(is_grid_in_bounds)
+
+

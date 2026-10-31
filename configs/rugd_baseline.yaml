@@ -1,0 +1,55 @@
+# RUGD Dense Traversability Baseline Configuration
+# Model: LightweightTraversabilityNet (MobileNetV3-Small Encoder-Decoder)
+# Trained on RUGD Off-Road Dataset for UGV Autonomous Navigation
+
+model:
+  architecture: "LightweightTraversabilityNet"
+  backbone: "mobilenet_v3_small"
+  num_classes: 3
+  class_labels:
+    0: "SAFE"
+    1: "UNKNOWN"
+    2: "UNSAFE"
+  ignore_index: 255
+  parameter_count: 1152067
+  model_size_mb: 4.55
+
+checkpoint:
+  primary: "models/rugd_traversability/outputs/checkpoints/best.pt"
+  latest: "models/rugd_traversability/outputs/checkpoints/latest.pt"
+  sha256: "a49d4222a208b0d79aa2a1df9c8d28c5f31809955bd0a85336fc92d5e849cd91"
+  size_bytes: 4549086
+
+input:
+  color_space: "RGB"
+  channels: 3
+  nominal_resolution: [480, 640]
+  supported_resolutions:
+    - [480, 640]
+    - [400, 640]
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+output:
+  tensor_shape: [null, 3, null, null]
+  logits: true
+  activation: "softmax"
+
+training_hyperparameters:
+  loss: "CombinedTraversabilityLoss (CrossEntropy + Focal + Dice)"
+  optimizer: "AdamW"
+  learning_rate: 0.0005
+  weight_decay: 0.0001
+  batch_size: 8
+  epochs_completed: 38
+  early_stopped: true
+
+baseline_metrics:
+  validation_miou: 0.9803
+  pixel_accuracy: 0.9982
+  safe_iou: 0.9896
+  unknown_iou: 0.9981
+  unsafe_iou: 0.9553
+  unsafe_recall: 0.9709
+  false_safe_ratio: 0.0221

@@ -53,7 +53,7 @@ safety:
   # Staleness timeouts and watchdogs
   max_map_age_s: 2.00
   max_localization_age_s: 1.00
-  command_timeout_s: 0.25
+  command_timeout_s: 0.35
   replan_cross_track_threshold_m: 0.50
   replan_blocked_lookahead_m: 2.00
   command_rate_hz: 10.0

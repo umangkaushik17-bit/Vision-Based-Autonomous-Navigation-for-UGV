@@ -1,0 +1,209 @@
+{
+  "hardware_environment": {
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 155H",
+    "cores": 16,
+    "logical_processors": 22,
+    "gpu_model": "Intel(R) Graphics (Arc architecture, driver 32.0.101.8831)",
+    "npu_model": "Intel(R) AI Boost (driver 32.0.100.4512)",
+    "os": "Windows 10 AMD64 / WSL2 Linux 6.18",
+    "pytorch_version": "2.6.0+cpu"
+  },
+  "backends_status": {
+    "CPU": {
+      "available": true,
+      "validated": true
+    },
+    "VECTORIZED_CPU": {
+      "available": true,
+      "validated": true
+    },
+    "CUDA": {
+      "available": false,
+      "validated": false,
+      "reason": "No NVIDIA CUDA GPU on host"
+    },
+    "INTEL_GPU": {
+      "available": false,
+      "validated": false,
+      "reason": "torch.xpu runtime not installed in environment"
+    },
+    "NPU": {
+      "available": false,
+      "validated": false,
+      "reason": "Technically unsuitable for dynamic geometric DWA"
+    }
+  },
+  "benchmark_comparison": {
+    "cpu_reference": {
+      "backend": "Reference CPU (DWAPlanner)",
+      "grand_mean_ms": 3174.44,
+      "grand_median_ms": 3270.99,
+      "grand_p95_ms": 3373.83,
+      "mean_candidates_per_second": 160.2,
+      "scenarios": [
+        {
+          "scenario": "Static Baseline",
+          "mean_ms": 1546.2,
+          "median_ms": 1534.77,
+          "p95_ms": 1611.94,
+          "p99_ms": 1626.16,
+          "max_ms": 1629.72,
+          "candidates_per_second": 242.5,
+          "cpu_percent": 79.2,
+          "ram_mb": 349.65,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 0.9301
+        },
+        {
+          "scenario": "Moving Obstacle Outside Corridor",
+          "mean_ms": 1348.2,
+          "median_ms": 1350.69,
+          "p95_ms": 1363.36,
+          "p99_ms": 1365.1,
+          "max_ms": 1365.54,
+          "candidates_per_second": 278.1,
+          "cpu_percent": 99.0,
+          "ram_mb": 349.66,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 1.1801
+        },
+        {
+          "scenario": "Crossing Obstacle",
+          "mean_ms": 3595.15,
+          "median_ms": 3575.28,
+          "p95_ms": 3691.55,
+          "p99_ms": 3710.14,
+          "max_ms": 3714.78,
+          "candidates_per_second": 104.3,
+          "cpu_percent": 99.1,
+          "ram_mb": 352.4,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 1.0953
+        },
+        {
+          "scenario": "Four Dynamic Obstacles",
+          "mean_ms": 6111.67,
+          "median_ms": 5951.67,
+          "p95_ms": 6855.09,
+          "p99_ms": 7034.73,
+          "max_ms": 7079.63,
+          "candidates_per_second": 61.4,
+          "cpu_percent": 99.3,
+          "ram_mb": 352.42,
+          "selected_v": 0.15,
+          "selected_w": -0.208,
+          "planner_status": "SUCCESS",
+          "score": 0.8684
+        },
+        {
+          "scenario": "Static + Dynamic Combination",
+          "mean_ms": 3270.99,
+          "median_ms": 3287.12,
+          "p95_ms": 3347.19,
+          "p99_ms": 3347.9,
+          "max_ms": 3348.07,
+          "candidates_per_second": 114.6,
+          "cpu_percent": 99.8,
+          "ram_mb": 352.42,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 0.5446
+        }
+      ]
+    },
+    "vectorized_cpu": {
+      "backend": "Vectorized CPU (PyTorch SIMD)",
+      "grand_mean_ms": 130.91,
+      "grand_median_ms": 131.33,
+      "grand_p95_ms": 143.13,
+      "mean_candidates_per_second": 4498.6,
+      "scenarios": [
+        {
+          "scenario": "Static Baseline",
+          "mean_ms": 30.78,
+          "median_ms": 31.19,
+          "p95_ms": 34.98,
+          "p99_ms": 35.72,
+          "max_ms": 35.9,
+          "candidates_per_second": 12184.0,
+          "cpu_percent": 343.4,
+          "ram_mb": 390.38,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 0.9301
+        },
+        {
+          "scenario": "Moving Obstacle Outside Corridor",
+          "mean_ms": 110.31,
+          "median_ms": 109.45,
+          "p95_ms": 120.84,
+          "p99_ms": 122.22,
+          "max_ms": 122.57,
+          "candidates_per_second": 3399.6,
+          "cpu_percent": 202.9,
+          "ram_mb": 402.15,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 1.1801
+        },
+        {
+          "scenario": "Crossing Obstacle",
+          "mean_ms": 131.33,
+          "median_ms": 128.55,
+          "p95_ms": 142.58,
+          "p99_ms": 144.88,
+          "max_ms": 145.46,
+          "candidates_per_second": 2855.5,
+          "cpu_percent": 224.9,
+          "ram_mb": 411.47,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 1.0953
+        },
+        {
+          "scenario": "Four Dynamic Obstacles",
+          "mean_ms": 225.1,
+          "median_ms": 228.48,
+          "p95_ms": 247.27,
+          "p99_ms": 251.71,
+          "max_ms": 252.82,
+          "candidates_per_second": 1665.9,
+          "cpu_percent": 252.9,
+          "ram_mb": 411.16,
+          "selected_v": 0.15,
+          "selected_w": -0.208,
+          "planner_status": "SUCCESS",
+          "score": 0.8684
+        },
+        {
+          "scenario": "Static + Dynamic Combination",
+          "mean_ms": 157.04,
+          "median_ms": 156.87,
+          "p95_ms": 169.97,
+          "p99_ms": 170.33,
+          "max_ms": 170.42,
+          "candidates_per_second": 2387.9,
+          "cpu_percent": 232.9,
+          "ram_mb": 413.19,
+          "selected_v": 0.15,
+          "selected_w": 0.0,
+          "planner_status": "SUCCESS",
+          "score": 0.5393
+        }
+      ]
+    },
+    "speedup_factor": 24.2,
+    "collision_false_negatives": 0,
+    "stop_to_proceed_divergences": 0
+  }
+}

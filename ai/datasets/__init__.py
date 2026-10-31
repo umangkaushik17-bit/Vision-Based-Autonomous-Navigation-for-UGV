@@ -11,7 +11,10 @@ from ai.datasets.split_manager import SplitManager
 from ai.datasets.synthetic_dataset import SyntheticSequenceGenerator
 from ai.datasets.public_dataset import RUGDAdapter, RELLIS3DAdapter
 from ai.datasets.own_dataset import OwnDataImporter
-from ai.datasets.ugv_dataset import UGVDataset, OutdoorAugmentation, create_dataloader
+try:
+    from ai.datasets.ugv_dataset import UGVDataset, OutdoorAugmentation, create_dataloader
+except (ImportError, ModuleNotFoundError):
+    UGVDataset, OutdoorAugmentation, create_dataloader = None, None, None
 from ai.datasets.audit import DatasetAuditor, AuditReport
 
 __all__ = [

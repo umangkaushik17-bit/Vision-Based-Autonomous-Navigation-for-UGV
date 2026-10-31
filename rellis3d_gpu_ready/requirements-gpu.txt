@@ -1,0 +1,19 @@
+# Core PyTorch with CUDA (Match your CUDA runtime, e.g., cu118 or cu121)
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.1.0
+torchvision>=0.16.0
+
+# Computer Vision and Image Processing
+numpy>=1.24.0,<2.0.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+
+# Machine Learning & Profiling
+scikit-learn>=1.3.0
+pyyaml>=6.0
+tqdm>=4.65.0
+psutil>=5.9.0
+
+# Optional ONNX Runtime Inference Acceleration
+onnx>=1.14.0
+onnxruntime-gpu>=1.16.0; platform_system != "Darwin"

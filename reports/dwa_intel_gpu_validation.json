@@ -1,0 +1,354 @@
+{
+  "validation_metadata": {
+    "title": "Real Intel GPU DWA Validation & Comparative Benchmark",
+    "date": "2026-09-30 04:14:28",
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 155H",
+    "gpu_model": "Intel(R) Graphics (Meteor Lake Arc integrated GPU)",
+    "gpu_driver": "32.0.101.8831",
+    "npu_model": "Intel(R) AI Boost (NPU 3720)",
+    "pytorch_version": "2.6.0+xpu",
+    "xpu_available": true,
+    "xpu_device_name": "Intel(R) Graphics",
+    "workload": {
+      "candidates": 375,
+      "v_samples": 15,
+      "omega_samples": 25,
+      "horizon_s": 1.5,
+      "dt_s": 0.1,
+      "steps_per_trajectory": 15
+    }
+  },
+  "backends": {
+    "CPU_Reference": {
+      "backend_type": "CPU",
+      "backend_name": "Reference CPU",
+      "device_name": "Host CPU (Reference Python/NumPy)",
+      "grand_mean_ms": 2587.08,
+      "grand_median_ms": 1429.71,
+      "grand_p95_ms": 2692.55,
+      "mean_candidates_per_second": 199.0,
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "n_warmup": 3,
+          "n_measured": 10,
+          "latency_ms": {
+            "mean": 1429.71,
+            "median": 1428.44,
+            "p95": 1533.91,
+            "min": 1327.91,
+            "max": 1543.69,
+            "std": 75.19
+          },
+          "candidates_per_second": 262.3,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.9301,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "n_warmup": 3,
+          "n_measured": 10,
+          "latency_ms": {
+            "mean": 1409.87,
+            "median": 1400.6,
+            "p95": 1452.78,
+            "min": 1366.44,
+            "max": 1455.15,
+            "std": 32.85
+          },
+          "candidates_per_second": 266.0,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.8367,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "n_warmup": 3,
+          "n_measured": 10,
+          "latency_ms": {
+            "mean": 3443.44,
+            "median": 3429.58,
+            "p95": 3617.31,
+            "min": 3246.02,
+            "max": 3662.48,
+            "std": 114.08
+          },
+          "candidates_per_second": 108.9,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "score": 1.0953,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "n_warmup": 3,
+          "n_measured": 10,
+          "latency_ms": {
+            "mean": 5347.99,
+            "median": 5324.37,
+            "p95": 5490.43,
+            "min": 5256.71,
+            "max": 5559.0,
+            "std": 80.17
+          },
+          "candidates_per_second": 70.1,
+          "selected_v": 0.15,
+          "selected_w": -0.208,
+          "score": 0.8684,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Workload",
+          "n_warmup": 3,
+          "n_measured": 10,
+          "latency_ms": {
+            "mean": 1304.38,
+            "median": 1301.66,
+            "p95": 1368.3,
+            "min": 1253.3,
+            "max": 1389.59,
+            "std": 44.2
+          },
+          "candidates_per_second": 287.5,
+          "selected_v": 0.257,
+          "selected_w": 0.0,
+          "score": 0.7391,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        }
+      ]
+    },
+    "Vectorized_CPU": {
+      "backend_type": "VECTORIZED_CPU",
+      "backend_name": "Vectorized CPU (PyTorch)",
+      "device_name": "Host CPU (PyTorch SIMD Vectorized)",
+      "grand_mean_ms": 65.99,
+      "grand_median_ms": 27.85,
+      "grand_p95_ms": 73.81,
+      "mean_candidates_per_second": 9589.0,
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 25.67,
+            "median": 24.78,
+            "p95": 32.73,
+            "min": 21.65,
+            "max": 35.06,
+            "std": 2.9
+          },
+          "candidates_per_second": 14610.3,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.9301,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 27.85,
+            "median": 27.24,
+            "p95": 31.22,
+            "min": 24.77,
+            "max": 38.65,
+            "std": 2.12
+          },
+          "candidates_per_second": 13463.6,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.8336,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 96.63,
+            "median": 95.5,
+            "p95": 106.51,
+            "min": 83.91,
+            "max": 116.25,
+            "std": 6.25
+          },
+          "candidates_per_second": 3881.0,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "score": 1.0953,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 152.07,
+            "median": 151.53,
+            "p95": 164.76,
+            "min": 136.39,
+            "max": 187.05,
+            "std": 8.04
+          },
+          "candidates_per_second": 2465.9,
+          "selected_v": 0.15,
+          "selected_w": -0.208,
+          "score": 0.8684,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Workload",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 27.73,
+            "median": 27.01,
+            "p95": 33.84,
+            "min": 24.63,
+            "max": 35.68,
+            "std": 2.3
+          },
+          "candidates_per_second": 13524.1,
+          "selected_v": 0.3,
+          "selected_w": 0.0,
+          "score": 0.7378,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 0.0
+        }
+      ]
+    },
+    "Intel_GPU": {
+      "backend_type": "INTEL_GPU",
+      "backend_name": "Intel GPU (Arc / iGPU)",
+      "device_name": "Intel XPU (Intel(R) Graphics)",
+      "grand_mean_ms": 204.72,
+      "grand_median_ms": 89.5,
+      "grand_p95_ms": 216.98,
+      "mean_candidates_per_second": 3094.6,
+      "scenarios": [
+        {
+          "scenario": "Scenario A: Open Environment",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 78.06,
+            "median": 77.91,
+            "p95": 82.7,
+            "min": 65.18,
+            "max": 84.82,
+            "std": 3.15
+          },
+          "candidates_per_second": 4804.0,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.9301,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 23921.5
+        },
+        {
+          "scenario": "Scenario B: Static Obstacle",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 89.5,
+            "median": 86.97,
+            "p95": 105.86,
+            "min": 70.36,
+            "max": 126.4,
+            "std": 8.8
+          },
+          "candidates_per_second": 4190.1,
+          "selected_v": 0.45,
+          "selected_w": 0.0,
+          "score": 0.8336,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 26095.5
+        },
+        {
+          "scenario": "Scenario C: Dynamic Obstacle",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 305.46,
+            "median": 303.0,
+            "p95": 325.19,
+            "min": 283.84,
+            "max": 359.63,
+            "std": 12.58
+          },
+          "candidates_per_second": 1227.7,
+          "selected_v": 0.171,
+          "selected_w": 0.0,
+          "score": 1.0953,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 23921.5
+        },
+        {
+          "scenario": "Scenario D: Multiple Dynamic Obstacles",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 466.23,
+            "median": 467.07,
+            "p95": 479.26,
+            "min": 436.29,
+            "max": 487.53,
+            "std": 8.94
+          },
+          "candidates_per_second": 804.3,
+          "selected_v": 0.15,
+          "selected_w": -0.208,
+          "score": 0.8684,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 23921.5
+        },
+        {
+          "scenario": "Scenario E: Heavy Collision Workload",
+          "n_warmup": 20,
+          "n_measured": 100,
+          "latency_ms": {
+            "mean": 84.33,
+            "median": 83.92,
+            "p95": 91.89,
+            "min": 69.84,
+            "max": 96.84,
+            "std": 4.1
+          },
+          "candidates_per_second": 4446.8,
+          "selected_v": 0.3,
+          "selected_w": 0.0,
+          "score": 0.7378,
+          "status": "SUCCESS",
+          "xpu_peak_memory_kb": 25743.0
+        }
+      ]
+    },
+    "CUDA": {
+      "available": false,
+      "status": "Hardware absent on host laptop"
+    },
+    "NPU": {
+      "available": false,
+      "status": "NOT VALIDATED FOR DWA (Unsuitable for dynamic branching geometry)"
+    }
+  },
+  "comparisons": {
+    "intel_gpu_speedup_vs_cpu_ref": 12.64,
+    "vectorized_cpu_speedup_vs_cpu_ref": 39.2,
+    "intel_gpu_vs_vectorized_cpu_ratio": 0.32
+  }
+}

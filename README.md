@@ -5,11 +5,12 @@
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green.svg)](https://opencv.org/)
 [![ROS 2](https://img.shields.io/badge/ROS_2-Jazzy%20%2F%20Humble-orange.svg)](https://docs.ros.org/)
 [![Gazebo](https://img.shields.io/badge/Simulation-Gazebo%20Harmonic-blueviolet.svg)](https://gazebosim.org/)
-[![Compute](https://img.shields.io/badge/Compute-CPU%20%2B%20NVIDIA%20A100-purple.svg)](https://nvidia.com)
-[![Tests](https://img.shields.io/badge/Tests-461%20Passed%20(100%25)-brightgreen.svg)]()
-[![Status](https://img.shields.io/badge/Phase%2013.12-Complete%20(Baseline%2045397f8)-blue.svg)](docs/PHASE_13_MASTER_CONTEXT.md)
+[![Compute](https://img.shields.io/badge/Compute-CPU%20%2B%20NVIDIA%20Tesla%20T4-purple.svg)](https://nvidia.com)
+[![Tests](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/Phase%2014.7.4-Complete%20%26%20Sealed-brightgreen.svg)](reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md)
 
 A production-grade, camera-first, GPS-denied autonomous robotics stack for outdoor Unmanned Ground Vehicles (UGVs) developed for the **Smart India Hackathon (SIH 2026)**.
+
 
 ---
 
@@ -59,6 +60,11 @@ The stack unifies deep semantic traversability estimation, visual-inertial odome
    - Comprehensive Software-in-the-Loop closed-loop validation revalidated under canonical termination semantics.
    - Strict ground-truth isolation, zero simulated collisions, full-horizon goal arrival validation, and legacy evidence separation.
    - Full quantitative characterization documented in [docs/PHASE_13_13_SIL_RESULTS.md](docs/PHASE_13_13_SIL_RESULTS.md).
+
+7. **GPU-Accelerated Dynamic Local Planning (Phase 13 GPU Acceleration Workstream):**
+   - Vectorized PyTorch/CUDA tensor kernels ([`AcceleratedDWAPlanner`](ai/planning/dynamic_gpu/gpu_dwa.py)) evaluating multi-horizon trajectories with exact SAT polygon intersection.
+   - Slashed measured DWA local trajectory simulation and collision checking latency from $5,673\,\text{ms}$ to **$58.31\,\text{ms}$** ($97.32\times$ local DWA speedup) on **NVIDIA Tesla T4** (`sm_75`).
+   - Achieved local planning real-time closed-loop factor of **$1.235\times$** with zero collision false negatives and 100% behavioral safety parity. Fully detailed in [docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md](docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md).
 
 ---
 
@@ -125,24 +131,46 @@ SIH2026/
 ### 1. Python Environment Setup
 ```powershell
 # Clone and enter directory
-cd c:\Users\shres\Desktop\SIH2026
+cd SIH2026
 
 # Install editable package with development dependencies
 pip install -e .
 ```
 
-### 2. Run Comprehensive Test Suite
-The entire repository is validated by an extensive test suite verifying algorithm purity, coordinate transforms, ROS 2 conversion boundaries, and scenario integration:
-
+### 2. Native C++ DWA Acceleration Build
+Compile the native C++ dual-target (SIMD AVX2 + Scalar portable) shared library:
 ```powershell
-# Run the complete test suite (461 tests)
-pytest -v tests/
+python scripts/build_dwa_cpp.py
+```
+This builds `ai/planning/native_cpp/dwa_cpp.dll` (Windows) or `libdwa_cpp.so` (Linux), automatically selecting the optimal CPU execution path at runtime.
 
-# Run Phase 13 dynamic obstacle core tests (239 tests)
-pytest -v tests/test_dwa_dynamic.py tests/test_behavioral_state.py tests/test_global_replanning.py
+### 3. Perception Model Weights Setup
+The semantic traversability engine (`ai/traversability/dense_predictor.py`) uses a lightweight MobileNetV3-Small encoder-decoder network.
+- **Search locations:**
+  1. `outputs/rellis3d/checkpoints/best.pt`
+  2. `models/rellis3d/best.pt`
+  3. `checkpoints/best.pt`
+- **Fallback:** If trained neural weights are not present, the navigation pipeline operates gracefully in core geometric/obstacle perception mode without crashing.
 
-# Run ROS 2 boundary, interface, and topic contract tests (180 tests)
-pytest -v tests/test_dynamic_converters.py tests/test_ros2_topic_contract.py tests/test_ros2_node_graph.py tests/test_phase13_ros2_end_to_end.py
+### 4. Interactive Simulation & Presentation Launch
+Launch the complete 100m outdoor presentation world with live UGV, RViz visualization, dynamic obstacle controllers, and ROS 2 bridge:
+```bash
+# On ROS 2 Linux (Ubuntu 24.04 / Jazzy or Humble):
+./simulation/scripts/launch_presentation.sh
+# Or directly via ROS 2:
+ros2 launch simulation/launch/prototype_presentation.launch.py
+
+# On Windows:
+launch_presentation.bat
+```
+
+### 5. Run Test Suite
+```powershell
+# Run the core unit & integration test suite
+pytest -v tests/test_outdoor_presentation_100m.py tests/test_dynamic_evasion_w5.py tests/test_core_types.py tests/test_dwa_scalar_parity.py
+
+# Run Phase 14 combined mission and recovery integration tests
+pytest -v tests/test_phase14_combined_mission.py tests/test_mission_recovery_integration.py
 ```
 
 ---
@@ -164,32 +192,41 @@ pytest -v tests/test_dynamic_converters.py tests/test_ros2_topic_contract.py tes
 | **Phase 10** | ROS 2 Architecture, Custom Messages & TF2 Tree | **Complete** | Canonical TF2 tree, sub-ms lookups, 205 tests |
 | **Phase 11** | Gazebo Outdoor World & 4WD UGV Simulation | **Complete** | Gazebo Harmonic world, ros_gz bridge, 221 tests |
 | **Phase 12** | Closed-Loop Navigation, DWA Planning & Safety Clamps | **Complete** | 8 deterministic scenarios, 4 SIL missions, 250 tests |
-| **Phase 13** | Dynamic Obstacle Tracking & Predictive Replanning | **Complete** | **M13.1–M13.12 Complete** (461/461 tests passing) |
-| **Phase 14** | GPS-Denied Full Long-Distance Mission Execution | Planned | Multi-waypoint outdoor state machine |
-| **Phase 15** | Advanced Terrain-Aware Navigation (Slip/Slope/Roll) | Planned | 3D pitch/roll compensation & terrain slip modeling |
+| **Phase 13** | Dynamic Obstacles, Predictive Replanning & Acceleration | **Complete** | Native C++ SIMD AVX2 DWA, 1.235x RTF on Tesla T4 |
+| **Phase 14** | GPS-Denied Full Long-Distance Mission Execution & Recovery | **Complete (Phase 14.7.4)** | 100m outdoor presentation world, zero collision false negatives, dynamic evasion, recovery FSM, presentation RViz & SDF models, 12-run benchmark matrix in [reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md](reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md) |
+| **Phase 15** | Advanced 2.5D Terrain-Aware Navigation (Slip/Slope/Roll) | Planned | 2.5D elevation & normal costmap layers, SE(3) camera attitude compensation |
 | **Phase 16** | Full System Benchmarking & SIH Demonstration | Planned | Standardized 10-scenario demonstration dashboard |
+
 
 ---
 
 ## 👥 Team Collaboration & Branching Strategy
 
 To facilitate parallel development without merge conflicts:
-- **Baseline Git Commit:** `45397f8`
-- **Baseline Git Tag:** `phase-13.12-complete`
+- **Baseline Git Commit:** `b55ee18914ffd973f45a655b70505a4521fe8d5a`
+- **Active Branch:** `demo-01-interactive-ugv`
 
 ### Work Streams:
-1. **Algorithm Development Stream (Lead):** Continues on `main` / `feature/phase-13-algorithms` developing advanced multi-agent tracking and Phase 14 waypoint mission sequencing.
-2. **ROS 2 Runtime Integration Stream (Teammate):** Branches from `phase-13.12-complete` to `feature/ros2-runtime-jazzy` on an Ubuntu 24.04 Linux workstation to execute native builds, DDS networking, Gazebo Harmonic simulation, and closed-loop runs.
+1. **Algorithm Development Stream (Lead):** Finalizing Phase 13 (Milestone 13.18 Regression, 13.19 Audit) prior to Phase 14 advancement.
+2. **ROS 2 Runtime Integration Stream (Teammate):** Branches to execute native builds, DDS networking, Gazebo Harmonic simulation, and closed-loop runs on Ubuntu 24.04 per [`docs/ROS2_RUNTIME_INTEGRATION_PLAN.md`](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md).
 
 ---
 
 ## 📚 Technical Documentation Index
 
 - [docs/PHASE_13_MASTER_CONTEXT.md](docs/PHASE_13_MASTER_CONTEXT.md) — **Single Source of Truth for Phase 13** (algorithms, math models, ROSIDL interfaces, contracts, test evidence).
-- [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md) — **ROS 2 Teammate Runtime Guide** (gated sequence ROS2-R0 to ROS2-R14, Gazebo Harmonic integration, commands, and reporting templates).
-- [docs/ROADMAP.md](docs/ROADMAP.md) — Comprehensive technical roadmap across all project phases.
+- [docs/DYNAMIC_OBSTACLES.md](docs/DYNAMIC_OBSTACLES.md) — **Authoritative Architecture Specification** (detection, Kalman tracking, CWNA prediction, dynamic occupancy, predictive DWA, behavioral state machine).
+- [docs/VISUALIZATION_GUIDE.md](docs/VISUALIZATION_GUIDE.md) — **Visualization User Guide** (CLI regeneration, RViz2 configuration, and diagnostic plot interpretation).
+- [docs/PHASE_13_17_VISUALIZATION_DOCUMENTATION_REPORT.md](docs/PHASE_13_17_VISUALIZATION_DOCUMENTATION_REPORT.md) — **Milestone 13.17 Checkpoint Report** (Verification of 6 diagnostic plots, animation, RViz assets, and 100% test pass).
+- [docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md](docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md) — **Phase 13.17.4 Final Report** (Full closed-loop 21-mission Phase 13.16-R2 benchmark on NVIDIA Tesla T4).
+- [docs/PHASE_13_17_3_STABILITY_REPORT.md](docs/PHASE_13_17_3_STABILITY_REPORT.md) — **Phase 13.17.3 Stability Report** (250-cycle stress, memory stability, and final harness closure).
+- [docs/PHASE_13_PERFORMANCE_ACCELERATION.md](docs/PHASE_13_PERFORMANCE_ACCELERATION.md) — **Phase 13.17.2 Performance Report** (T4 runtime profiling, DWA speedup, and replan parity).
+- [docs/PHASE_13_17_1_CPU_GPU_PARITY.md](docs/PHASE_13_17_1_CPU_GPU_PARITY.md) — **Phase 13.17.1 Parity Report** (1,210-case CPU/GPU behavioral and safety parity validation).
+- [docs/PHASE_13_16_FULL_CLOSED_LOOP_BENCHMARK.md](docs/PHASE_13_16_FULL_CLOSED_LOOP_BENCHMARK.md) — **Phase 13.16 CPU Benchmark** (21 canonical missions, baseline computation profile).
+- [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md) — **ROS 2 Teammate Runtime Guide** (gated sequence ROS2-R0 to ROS2-R14, Gazebo Harmonic integration).
+- [docs/ROADMAP.md](docs/ROADMAP.md) — Comprehensive technical roadmap across all project phases (Phases 0 to 16).
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture, pipeline flows, and component responsibilities.
-- [docs/DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) — Current repository audit, pass rates, and environment status.
+- [docs/DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) — Cumulative repository audit, phase status, and test suite health.
 - [docs/PHASE_12_PATH_PLANNING.md](docs/PHASE_12_PATH_PLANNING.md) — Phase 12 static planning, collision checking, and SIL simulation baseline.
 - [docs/PHASE_10_ROS2_ARCHITECTURE.md](docs/PHASE_10_ROS2_ARCHITECTURE.md) — Foundational ROS 2 architecture and TF2 integration.
 
@@ -198,6 +235,6 @@ To facilitate parallel development without merge conflicts:
 ## ⚠️ Known Limitations & Disclosures
 
 1. **Host Native Toolchain Limitation:** The current development machine is Windows; native `colcon build`, native `rclpy` binaries, and DDS daemons are unverified on Windows and are scheduled for validation on Ubuntu 24.04 per [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md).
-2. **Pure Python DWA Latency:** The unoptimized Python implementation of DWA evaluates multi-horizon trajectory rollouts in interpreted loops ($1.36\,\text{s}\text{--}4.5\,\text{s}$ latency). Production deployment will target C++/Cython acceleration in subsequent milestones.
+2. **Computational Acceleration vs Algorithmic Limits:** Vectorized GPU acceleration in Phase 13.17 resolved the computational bottleneck ($58.31\,\text{ms}$ DWA latency, $1.235\times$ Real-Time Factor on Tesla T4). However, GPU acceleration preserves CPU equivalence and does not alter underlying 2D local DWA algorithmic limitations (local minima traps in concave obstacles, narrow-corridor deadlocks), which transition to Phase 14 hierarchical recovery.
 3. **Visual Odometry Scale Factor:** The monocular visual odometry pipeline utilizes an empirical scale compensation factor ($1.167$) calibrated to the specific simulated camera mount.
-4. **Physical Hardware Demonstration:** All tests to date are evaluated in high-fidelity Software-In-The-Loop (SIL) simulation and unit/integration harnesses. Physical UGV outdoor trials are scheduled for Phase 16.
+4. **Simulation & Cloud Validation:** All benchmarks to date are evaluated in high-fidelity Software-In-The-Loop (SIL) simulation and Kaggle Cloud NVIDIA Tesla T4 environments. Physical UGV outdoor hardware trials are scheduled for Phase 16.

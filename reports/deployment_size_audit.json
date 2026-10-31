@@ -1,0 +1,26 @@
+{
+  "repository_path": "C:\\Users\\shres\\Desktop\\SIH2026",
+  "development_repository_size_bytes": 2224912069,
+  "development_repository_size_mb": 2121.84,
+  "git_metadata_size_mb": 2999.2,
+  "minimal_production_package_size_bytes": 229833228,
+  "minimal_production_package_size_mb": 219.19,
+  "excluded_research_assets_mb": 1902.66,
+  "size_reduction_percent": 89.7,
+  "components": {
+    "native_cpp_simd_binary_kb": 223.0,
+    "native_cpp_scalar_binary_kb": 218.5,
+    "production_model_lightweight_traversability_net_mb": 12.86,
+    "production_runtime_and_safety_kb": 97.8,
+    "production_navigation_core_mb": 1.39,
+    "configurations_kb": 38.9
+  },
+  "excluded_categories": {
+    "training_datasets_mb": 1282.3,
+    "sam_tp_weights_and_runtime_mb": 0.0,
+    "temporary_venv_xpu_mb": 6609.35,
+    "benchmarks_and_reports_mb": 0.26,
+    "artifacts_and_scratch_mb": 128.2,
+    "pytest_cache_mb": 0.07
+  }
+}

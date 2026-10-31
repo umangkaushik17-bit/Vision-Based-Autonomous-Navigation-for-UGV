@@ -1,0 +1,23 @@
+{
+  "benchmark_name": "Phase 13.16-R2 Full Closed-Loop Benchmark (GPU Accelerated)",
+  "timestamp_utc": "2026-09-12T04:23:04.926844+00:00",
+  "git_branch": "demo-01-interactive-ugv",
+  "git_commit": "b55ee18914ffd973f45a655b70505a4521fe8d5a",
+  "phase16_baseline_commit": "abe937f",
+  "phase17_gpu_commit": "1c1943e",
+  "working_tree_frozen": true,
+  "cpu_reference_status": "100% FROZEN (ai/planning/dynamic/)",
+  "gpu_planner_module": "ai/planning/dynamic_gpu/ (AcceleratedDWAPlanner)",
+  "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+  "python_version": "3.12.13",
+  "cpu_count": 4,
+  "gpu_name": "Tesla T4",
+  "gpu_count": 2,
+  "compute_capability": "7.5",
+  "vram_gb": 14.56,
+  "cuda_available": true,
+  "cuda_version": "12.8",
+  "driver_version": "580.159.04",
+  "pytorch_version": "2.10.0+cu128",
+  "real_cuda_computation": true
+}

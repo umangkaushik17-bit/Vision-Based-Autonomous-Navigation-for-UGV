@@ -1,0 +1,605 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="demo_outdoor">
+
+    <!-- Physics Engine Configuration (Lightweight ODE for CPU-only execution) -->
+    <physics name="default_physics" type="ode">
+      <max_step_size>0.005</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>200</real_time_update_rate>
+    </physics>
+
+    <!-- Essential Gazebo Sim System Plugins -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Sun & Outdoor Lighting -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 20 0 0.8 0.5</pose>
+      <diffuse>0.9 0.85 0.8 1.0</diffuse>
+      <specular>0.3 0.3 0.3 1.0</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.2 -0.85</direction>
+    </light>
+
+    <!-- Ground Plane (Lightweight Terrain) -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="ground_link">
+        <collision name="ground_collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="ground_visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.35 0.40 0.25 1.0</ambient>
+            <diffuse>0.40 0.48 0.30 1.0</diffuse>
+            <specular>0.05 0.05 0.05 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- GOAL TARGET BEACON (x = 7.0, y = 0.0)                             -->
+    <!-- ================================================================= -->
+    <model name="goal_marker">
+      <static>true</static>
+      <pose>7.0 0.0 0.5 0 0 0</pose>
+      <link name="goal_link">
+        <visual name="goal_cylinder_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.35</radius>
+              <length>1.0</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.9 0.8 0.0 0.85</ambient>
+            <diffuse>1.0 0.9 0.1 0.85</diffuse>
+            <specular>0.8 0.8 0.8 1.0</specular>
+          </material>
+        </visual>
+        <visual name="goal_top_beacon">
+          <pose>0 0 0.6 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.25</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.0 1.0 0.2 1.0</ambient>
+            <diffuse>0.1 1.0 0.3 1.0</diffuse>
+            <specular>1.0 1.0 1.0 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- STATIC OBSTACLE: LARGE ROCK BOULDER (x = 3.5, y = 0.15)           -->
+    <!-- Directly challenges the straight-line navigation path              -->
+    <!-- ================================================================= -->
+    <model name="stationary_rock">
+      <static>true</static>
+      <pose>3.5 0.15 0.25 0 0 0.25</pose>
+      <link name="rock_link">
+        <collision name="rock_collision">
+          <geometry>
+            <box>
+              <size>1.1 1.1 0.5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="rock_visual">
+          <geometry>
+            <box>
+              <size>1.1 1.1 0.5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.40 0.38 0.35 1.0</ambient>
+            <diffuse>0.48 0.45 0.42 1.0</diffuse>
+            <specular>0.15 0.15 0.15 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- DYNAMIC OBSTACLE: CONTROLLABLE VEHICLE / BOT                      -->
+    <!-- Starts at neutral standby: (x = 2.5, y = -3.0, yaw = 1.57)       -->
+    <!-- Driven into UGV path via /model/dynamic_obstacle/cmd_vel          -->
+    <!-- ================================================================= -->
+    <model name="dynamic_obstacle">
+      <static>false</static>
+      <pose>2.5 -3.0 0.35 0 0 1.570796</pose>
+      <link name="dynamic_obstacle_link">
+        <inertial>
+          <mass>25.0</mass>
+          <inertia>
+            <ixx>0.5</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.5</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.7</izz>
+          </inertia>
+        </inertial>
+        <collision name="obstacle_collision">
+          <geometry>
+            <box>
+              <size>0.8 0.8 0.6</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.01</mu>
+                <mu2>0.01</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <!-- Distinct High-Visibility Safety Orange Body -->
+        <visual name="obstacle_visual_body">
+          <geometry>
+            <box>
+              <size>0.8 0.8 0.6</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.9 0.3 0.0 1.0</ambient>
+            <diffuse>1.0 0.35 0.0 1.0</diffuse>
+            <specular>0.5 0.5 0.5 1.0</specular>
+          </material>
+        </visual>
+        <!-- Yellow / White Roof Beacon for Visual Clarity -->
+        <visual name="obstacle_visual_beacon">
+          <pose>0 0 0.35 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.2</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>1.0 1.0 0.0 1.0</ambient>
+            <diffuse>1.0 1.0 0.2 1.0</diffuse>
+            <specular>0.8 0.8 0.8 1.0</specular>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Direct Velocity Control Plugin for Smooth Keyboard Teleoperation -->
+      <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+        <link_name>dynamic_obstacle_link</link_name>
+        <topic>/model/dynamic_obstacle/cmd_vel</topic>
+      </plugin>
+
+      <!-- Ground-Truth Odometry Publisher for Tracker/Simulated Sensor Adapter -->
+      <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+        <odom_frame>odom</odom_frame>
+        <robot_base_frame>dynamic_obstacle_link</robot_base_frame>
+        <odom_topic>/model/dynamic_obstacle/odometry</odom_topic>
+        <dimensions>3</dimensions>
+      </plugin>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- AUTONOMOUS UGV 4WD ROBOT MODEL                                    -->
+    <!-- Spawned at origin: (x = 0.0, y = 0.0, z = 0.0)                     -->
+    <!-- ================================================================= -->
+    <model name="ugv_4wd">
+      <static>false</static>
+      <pose>0.0 0.0 0.0 0 0 0</pose>
+
+      <!-- Base Link (Chassis) -->
+      <link name="base_link">
+        <pose>0 0 0.125 0 0 0</pose>
+        <inertial>
+          <mass>25.0</mass>
+          <inertia>
+            <ixx>0.505</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.963</iyy>
+            <iyz>0.0</iyz>
+            <izz>1.302</izz>
+          </inertia>
+        </inertial>
+        <collision name="chassis_collision">
+          <geometry>
+            <box>
+              <size>0.65 0.45 0.20</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="chassis_visual">
+          <geometry>
+            <box>
+              <size>0.65 0.45 0.20</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.3 0.25 1.0</ambient>
+            <diffuse>0.3 0.5 0.4 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+      </link>
+
+      <!-- Front Left Wheel -->
+      <link name="wheel_fl_link">
+        <pose>0.20 0.24 0.125 -1.57079632679 0 0</pose>
+        <inertial>
+          <mass>2.0</mass>
+          <inertia>
+            <ixx>0.0088</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.0088</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.0156</izz>
+          </inertia>
+        </inertial>
+        <collision name="wheel_fl_collision">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="wheel_fl_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1.0</ambient>
+            <diffuse>0.15 0.15 0.15 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="wheel_fl_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_fl_link</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <!-- Front Right Wheel -->
+      <link name="wheel_fr_link">
+        <pose>0.20 -0.24 0.125 -1.57079632679 0 0</pose>
+        <inertial>
+          <mass>2.0</mass>
+          <inertia>
+            <ixx>0.0088</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.0088</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.0156</izz>
+          </inertia>
+        </inertial>
+        <collision name="wheel_fr_collision">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="wheel_fr_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1.0</ambient>
+            <diffuse>0.15 0.15 0.15 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="wheel_fr_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_fr_link</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <!-- Rear Left Wheel -->
+      <link name="wheel_rl_link">
+        <pose>-0.20 0.24 0.125 -1.57079632679 0 0</pose>
+        <inertial>
+          <mass>2.0</mass>
+          <inertia>
+            <ixx>0.0088</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.0088</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.0156</izz>
+          </inertia>
+        </inertial>
+        <collision name="wheel_rl_collision">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="wheel_rl_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1.0</ambient>
+            <diffuse>0.15 0.15 0.15 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="wheel_rl_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_rl_link</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <!-- Rear Right Wheel -->
+      <link name="wheel_rr_link">
+        <pose>-0.20 -0.24 0.125 -1.57079632679 0 0</pose>
+        <inertial>
+          <mass>2.0</mass>
+          <inertia>
+            <ixx>0.0088</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.0088</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.0156</izz>
+          </inertia>
+        </inertial>
+        <collision name="wheel_rr_collision">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="wheel_rr_visual">
+          <geometry>
+            <cylinder>
+              <radius>0.125</radius>
+              <length>0.08</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1.0</ambient>
+            <diffuse>0.15 0.15 0.15 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="wheel_rr_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_rr_link</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <lower>-1e16</lower>
+            <upper>1e16</upper>
+          </limit>
+        </axis>
+      </joint>
+
+      <!-- Camera Link & Optical Frame -->
+      <link name="camera_link">
+        <pose>0.15 0.0 0.525 0 0.261799 0</pose>
+        <inertial>
+          <mass>0.25</mass>
+          <inertia>
+            <ixx>0.0001</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.0001</iyy>
+            <iyz>0</iyz>
+            <izz>0.0001</izz>
+          </inertia>
+        </inertial>
+        <visual name="camera_visual">
+          <geometry>
+            <box>
+              <size>0.05 0.12 0.04</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1.0</ambient>
+            <diffuse>0.2 0.2 0.8 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+      <joint name="camera_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>camera_link</child>
+      </joint>
+
+      <link name="camera_optical">
+        <pose>0.15 0.0 0.525 -1.57079632679 0 -1.57079632679</pose>
+        <inertial>
+          <mass>0.01</mass>
+          <inertia>
+            <ixx>1e-6</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1e-6</iyy>
+            <iyz>0</iyz>
+            <izz>1e-6</izz>
+          </inertia>
+        </inertial>
+        <sensor name="rgb_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>30.0</update_rate>
+          <camera>
+            <horizontal_fov>1.3962634</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.10</near>
+              <far>50.0</far>
+            </clip>
+          </camera>
+        </sensor>
+      </link>
+      <joint name="camera_optical_joint" type="fixed">
+        <parent>camera_link</parent>
+        <child>camera_optical</child>
+      </joint>
+
+      <!-- IMU Link -->
+      <link name="imu_link">
+        <pose>0.0 0.0 0.275 0 0 0</pose>
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>1e-5</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1e-5</iyy>
+            <iyz>0</iyz>
+            <izz>1e-5</izz>
+          </inertia>
+        </inertial>
+        <sensor name="imu_sensor" type="imu">
+          <always_on>true</always_on>
+          <update_rate>200.0</update_rate>
+        </sensor>
+      </link>
+      <joint name="imu_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>imu_link</child>
+      </joint>
+
+      <!-- Diff-Drive Simulation Plugin for 4WD UGV -->
+      <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+        <left_joint>wheel_fl_joint</left_joint>
+        <left_joint>wheel_rl_joint</left_joint>
+        <right_joint>wheel_fr_joint</right_joint>
+        <right_joint>wheel_rr_joint</right_joint>
+        <wheel_separation>0.48</wheel_separation>
+        <wheel_radius>0.125</wheel_radius>
+        <odom_publish_frequency>50</odom_publish_frequency>
+        <topic>/model/ugv_4wd/cmd_vel</topic>
+        <odom_topic>/model/ugv_4wd/wheel_odom</odom_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_link</child_frame_id>
+      </plugin>
+
+      <!-- Accurate Odometry Publisher for UGV base_link (Supports Instant Pose Teleportation/Reset) -->
+      <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+        <odom_frame>odom</odom_frame>
+        <robot_base_frame>base_link</robot_base_frame>
+        <odom_topic>/model/ugv_4wd/odometry</odom_topic>
+        <dimensions>3</dimensions>
+      </plugin>
+
+      <!-- Joint State Publisher Plugin -->
+      <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+        <topic>/world/demo_outdoor/model/ugv_4wd/joint_state</topic>
+        <joint_name>wheel_fl_joint</joint_name>
+        <joint_name>wheel_fr_joint</joint_name>
+        <joint_name>wheel_rl_joint</joint_name>
+        <joint_name>wheel_rr_joint</joint_name>
+      </plugin>
+
+    </model>
+
+  </world>
+</sdf>
