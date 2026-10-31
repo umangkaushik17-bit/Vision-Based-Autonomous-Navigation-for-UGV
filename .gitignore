@@ -61,11 +61,20 @@ logs/
 *.log
 runs/
 wandb/
+output/
+outputs/
 /outputs/
+tmp/
+.codex-build/
+.codex-finalizer/
+*.tmp
+*.bak
 simulation/outputs/*
 !simulation/outputs/phase16/
 tools/kaggle/dataset/*.zip
 models/
+!simulation/models/
+!simulation/models/**/*.obj
 scratch/
 references/
 frame.jpg
@@ -84,4 +93,5 @@ tools/kaggle/eval_dataset/
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
-notebooks/
+notebooks/
+

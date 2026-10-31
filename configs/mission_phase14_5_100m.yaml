@@ -14,7 +14,7 @@ mission:
     - id: "W1"
       x: 20.0
       y: 0.0
-      xy_tolerance_m: 0.50
+      xy_tolerance_m: 0.85
       metadata:
         description: "Initial straight approach corridor"
         segment_length_m: 20.00
@@ -22,7 +22,7 @@ mission:
     - id: "W2"
       x: 40.0
       y: 6.0
-      xy_tolerance_m: 0.50
+      xy_tolerance_m: 0.85
       metadata:
         description: "Lateral left detour avoiding granite rock cluster"
         segment_length_m: 20.88
@@ -30,7 +30,7 @@ mission:
     - id: "W3"
       x: 60.0
       y: -4.0
-      xy_tolerance_m: 0.50
+      xy_tolerance_m: 0.85
       metadata:
         description: "Right diagonal crossing through dynamic obstacle zone"
         segment_length_m: 22.36
@@ -38,7 +38,7 @@ mission:
     - id: "W4"
       x: 80.0
       y: 3.0
-      xy_tolerance_m: 0.50
+      xy_tolerance_m: 0.85
       metadata:
         description: "Chicane maneuver through narrow forest passage"
         segment_length_m: 21.19

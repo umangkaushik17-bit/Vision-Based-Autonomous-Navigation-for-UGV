@@ -156,7 +156,9 @@ class WaypointManager:
 
     def mark_active_reached(
         self,
-        pose_or_state: Union[RobotState, Tuple[float, float], Tuple[float, float, float]],
+        pose_or_state: Optional[Union[RobotState, Tuple[float, float], Tuple[float, float, float]]] = None,
+        force: bool = False,
+        tolerance_m: Optional[float] = None,
     ) -> bool:
         """Mark active waypoint reached if and only if the arrival condition is verified.
         
@@ -168,12 +170,24 @@ class WaypointManager:
         if curr is None:
             return False
 
-        if not curr.is_reached(pose_or_state):
-            return False
+        if force:
+            if curr.id not in self._reached_ids:
+                self._reached_ids.append(curr.id)
+            return True
 
-        if curr.id not in self._reached_ids:
-            self._reached_ids.append(curr.id)
-        return True
+        if pose_or_state is not None:
+            if tolerance_m is not None:
+                if curr.distance_to(pose_or_state) <= tolerance_m:
+                    if curr.id not in self._reached_ids:
+                        self._reached_ids.append(curr.id)
+                    return True
+                return False
+            if curr.is_reached(pose_or_state):
+                if curr.id not in self._reached_ids:
+                    self._reached_ids.append(curr.id)
+                return True
+
+        return False
 
     def advance(self) -> Optional[Waypoint]:
         """Advance to the next sequential waypoint in order.

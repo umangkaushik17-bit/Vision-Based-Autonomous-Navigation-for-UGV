@@ -163,10 +163,10 @@ This roadmap outlines the systematic, phased implementation plan for the autonom
 - **Status:** **PLANNED / NOT STARTED** (Phase 13 frozen with documented limitations).
 - **Scope Note:** *Phase 14 is the planned next major phase. Detailed milestone breakdown requires a dedicated Phase 14 architecture and planning task.*
 
-### Phase 15: Advanced Terrain-Aware Navigation
-- **Goal:** Extend traversability scoring to evaluate slope/pitch angle, surface slip risk, and vehicle ground clearance.
-- **Deliverables:** 3D pitch/roll compensation in costmap generation.
-- **Exit Criteria:** Rover successfully rejects steep embankments and chooses gentle dirt trails.
+### Phase 15: Advanced 2.5D Terrain-Aware Navigation
+- **Goal:** Extend planar traversability scoring with a 2.5D elevation representation to evaluate terrain slope, surface roughness, and step heights.
+- **Deliverables:** Subphase 15.0 metric depth foundation, 2.5D elevation & surface normal costmap layers, dynamic SE(3) camera attitude compensation, terrain-constrained Global A*, terrain-aware native C++ DWA, and authoritative terrain safety governor.
+- **Exit Criteria:** Rover reliably avoids terrain-specific failure modes (steep slopes $>28^\circ$, high-centering step obstacles $>0.12\text{ m}$) while maintaining parity on flat terrain.
 
 ### Phase 16: Full Benchmarking and SIH Demonstration
 - **Goal:** Execute comprehensive system benchmarks across 10 standardized scenarios. Generate metric reports, demo recordings, and presentation assets.

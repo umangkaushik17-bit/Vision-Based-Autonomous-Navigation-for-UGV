@@ -1,0 +1,133 @@
+{
+  "timestamp": "2026-10-03 23:17:50",
+  "execution_environment": "WSL2",
+  "kernel": "Linux 6.18.40.1-microsoft-standard-WSL2",
+  "total_runs": 1,
+  "nominal_target_distance_m": 104.65,
+  "rtf_aggregate": {
+    "min": 0.8,
+    "mean": 0.8,
+    "max": 0.8
+  },
+  "planning_loop_ms_mean": 42.61,
+  "costmap_latency_ms_mean": 3.23,
+  "cpu_percent_mean": 59.24,
+  "memory_rss_mb_mean": 1396.35,
+  "total_collisions": 0,
+  "total_safety_violations": 0,
+  "preflight": {
+    "world_sdf_exists": true,
+    "rviz_config_exists": true,
+    "rviz_config_valid": true,
+    "rviz_parse_time_s": 0.16285861400001522,
+    "rviz2_binary_available": true,
+    "rviz_startup_time_s": 0.127,
+    "launch_file_valid": true,
+    "os_kernel": "Linux 6.18.40.1-microsoft-standard-WSL2",
+    "is_wsl": true,
+    "cpu_count": 22,
+    "ram_total_gb": 7.49
+  },
+  "runs": [
+    {
+      "run_index": 1,
+      "mode": "REPEATABILITY TEST",
+      "wall_duration_s": 188.75,
+      "sim_duration_s": 150.94,
+      "rtf_overall": 0.8,
+      "rtf_stats": {
+        "min": 0.05,
+        "mean": 0.85,
+        "p95": 1.08,
+        "max": 6.9
+      },
+      "ugv_distance_traveled_m": 107.82,
+      "ugv_final_pose": [
+        99.6,
+        -0.04,
+        -0.28
+      ],
+      "waypoints_reached": [],
+      "active_waypoint": null,
+      "collisions": 0,
+      "safety_violations": 0,
+      "min_boulder_clearance_m": 0.555,
+      "min_dynamic_clearance_m": 999.0,
+      "recovery_events": 0,
+      "tactical_decisions": {
+        "PROCEED": 138,
+        "AVOID": 312
+      },
+      "topic_counts": {
+        "/costmap/occupancy": 389,
+        "/mission/waypoint_markers": 450,
+        "/visualization_marker_array": 451,
+        "/robot_description": 1,
+        "/planning/global_path": 450,
+        "/planning/dynamic_trajectory": 450,
+        "/perception/traversability_overlay": 299,
+        "/odom": 7407,
+        "/dynamic_obstacle/odom": 0,
+        "/clock": 29629
+      },
+      "topic_rates_hz": {
+        "/costmap/occupancy": 2.74,
+        "/mission/waypoint_markers": 3.16,
+        "/visualization_marker_array": 3.16,
+        "/robot_description": 0.0,
+        "/planning/global_path": 3.16,
+        "/planning/dynamic_trajectory": 3.16,
+        "/perception/traversability_overlay": 1.92,
+        "/odom": 39.99,
+        "/dynamic_obstacle/odom": 0.0,
+        "/clock": 159.22
+      },
+      "costmap_info": {
+        "width": 1200,
+        "height": 300,
+        "resolution": 0.10000000149011612,
+        "origin_x": -5.0,
+        "origin_y": -15.0,
+        "frame_id": "odom"
+      },
+      "dynamic_obstacle_patrol_active": false,
+      "timing_loop_ms": {
+        "min": 10.0,
+        "mean": 42.61,
+        "p95": 75.0,
+        "max": 239.0
+      },
+      "timing_dwa_ms": {
+        "min": 1.0,
+        "mean": 3.65,
+        "p95": 9.0,
+        "max": 16.0
+      },
+      "timing_costmap_ms": {
+        "min": 1.0,
+        "mean": 3.23,
+        "p95": 9.0,
+        "max": 19.0
+      },
+      "timing_viz_adapter_ms": {
+        "min": 3.0,
+        "mean": 6.74,
+        "p95": 12.0,
+        "max": 226.0
+      },
+      "cpu_percent": {
+        "min": 0.0,
+        "mean": 59.24,
+        "p95": 68.9,
+        "max": 73.2
+      },
+      "memory_rss_mb": {
+        "min": 75.33,
+        "mean": 1396.35,
+        "p95": 1441.38,
+        "max": 1444.2
+      },
+      "memory_growth_mb": 613.07
+    }
+  ]
+}

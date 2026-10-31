@@ -1,0 +1,71 @@
+{
+  "mission_status": "SUCCESS",
+  "total_mission_time_s": 107.8,
+  "total_distance_traveled_m": 106.25,
+  "average_linear_speed_mps": 0.99,
+  "maximum_linear_speed_mps": 1.02,
+  "average_angular_speed_radps": 0.092,
+  "maximum_angular_speed_radps": 0.552,
+  "minimum_dynamic_obstacle_clearance_m": 2.06,
+  "dynamic_obstacles_configured": 5,
+  "dynamic_obstacles_detected": 5,
+  "waypoint_splits": {
+    "W1": {
+      "split_time_s": 20.92,
+      "pose": [
+        19.43,
+        -0.56
+      ],
+      "distance_to_target_m": 0.799,
+      "distance_traveled_m": 20.18
+    },
+    "W2": {
+      "split_time_s": 42.32,
+      "pose": [
+        39.18,
+        5.88
+      ],
+      "distance_to_target_m": 0.83,
+      "distance_traveled_m": 41.38
+    },
+    "W3": {
+      "split_time_s": 65.62,
+      "pose": [
+        59.21,
+        -3.76
+      ],
+      "distance_to_target_m": 0.824,
+      "distance_traveled_m": 64.53
+    },
+    "W4": {
+      "split_time_s": 86.98,
+      "pose": [
+        79.24,
+        2.69
+      ],
+      "distance_to_target_m": 0.818,
+      "distance_traveled_m": 85.72
+    },
+    "W5": {
+      "split_time_s": 107.8,
+      "pose": [
+        99.38,
+        0.04
+      ],
+      "distance_to_target_m": 0.624,
+      "distance_traveled_m": 106.25
+    }
+  },
+  "behavioral_decisions": {
+    "PROCEED": 410,
+    "AVOID": 613,
+    "WAIT": 0,
+    "STOP": 0,
+    "EMERGENCY_STOP": 0
+  },
+  "safety_metrics": {
+    "collision_count": 0,
+    "emergency_stops": 0,
+    "recovery_reverses": 0
+  }
+}

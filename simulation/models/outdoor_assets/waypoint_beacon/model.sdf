@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <model name="waypoint_beacon">
+    <static>true</static>
+    <link name="beacon_link">
+      <!-- Pedestal base -->
+      <visual name="pedestal_base">
+        <pose>0 0 0.08 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.40</radius>
+            <length>0.16</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.20 0.22 0.25 1.0</ambient>
+          <diffuse>0.28 0.30 0.35 1.0</diffuse>
+          <specular>0.4 0.4 0.4 1.0</specular>
+        </material>
+      </visual>
+
+      <!-- Slender mast -->
+      <visual name="beacon_mast">
+        <pose>0 0 0.70 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.08</radius>
+            <length>1.10</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.6 0.6 0.65 1.0</ambient>
+          <diffuse>0.8 0.8 0.85 1.0</diffuse>
+          <specular>0.8 0.8 0.8 1.0</specular>
+        </material>
+      </visual>
+
+      <!-- High-visibility glowing beacon orb -->
+      <visual name="beacon_orb">
+        <pose>0 0 1.38 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.22</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <ambient>0.0 0.9 1.0 1.0</ambient>
+          <diffuse>0.1 1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0 1.0</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

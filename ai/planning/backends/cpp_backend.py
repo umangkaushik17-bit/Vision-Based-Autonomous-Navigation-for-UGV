@@ -462,7 +462,7 @@ class CPPDWABackend(DWABackend):
         self,
         state: RobotState,
         global_path: Path,
-        lookahead_dist: float = 0.60,
+        lookahead_dist: float = 1.50,
     ) -> Tuple[float, float]:
         if len(global_path) == 0:
             return (state.x + 1.0 * math.cos(state.yaw), state.y + 1.0 * math.sin(state.yaw))
@@ -494,8 +494,9 @@ class CPPDWABackend(DWABackend):
     ) -> Tuple[Optional[Trajectory], float, float, PlannerStatus, Dict[str, Any]]:
         t_start = time.perf_counter()
 
-        # Local target and path
-        local_target = self._find_local_target(current_state, global_path)
+        # Local target and path (adaptive lookahead based on speed and horizon)
+        lookahead = max(1.50, current_state.v * 1.50 + 0.50)
+        local_target = self._find_local_target(current_state, global_path, lookahead_dist=lookahead)
         d_curr = math.hypot(local_target[0] - current_state.x, local_target[1] - current_state.y)
 
         path_len = len(global_path)

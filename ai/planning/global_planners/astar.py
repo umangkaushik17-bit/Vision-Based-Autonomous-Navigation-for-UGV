@@ -150,6 +150,32 @@ class AStarPlanner(GlobalPlanner):
             return None, PlannerStatus.INVALID_GOAL, {"error": "Goal out of map bounds"}
 
         res = self._get_resolution(costmap)
+        shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
+
+        # Footprint inflation for chassis obstacle & critical hazard clearance (circumscribed radius ensures full rotation clearance)
+        infl_radius = self.config.vehicle.circumscribed_radius_m + self.config.vehicle.collision_margin_m
+        infl_cells = max(4, int(np.ceil(infl_radius / res)))
+        infl_obstacle: Optional[np.ndarray] = None
+        if hasattr(costmap, "obstacle") and costmap.obstacle.any():
+            cached_infl = getattr(costmap, "_cached_infl_obstacle", None)
+            cached_cells = getattr(costmap, "_cached_infl_cells", None)
+            if cached_infl is not None and cached_cells == infl_cells:
+                infl_obstacle = cached_infl
+            else:
+                from scipy.ndimage import binary_dilation
+                infl_obstacle = binary_dilation(costmap.obstacle, iterations=infl_cells)
+                try:
+                    costmap._cached_infl_obstacle = infl_obstacle
+                    costmap._cached_infl_cells = infl_cells
+                except Exception:
+                    pass
+
+        infl_hazard: Optional[np.ndarray] = None
+        if hasattr(costmap, "hazard") and (costmap.hazard >= self.cost_evaluator.critical_hazard_threshold).any():
+            from scipy.ndimage import binary_dilation
+            crit_mask = costmap.hazard >= self.cost_evaluator.critical_hazard_threshold
+            infl_hazard = binary_dilation(crit_mask, iterations=infl_cells)
+
         r_start, c_start = self._grid_coords(costmap, start_x, start_y)
         r_goal, c_goal = self._grid_coords(costmap, goal_x, goal_y)
 
@@ -157,13 +183,21 @@ class AStarPlanner(GlobalPlanner):
         if self.collision_checker.is_point_collision(start_x, start_y, costmap):
             return None, PlannerStatus.START_BLOCKED, {"error": "Start point in collision/hazard"}
 
-        if self.collision_checker.is_point_collision(goal_x, goal_y, costmap):
-            return None, PlannerStatus.GOAL_BLOCKED, {"error": "Goal point in collision/hazard"}
-
-        # Footprint validation at goal pose
         goal_yaw = float(goal.yaw) if hasattr(goal, "yaw") and goal.yaw is not None else 0.0
-        if self.collision_checker.is_footprint_collision(goal_x, goal_y, goal_yaw, costmap):
-            return None, PlannerStatus.GOAL_BLOCKED, {"error": "Goal footprint in collision"}
+        if (
+            self.collision_checker.is_point_collision(goal_x, goal_y, costmap)
+            or self.collision_checker.is_footprint_collision(goal_x, goal_y, goal_yaw, costmap)
+            or (infl_obstacle is not None and 0 <= r_goal < shape[0] and 0 <= c_goal < shape[1] and infl_obstacle[r_goal, c_goal])
+        ):
+            free_pt = self._find_nearest_free_point(
+                goal_x, goal_y, costmap, search_radius_m=1.5, check_footprint=True, yaw=goal_yaw,
+                infl_obstacle=infl_obstacle, infl_hazard=infl_hazard
+            )
+            if free_pt is not None:
+                goal_x, goal_y = free_pt
+                r_goal, c_goal = self._grid_coords(costmap, goal_x, goal_y)
+            else:
+                return None, PlannerStatus.GOAL_BLOCKED, {"error": "Goal point in collision/hazard"}
 
         if (r_start, c_start) == (r_goal, c_goal):
             pts = np.array([[start_x, start_y], [goal_x, goal_y]], dtype=np.float32)
@@ -176,6 +210,14 @@ class AStarPlanner(GlobalPlanner):
                 "path_cost": 0.0
             }
 
+        # Corridor bounding box to prevent expanding irrelevant distant cells
+        bbox_margin_m = 12.0
+        bbox_margin_cells = max(30, int(np.ceil(bbox_margin_m / res)))
+        r_min = max(0, min(r_start, r_goal) - bbox_margin_cells)
+        r_max = min(shape[0] - 1, max(r_start, r_goal) + bbox_margin_cells)
+        c_min = max(0, min(c_start, c_goal) - bbox_margin_cells)
+        c_max = min(shape[1] - 1, max(c_start, c_goal) + bbox_margin_cells)
+
         # Priority queue stores tuples: (f_score, g_score, r, c)
         start_h = self._heuristic(r_start, c_start, r_goal, c_goal, res)
         open_set: List[Tuple[float, float, int, int]] = []
@@ -185,23 +227,8 @@ class AStarPlanner(GlobalPlanner):
         came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
         closed_set: Set[Tuple[int, int]] = set()
 
-        # Footprint inflation for chassis obstacle & critical hazard clearance (circumscribed radius ensures full rotation clearance)
-        infl_radius = self.config.vehicle.circumscribed_radius_m + self.config.vehicle.collision_margin_m
-        infl_cells = max(4, int(np.ceil(infl_radius / res)))
-        infl_obstacle: Optional[np.ndarray] = None
-        if hasattr(costmap, "obstacle") and costmap.obstacle.any():
-            from scipy.ndimage import binary_dilation
-            infl_obstacle = binary_dilation(costmap.obstacle, iterations=infl_cells)
-
-        infl_hazard: Optional[np.ndarray] = None
-        if hasattr(costmap, "hazard") and (costmap.hazard >= self.cost_evaluator.critical_hazard_threshold).any():
-            from scipy.ndimage import binary_dilation
-            crit_mask = costmap.hazard >= self.cost_evaluator.critical_hazard_threshold
-            infl_hazard = binary_dilation(crit_mask, iterations=infl_cells)
-
         nodes_explored = 0
         goal_reached_coord: Optional[Tuple[int, int]] = None
-        shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
 
         while open_set:
             f, g, curr_r, curr_c = heapq.heappop(open_set)
@@ -220,7 +247,7 @@ class AStarPlanner(GlobalPlanner):
             for dr, dc, step_mult in self.motions:
                 nr, nc = curr_r + dr, curr_c + dc
 
-                if not (0 <= nr < shape[0] and 0 <= nc < shape[1]):
+                if not (r_min <= nr <= r_max and c_min <= nc <= c_max):
                     continue
                 if (nr, nc) in closed_set:
                     continue
@@ -291,4 +318,45 @@ class AStarPlanner(GlobalPlanner):
             "path_cost": float(total_cost),
         }
         return final_path, PlannerStatus.SUCCESS, diagnostics
+
+    def _find_nearest_free_point(
+        self,
+        gx: float,
+        gy: float,
+        costmap: Any,
+        search_radius_m: float = 1.5,
+        check_footprint: bool = False,
+        yaw: float = 0.0,
+        infl_obstacle: Optional[np.ndarray] = None,
+        infl_hazard: Optional[np.ndarray] = None,
+    ) -> Optional[Tuple[float, float]]:
+        """Find the closest collision-free grid point to (gx, gy) within search_radius_m."""
+        res = self._get_resolution(costmap)
+        max_steps = max(1, int(math.ceil(search_radius_m / res)))
+        best_pt: Optional[Tuple[float, float]] = None
+        best_d = float("inf")
+        shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
+        for step_x in range(-max_steps, max_steps + 1):
+            for step_y in range(-max_steps, max_steps + 1):
+                d = math.hypot(step_x * res, step_y * res)
+                if d > search_radius_m or d >= best_d:
+                    continue
+                cand_x = gx + step_x * res
+                cand_y = gy + step_y * res
+                if not costmap.is_in_bounds(cand_x, cand_y):
+                    continue
+                r_cand, c_cand = self._grid_coords(costmap, cand_x, cand_y)
+                if not (0 <= r_cand < shape[0] and 0 <= c_cand < shape[1]):
+                    continue
+                if infl_obstacle is not None and infl_obstacle[r_cand, c_cand]:
+                    continue
+                if infl_hazard is not None and infl_hazard[r_cand, c_cand]:
+                    continue
+                if self.collision_checker.is_point_collision(cand_x, cand_y, costmap):
+                    continue
+                if check_footprint and self.collision_checker.is_footprint_collision(cand_x, cand_y, yaw, costmap):
+                    continue
+                best_d = d
+                best_pt = (cand_x, cand_y)
+        return best_pt
 

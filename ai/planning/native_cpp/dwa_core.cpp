@@ -603,8 +603,8 @@ void DWAPlannerCore::plan(
             path_score = 1.0 / (1.0 + cte);
         }
 
-        // 2. Heading score (alignment to local target)
-        double target_yaw = std::atan2(local_target_y - end_y, local_target_x - end_x);
+        // 2. Heading score (alignment to local target direction from current state)
+        double target_yaw = std::atan2(local_target_y - current_state.y, local_target_x - current_state.x);
         double heading_err = std::abs(std::remainder(target_yaw - end_yaw, 2.0 * M_PI));
         double heading_score = (M_PI - heading_err) / M_PI;
 
@@ -616,11 +616,11 @@ void DWAPlannerCore::plan(
         // 4. Static clearance score
         double clearance_score = std::min(diag.static_clearance, 1.50) / 1.50;
 
-        // 5. Velocity score
+        // 5. Velocity score (prefer forward motion aligned with path heading, penalize unnecessary reverse)
         double vel_factor = std::max(0.0, std::cos(heading_err));
-        double vel_score = (v >= 0.0)
+        double vel_score = (v > 0.05)
             ? (v / std::max(0.1, max_v)) * vel_factor
-            : -0.5 * std::abs(v) / max_v;
+            : (v >= 0.0 ? 0.0 : -0.5 * std::abs(v) / max_v);
 
         // 6. Terrain score
         double terrain_score = 1.0 / (1.0 + diag.terrain_cost);

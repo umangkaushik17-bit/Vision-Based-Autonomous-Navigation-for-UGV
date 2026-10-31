@@ -87,13 +87,28 @@ class DWAPlanner(LocalPlanner):
         self,
         state: RobotState,
         dt: float,
-        max_v_limit: Optional[float] = None
+        max_v_limit: Optional[float] = None,
+        heading_error: Optional[float] = None,
     ) -> Tuple[float, float, float, float]:
-        """Calculate reachable velocity limits based on vehicle accelerations and localization mode."""
+        """Calculate reachable velocity limits based on vehicle accelerations, localization mode, and heading alignment."""
         eff_max_v = min(self.max_v, max_v_limit) if max_v_limit is not None else self.max_v
 
+        # Heading error damping: prevent wide looping arcs on sharp waypoint transitions or obstacle bypass
+        if heading_error is not None:
+            if heading_error > 1.10:  # > ~63 degrees: prioritize in-place rotation
+                eff_max_v = min(eff_max_v, 0.10)
+            elif heading_error > 0.65:  # > ~37 degrees: scale linear velocity with cos(err)
+                scale = max(0.20, math.cos(heading_error))
+                eff_max_v = min(eff_max_v, self.max_v * scale)
+
         v_low = max(self.min_v, state.v - self.max_accel_v * dt)
+        # When heading error is large, allow zero forward velocity for in-place pivot turn
+        if heading_error is not None and heading_error > 0.85:
+            v_low = min(v_low, 0.0)
+
         v_high = min(eff_max_v, state.v + self.max_accel_v * dt)
+        if v_high < v_low:
+            v_high = v_low
 
         w_low = max(-self.max_omega, state.omega - self.max_accel_omega * dt)
         w_high = min(self.max_omega, state.omega + self.max_accel_omega * dt)
@@ -104,7 +119,7 @@ class DWAPlanner(LocalPlanner):
         self,
         state: RobotState,
         global_path: Path,
-        lookahead_dist: float = 0.60
+        lookahead_dist: float = 1.50
     ) -> Tuple[float, float]:
         """Find target waypoint along global path approximately lookahead_dist ahead."""
         if len(global_path) == 0:
@@ -210,10 +225,14 @@ class DWAPlanner(LocalPlanner):
         # Enforce degraded velocity cap (Phase 8/12 contract: v <= 0.35 m/s)
         max_v_limit = self.degraded_max_v if is_degraded else None
 
-        local_target = self._find_local_target(current_state, global_path)
+        lookahead = max(1.50, current_state.v * self.pred_horizon + 0.50)
+        local_target = self._find_local_target(current_state, global_path, lookahead_dist=lookahead)
         d_curr = math.hypot(local_target[0] - current_state.x, local_target[1] - current_state.y)
+        target_yaw_init = math.atan2(local_target[1] - current_state.y, local_target[0] - current_state.x)
+        init_heading_err = abs((target_yaw_init - current_state.yaw + math.pi) % (2.0 * math.pi) - math.pi)
+
         v_low, v_high, w_low, w_high = self._compute_dynamic_window(
-            current_state, dt=self.sim_dt, max_v_limit=max_v_limit
+            current_state, dt=self.sim_dt, max_v_limit=max_v_limit, heading_error=init_heading_err
         )
 
         v_candidates = np.linspace(v_low, v_high, self.v_samples)
@@ -328,8 +347,8 @@ class DWAPlanner(LocalPlanner):
                 else:
                     path_score = 1.0
 
-                # 3b. Heading score (alignment to local target)
-                target_yaw = math.atan2(local_target[1] - end_pt.y, local_target[0] - end_pt.x)
+                # 3b. Heading score (alignment to local target direction)
+                target_yaw = math.atan2(local_target[1] - current_state.y, local_target[0] - current_state.x)
                 heading_err = abs((target_yaw - end_pt.yaw + np.pi) % (2.0 * np.pi) - np.pi)
                 heading_score = (math.pi - heading_err) / math.pi  # Normalized [0, 1]
 
@@ -343,12 +362,21 @@ class DWAPlanner(LocalPlanner):
 
                 # 3e. Velocity score (prefer forward motion aligned with path heading, penalize unnecessary reverse)
                 vel_factor = max(0.0, math.cos(heading_err))
-                vel_score = (float(v) / max(0.1, self.max_v) * vel_factor) if v >= 0 else -0.5 * abs(v) / self.max_v
+                vel_score = (float(v) / max(0.1, self.max_v) * vel_factor) if v > 0.05 else (0.0 if v >= 0 else -0.5 * abs(v) / self.max_v)
 
                 # 3f. Terrain score (lower terrain cost is preferred)
                 terrain_score = 1.0 / (1.0 + traj.total_cost)
 
                 # Composite score: static multi-objective minus dynamic penalty plus dynamic clearance
+                dyn_evasion_bonus = 0.0
+                if has_dynamic and obstacle_hulls:
+                    for h in obstacle_hulls:
+                        dx_h = h.x_min - current_state.x
+                        if 0.5 < dx_h < 15.0 and abs(h.y_min - current_state.y) < 2.0:
+                            y_disp = abs(end_pt.y - current_state.y)
+                            if y_disp > 0.12 and v > 0.35:
+                                dyn_evasion_bonus = max(dyn_evasion_bonus, 0.30 * min(1.0, y_disp / 0.8) * (v / max(0.1, self.max_v)))
+
                 total_score = (
                     self.w_path * path_score +
                     self.w_heading * heading_score +
@@ -357,7 +385,8 @@ class DWAPlanner(LocalPlanner):
                     self.w_vel * vel_score +
                     self.w_terrain * terrain_score -
                     dyn_penalty +
-                    (dyn_cfg.w_dynamic_clearance * dyn_clearance if has_dynamic else 0.0)
+                    (dyn_cfg.w_dynamic_clearance * dyn_clearance if has_dynamic else 0.0) +
+                    dyn_evasion_bonus
                 )
 
                 valid_candidates.append((total_score, traj, float(v), float(w), dyn_res))

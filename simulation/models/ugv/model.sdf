@@ -408,6 +408,9 @@
       <odom_topic>/model/ugv_4wd/odometry</odom_topic>
       <frame_id>odom</frame_id>
       <child_frame_id>base_link</child_frame_id>
+      <cmd_vel_timeout>0.25</cmd_vel_timeout>
+      <max_linear_acceleration>2.0</max_linear_acceleration>
+      <max_angular_acceleration>3.5</max_angular_acceleration>
     </plugin>
 
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">

@@ -1,0 +1,2 @@
+Run,Mode,RTF,Distance_m,Final_X,Final_Y,Waypoints_Reached,Collisions,Safety_Violations,Loop_P95_ms,DWA_P95_ms,Costmap_Mean_ms,CPU_Mean_pct,Memory_MB,Mem_Growth_MB
+1,REPEATABILITY TEST,0.8,107.82,99.6,-0.04,,0,0,75.0,9.0,3.23,59.24,1396.35,613.07

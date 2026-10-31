@@ -101,3 +101,18 @@ Phase 13 is formally audited and frozen:
 ### Next Step: Phase 14 (Not Started)
 Phase 14 (*GPS-Denied Outdoor Navigation & Mission Executive*) is planned and not started.
 
+---
+
+## 6. Phase 15 Readiness Tracking
+
+- **Status:** `Phase 15: READY_TO_START_PHASE_15_WITH_PRECONDITIONS`
+- **Execution State:** Unstarted (Documentation audit & scope revision complete; strictly zero production code modified).
+- **Prerequisites Summary:**
+  1. *Subphase 15.0 Precondition*: Establish trustworthy Gazebo metric depth and known ground-truth terrain simulation foundation before any navigation algorithm implementation begins.
+  2. *Ground-Truth Terrain Geometries*: Verify flat, $10^\circ, 20^\circ, 30^\circ$, cross-slope, step obstacles, and undulating mounds in Gazebo.
+  3. *Sensor Sync & Calibration*: Verify RGB/depth frame synchronization and camera extrinsics.
+  4. *Regression Baseline*: Ensure Phase 14 2D planar navigation suite passes cleanly.
+  5. *Threshold Status*: Treat safety thresholds ($20^\circ$ safe, $28^\circ$ critical, $0.12\text{ m}$ clearance) as configured engineering assumptions, not physical rollover limits.
+  6. *Scope Boundary*: Formally exclude physical friction ($\mu$) estimation and terramechanics from Phase 15 deliverables.
+
+

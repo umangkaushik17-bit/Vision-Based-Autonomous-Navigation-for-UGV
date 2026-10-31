@@ -1,0 +1,340 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - "/UGV (Pose & Heading)1"
+        - "/Dynamic Obstacle1"
+        - /Global Path (A*)1
+        - /Selected Local Trajectory (DWA)1
+        - /Obstacle & Autonomy Markers1
+        - /Mission Waypoints (START -> W5)1
+      Splitter Ratio: 0.5
+    Tree Height: 550
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.20
+      Cell Size: 5
+      Class: rviz_default_plugins/Grid
+      Color: 70; 80; 95
+      Enabled: true
+      Line Style:
+        Line Width: 0.02
+        Value: Lines
+      Name: "Environment Grid"
+      Normal Cell Count: 0
+      Offset:
+        X: 50
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 25
+      Reference Frame: odom
+      Value: true
+    - Angle Tolerance: 0.1
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 255
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: false
+        Position:
+          Alpha: 0.3
+          Color: 204; 51; 204
+          Scale: 1
+          Value: false
+        Value: false
+      Enabled: true
+      Keep: 1
+      Name: "UGV (Pose & Heading)"
+      Position Tolerance: 0.1
+      Shape:
+        Alpha: 1
+        Axes Length: 1.0
+        Axes Radius: 0.08
+        Color: 255; 25; 0
+        Head Length: 0.3
+        Head Radius: 0.1
+        Shaft Length: 1
+        Shaft Radius: 0.05
+        Value: Axes
+      Topic:
+        Depth: 10
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /odom
+      Value: true
+    - Angle Tolerance: 0.1
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 255
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: false
+        Position:
+          Alpha: 0.3
+          Color: 255; 128; 0
+          Scale: 1
+          Value: false
+        Value: false
+      Enabled: true
+      Keep: 1
+      Name: "Dynamic Obstacle"
+      Position Tolerance: 0.1
+      Shape:
+        Alpha: 1
+        Axes Length: 1.0
+        Axes Radius: 0.08
+        Color: 255; 128; 0
+        Head Length: 0.3
+        Head Radius: 0.1
+        Shaft Length: 1
+        Shaft Radius: 0.05
+        Value: Axes
+      Topic:
+        Depth: 10
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /dynamic_obstacle/odom
+      Value: true
+    - Alpha: 0.90
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 240; 120
+      Enabled: true
+      Head Diameter: 0.10
+      Head Length: 0.15
+      Length: 0.30
+      Line Style: Lines
+      Line Width: 0.06
+      Name: "Global Path (A*)"
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0.02
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.05
+      Shaft Length: 0.10
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/global_path
+      Value: true
+    - Alpha: 1.0
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 225; 255
+      Enabled: true
+      Head Diameter: 0.10
+      Head Length: 0.15
+      Length: 0.30
+      Line Style: Lines
+      Line Width: 0.09
+      Name: "Selected Local Trajectory (DWA)"
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0.04
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.05
+      Shaft Length: 0.10
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /planning/dynamic_trajectory
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: "Obstacle & Autonomy Markers"
+      Namespaces:
+        dwa_candidates: false
+        dynamic_track: true
+        dynamic_track_label: true
+        goal_beacon: true
+        goal_text: true
+        judge_hud: false
+        pred_time_label: false
+        pred_trajectory: true
+        static_rock: true
+        static_rock_label: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /visualization_marker_array
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: "Mission Waypoints (START -> W5)"
+      Namespaces:
+        mission_start: true
+        mission_start_label: true
+        waypoint_beacons: true
+        waypoint_labels: true
+        waypoint_rings: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /mission/waypoint_markers
+      Value: true
+    - Alpha: 1.0
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: false
+      Name: "RobotModel (UGV 4WD) [Disabled for Speed]"
+      TF Prefix: ""
+      Update Interval: 0
+      Value: false
+      Visual Enabled: true
+    - Alpha: 0.65
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: false
+      Name: "Active Costmap [Disabled for Speed]"
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /costmap/occupancy
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: ""
+      Use Timestamp: false
+      Value: false
+    - Class: rviz_default_plugins/Image
+      Enabled: false
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: "Traversability Overlay [Disabled for Speed]"
+      Normalize Range: false
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /perception/traversability_overlay
+      Transport Hint: raw
+      Value: false
+    - Class: rviz_default_plugins/TF
+      Enabled: false
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        base_link:
+          Value: true
+        camera_link:
+          Value: false
+        camera_optical:
+          Value: false
+        odom:
+          Value: true
+      Marker Scale: 0.30
+      Name: "Coordinate Frames (TF)"
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        odom:
+          base_link:
+            camera_link:
+              camera_optical:
+                {}
+      Update Interval: 0
+      Value: false
+  Enabled: true
+  Global Options:
+    Background Color: 20; 24; 30
+    Fixed Frame: odom
+    Frame Rate: 15
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 10.0
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 0.3
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05
+      Invert Z Axis: false
+      Name: "Hero Perspective View"
+      Near Clip Distance: 0.01
+      Pitch: 0.52
+      Target Frame: base_link
+      Value: Orbit (rviz)
+      Yaw: 3.14
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 850
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Width: 1350
+  X: 100
+  Y: 100

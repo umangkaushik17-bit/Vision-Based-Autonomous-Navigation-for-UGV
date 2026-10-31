@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <model name="pine_tree">
+    <static>true</static>
+    <link name="tree_link">
+      <!-- Decorative vegetation: NO COLLISION for maximum simulation performance -->
+      <visual name="trunk_visual">
+        <pose>0 0 0.6 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.12</radius>
+            <length>1.2</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.32 0.20 0.12 1.0</ambient>
+          <diffuse>0.38 0.24 0.15 1.0</diffuse>
+          <specular>0.05 0.05 0.05 1.0</specular>
+        </material>
+      </visual>
+      <visual name="foliage_visual">
+        <geometry>
+          <mesh>
+            <uri>meshes/pine_foliage.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.32 0.18 1.0</ambient>
+          <diffuse>0.20 0.42 0.24 1.0</diffuse>
+          <specular>0.08 0.08 0.08 1.0</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
