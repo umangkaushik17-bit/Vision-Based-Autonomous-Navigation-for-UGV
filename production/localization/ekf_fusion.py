@@ -76,6 +76,10 @@ class MultiSensorEKF:
         # Gravity vector in world frame
         self.gravity = np.array([0.0, 0.0, -9.80665], dtype=np.float64)
 
+        # Online IMU bias estimates (rad/s and m/s^2)
+        self.gyro_bias = np.zeros(3, dtype=np.float64)
+        self.accel_bias = np.zeros(3, dtype=np.float64)
+
         # Watchdogs & Sensor Timestamps
         self.last_predict_time: Optional[float] = None
         self.last_wheel_time: Optional[float] = None
@@ -113,6 +117,8 @@ class MultiSensorEKF:
         self.initial_position = None
         self.wheel_slip_events = 0
         self.vio_dropouts = 0
+        self.gyro_bias.fill(0.0)
+        self.accel_bias.fill(0.0)
 
     def predict(self, current_time: float) -> None:
         """Propagates state and covariance forward using discrete 3D kinematics."""
@@ -155,14 +161,37 @@ class MultiSensorEKF:
         Q = self.Q_base * dt
 
         for _ in range(num_steps):
+            phi = float(self.x[3])
+            theta = float(np.clip(self.x[4], -1.35, 1.35))
+            sr, cr = math.sin(phi), math.cos(phi)
+            sp, cp = math.sin(theta), math.cos(theta)
+            tp = sp / cp
+            sec_p = 1.0 / cp
+
+            # Exact 3D Euler kinematic rate transformation E(phi, theta)
+            wx, wy, wz = float(self.x[9]), float(self.x[10]), float(self.x[11])
+            d_phi = wx + (sr * tp) * wy + (cr * tp) * wz
+            d_theta = cr * wy - sr * wz
+            d_psi = (sr * sec_p) * wy + (cr * sec_p) * wz
+
+            F[3, 9] = dt
+            F[3, 10] = sr * tp * dt
+            F[3, 11] = cr * tp * dt
+            F[4, 9] = 0.0
+            F[4, 10] = cr * dt
+            F[4, 11] = -sr * dt
+            F[5, 9] = 0.0
+            F[5, 10] = sr * sec_p * dt
+            F[5, 11] = cr * sec_p * dt
+
             # Non-linear state propagation
             self.x[0] += self.x[6] * dt + self.x[12] * dt2_half
             self.x[1] += self.x[7] * dt + self.x[13] * dt2_half
             self.x[2] += self.x[8] * dt + self.x[14] * dt2_half
 
-            self.x[3] = normalize_angle(self.x[3] + self.x[9] * dt)
-            self.x[4] = normalize_angle(self.x[4] + self.x[10] * dt)
-            self.x[5] = normalize_angle(self.x[5] + self.x[11] * dt)
+            self.x[3] = normalize_angle(self.x[3] + d_phi * dt)
+            self.x[4] = normalize_angle(self.x[4] + d_theta * dt)
+            self.x[5] = normalize_angle(self.x[5] + d_psi * dt)
 
             self.x[6] += self.x[12] * dt
             self.x[7] += self.x[13] * dt
@@ -267,6 +296,56 @@ class MultiSensorEKF:
         self.predict(meas.timestamp)
         self.last_imu_time = meas.timestamp
 
+        # 1. Update Angular Velocities (wx, wy, wz) with online bias compensation
+        omega_corr = meas.angular_velocity - self.gyro_bias
+        y_w = np.array([
+            omega_corr[0] - self.x[9],
+            omega_corr[1] - self.x[10],
+            omega_corr[2] - self.x[11],
+        ], dtype=np.float64)
+
+        H_w = np.zeros((3, 15), dtype=np.float64)
+        H_w[0, 9] = 1.0
+        H_w[1, 10] = 1.0
+        H_w[2, 11] = 1.0
+
+        R_w = meas.angular_velocity_covariance.copy()
+
+        # Kalman update for angular velocity
+        S_w = H_w @ self.P @ H_w.T + R_w
+        K_w = self.P @ H_w.T @ np.linalg.inv(S_w)
+
+        self.x += K_w @ y_w
+        I_KH_w = np.eye(15, dtype=np.float64) - K_w @ H_w
+        self.P = I_KH_w @ self.P @ I_KH_w.T + K_w @ R_w @ K_w.T
+
+        # 1b. Gravity-Vector Roll & Pitch Tilt Observability
+        # When specific force magnitude matches 1g (quasi-static / steady cruise) and z-component
+        # reflects gravitational tilt (az < g), bound roll and pitch drift from gravity vector.
+        ax_m, ay_m, az_m = (
+            float(meas.linear_acceleration[0] - self.accel_bias[0]),
+            float(meas.linear_acceleration[1] - self.accel_bias[1]),
+            float(meas.linear_acceleration[2] - self.accel_bias[2]),
+        )
+        g_mag = 9.80665
+        acc_norm = math.sqrt(ax_m * ax_m + ay_m * ay_m + az_m * az_m)
+        if abs(acc_norm - g_mag) < 0.25 and 0.5 < az_m < (g_mag - 1e-3):
+            phi_grav = math.atan2(ay_m, az_m)
+            theta_grav = math.atan2(-ax_m, math.hypot(ay_m, az_m))
+            y_tilt = np.array([
+                normalize_angle(phi_grav - self.x[3]),
+                normalize_angle(theta_grav - self.x[4]),
+            ], dtype=np.float64)
+            H_tilt = np.zeros((2, 15), dtype=np.float64)
+            H_tilt[0, 3] = 1.0
+            H_tilt[1, 4] = 1.0
+            R_tilt = np.eye(2, dtype=np.float64) * (0.01 + 2.0 * abs(acc_norm - g_mag))
+            S_tilt = H_tilt @ self.P @ H_tilt.T + R_tilt
+            K_tilt = self.P @ H_tilt.T @ np.linalg.inv(S_tilt)
+            self.x += K_tilt @ y_tilt
+            I_KH_t = np.eye(15, dtype=np.float64) - K_tilt @ H_tilt
+            self.P = I_KH_t @ self.P @ I_KH_t.T + K_tilt @ R_tilt @ K_tilt.T
+
         phi = self.x[3]
         theta = self.x[4]
         psi = self.x[5]
@@ -285,33 +364,10 @@ class MultiSensorEKF:
             [-sp,     cp * sr,                cp * cr],
         ], dtype=np.float64)
 
-        # 1. Update Angular Velocities (wx, wy, wz)
-        # Meas matches state indices [9, 10, 11]
-        y_w = np.array([
-            meas.angular_velocity[0] - self.x[9],
-            meas.angular_velocity[1] - self.x[10],
-            meas.angular_velocity[2] - self.x[11],
-        ], dtype=np.float64)
-
-        H_w = np.zeros((3, 15), dtype=np.float64)
-        H_w[0, 9] = 1.0
-        H_w[1, 10] = 1.0
-        H_w[2, 11] = 1.0
-
-        R_w = meas.angular_velocity_covariance.copy()
-
-        # Kalman update for angular velocity
-        S_w = H_w @ self.P @ H_w.T + R_w
-        K_w = self.P @ H_w.T @ np.linalg.inv(S_w)
-
-        self.x += K_w @ y_w
-        I_KH_w = np.eye(15, dtype=np.float64) - K_w @ H_w
-        self.P = I_KH_w @ self.P @ I_KH_w.T + K_w @ R_w @ K_w.T
-
         # 2. Update Linear Accelerations (ax, ay, az)
         # IMU measures proper acceleration in body frame: a_meas = R^T * (a_world - gravity)
         # Therefore: a_world_meas = R * a_meas + gravity
-        a_world_meas = R_body_to_world @ meas.linear_acceleration + self.gravity
+        a_world_meas = R_body_to_world @ (meas.linear_acceleration - self.accel_bias) + self.gravity
 
         y_a = np.array([
             a_world_meas[0] - self.x[12],

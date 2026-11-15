@@ -138,19 +138,30 @@ class DynamicOccupancyLayer:
         return (self.n_rows, self.n_cols)
 
     def _reset_slices(self, timestamp: float) -> None:
-        """Initialize or reset all time slices to empty/free space."""
+        """Initialize or reset all time slices to empty/free space (reusing buffers in-place)."""
         self.header_timestamp = float(timestamp)
-        self._slices = {}
-        for t_offset in self.time_bins:
-            self._slices[t_offset] = DynamicOccupancyGridSlice(
-                time_offset=t_offset,
-                timestamp=float(timestamp + t_offset),
-                cost=np.zeros((self.n_rows, self.n_cols), dtype=np.float32),
-                risk_level=np.zeros((self.n_rows, self.n_cols), dtype=np.uint8),
-                nominal_obstacle=np.zeros((self.n_rows, self.n_cols), dtype=bool),
-                uncertainty_zone=np.zeros((self.n_rows, self.n_cols), dtype=bool),
-                active_obstacle_ids=[],
-            )
+        if not self._slices:
+            self._slices = {}
+            for t_offset in self.time_bins:
+                self._slices[t_offset] = DynamicOccupancyGridSlice(
+                    time_offset=t_offset,
+                    timestamp=float(timestamp + t_offset),
+                    cost=np.zeros((self.n_rows, self.n_cols), dtype=np.float32),
+                    risk_level=np.zeros((self.n_rows, self.n_cols), dtype=np.uint8),
+                    nominal_obstacle=np.zeros((self.n_rows, self.n_cols), dtype=bool),
+                    uncertainty_zone=np.zeros((self.n_rows, self.n_cols), dtype=bool),
+                    active_obstacle_ids=[],
+                )
+            return
+
+        for t_offset, slc in self._slices.items():
+            slc.timestamp = float(timestamp + t_offset)
+            if slc.active_obstacle_ids:
+                slc.cost.fill(0.0)
+                slc.risk_level.fill(0)
+                slc.nominal_obstacle.fill(False)
+                slc.uncertainty_zone.fill(False)
+                slc.active_obstacle_ids.clear()
 
     # -------------------------------------------------------------------------
     # Coordinate Transformation Methods (Identical to Phase 5/9 WorldTerrainMap)

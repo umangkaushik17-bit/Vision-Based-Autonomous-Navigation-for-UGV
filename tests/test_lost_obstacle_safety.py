@@ -208,3 +208,53 @@ def test_scenario_j_stale_hazard_expires_safely():
     v_free, _, dec_free, _ = gov.evaluate(0.50, 0.0, robot_pose, h_expired, 3.5)
     assert v_free == 0.50
     assert dec_free == "ALLOW"
+
+
+def test_scenario_k_near_field_costmap_blind_spot_latching():
+    """Scenario K: Static/vision costmap obstacle in near-field blind spot (< 1.2m) is latched for TTL."""
+    from ai.spatial_fusion.world_map import WorldTerrainMap
+
+    wmap = WorldTerrainMap(resolution_m=0.10, x_bounds_m=[-2.0, 5.0], y_bounds_m=[-2.0, 2.0])
+    wmap.obstacle.fill(False)
+    r, c = wmap.world_to_grid(0.50, 0.0)
+    wmap.obstacle[r, c] = True
+
+    memory = RecentHazardMemory(RecentHazardMemoryConfig(base_ttl_s=3.50))
+    gov = SafetyGovernor()
+    robot_pose = (0.0, 0.0, 0.0)
+
+    hazards = memory.update([], current_time_s=1.0, robot_pose=robot_pose, costmap=wmap)
+    assert len(hazards) == 1
+    v, _, dec, _ = gov.evaluate(0.50, 0.0, robot_pose, hazards, 1.0)
+    assert v == 0.0
+    assert "STOP_FORWARD_HAZARD" in dec
+
+    # Even if costmap cell is temporarily cleared (dropped out of camera lower FOV), memory latches it
+    wmap.obstacle.fill(False)
+    hazards_blind = memory.update([], current_time_s=2.0, robot_pose=robot_pose, costmap=wmap)
+    assert len(hazards_blind) == 1
+    v2, _, dec2, _ = gov.evaluate(0.50, 0.0, robot_pose, hazards_blind, 2.0)
+    assert v2 == 0.0
+
+
+def test_scenario_l_3d_attitude_rollover_governor():
+    """Scenario L: Excessive vehicle roll or pitch triggers cautious slowdown or emergency rollover stop."""
+    gov = SafetyGovernor(SafetyGovernorConfig(cautious_tilt_deg=18.0, critical_tilt_deg=26.0, cautious_max_v_mps=0.15))
+    robot_pose = (0.0, 0.0, 0.0)
+
+    # 1. Moderate slope (20 deg pitch) -> cautious slowdown
+    v_caut, _, dec_caut, _ = gov.evaluate(
+        0.50, 0.0, robot_pose, [], current_time_s=1.0,
+        robot_roll_pitch=(0.0, math.radians(20.0)),
+    )
+    assert v_caut == 0.15
+    assert "CAUTIOUS_TILT_SLOWDOWN" in dec_caut
+
+    # 2. Critical rollover tilt (27 deg roll) -> immediate stop
+    v_stop, w_stop, dec_stop, _ = gov.evaluate(
+        0.50, 0.30, robot_pose, [], current_time_s=1.0,
+        robot_roll_pitch=(math.radians(27.0), 0.0),
+    )
+    assert v_stop == 0.0
+    assert w_stop == 0.0
+    assert "STOP_TILT_ROLLOVER_HAZARD" in dec_stop

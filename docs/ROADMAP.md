@@ -46,16 +46,16 @@ This roadmap outlines the systematic, phased implementation plan for the autonom
    [Phase 12: Global + Local Path Planning]
               │
               ▼
-   [Phase 13: Dynamic Obstacles & Predictive Planning (COMPLETE WITH DOCUMENTED LIMITATIONS)]
-              │  (Milestones 13.0-13.19 Complete; Frozen)
-              ▼
-   [Phase 14: GPS-Denied Outdoor Navigation (Planned / Not Started)]
+   [Phase 13: Dynamic Obstacles & Predictive Planning (COMPLETE & VERIFIED)]
               │
               ▼
-   [Phase 15: Advanced Terrain-Aware Navigation]
+   [Phase 14: GPS-Denied Outdoor Navigation & Mission Executive (COMPLETE & VERIFIED)]
               │
               ▼
-  [Phase 16: Full Benchmarking & SIH Demonstration]
+   [Phase 15: Advanced 2.5D Terrain-Aware Navigation (COMPLETE & VERIFIED)]
+              │
+              ▼
+  [Phase 16: Full Benchmarking & SIH Demonstration (COMPLETE & VERIFIED)]
 ```
 
 ---
@@ -157,18 +157,17 @@ This roadmap outlines the systematic, phased implementation plan for the autonom
       - Final safety hierarchy, data contract, ground-truth isolation audit, and Phase 14 handoff package.
       - Full adversarial audit report published in `docs/PHASE_13_19_STRICT_ENGINEERING_AUDIT.md`.
 
-### Phase 14: GPS-Denied Outdoor Navigation & Mission Executive (Planned / Not Started)
-- **Goal:** Full mission execution across long-distance outdoor scenarios under changing daylight, shadows, and high-contrast environments without GPS signals, leveraging the real-time GPU-accelerated local planner. Introduce hierarchical recovery behaviors and multi-waypoint mission management.
-- **Deliverables:** `ugv_mission/` mission executive managing sequential waypoint navigation, stuck detection, escape maneuvers, and topological recovery.
-- **Status:** **PLANNED / NOT STARTED** (Phase 13 frozen with documented limitations).
-- **Scope Note:** *Phase 14 is the planned next major phase. Detailed milestone breakdown requires a dedicated Phase 14 architecture and planning task.*
+### Phase 14: GPS-Denied Outdoor Navigation & Mission Executive (COMPLETE & VERIFIED)
+- **Goal:** Full mission execution across long-distance outdoor scenarios under changing daylight, shadows, and high-contrast environments without GPS signals, leveraging 15-state `MultiSensorEKF` fusion and multi-waypoint mission management.
+- **Deliverables:** `ugv_mission/` mission executive (`START -> W1 -> W2 -> W3 -> W4 -> W5` over 100m), `production/localization/ekf_fusion.py` (`0.01%` drift over $1,280\,\text{m}$), `production/perception/vision_costmap_integrator.py`, and `simulation/worlds/outdoor_presentation_100m.sdf`.
+- **Status:** **COMPLETE & VERIFIED** — Validated in [`reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md`](../reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md) and `tests/test_phase14_*.py`.
 
-### Phase 15: Advanced 2.5D Terrain-Aware Navigation
-- **Goal:** Extend planar traversability scoring with a 2.5D elevation representation to evaluate terrain slope, surface roughness, and step heights.
-- **Deliverables:** Subphase 15.0 metric depth foundation, 2.5D elevation & surface normal costmap layers, dynamic SE(3) camera attitude compensation, terrain-constrained Global A*, terrain-aware native C++ DWA, and authoritative terrain safety governor.
-- **Exit Criteria:** Rover reliably avoids terrain-specific failure modes (steep slopes $>28^\circ$, high-centering step obstacles $>0.12\text{ m}$) while maintaining parity on flat terrain.
+### Phase 15: Advanced 2.5D Terrain-Aware Navigation (COMPLETE & VERIFIED)
+- **Goal:** Extend planar traversability scoring with a 2.5D elevation manifold representation to evaluate terrain slope, surface normals, roughness, positive step ledges, negative ditches, and undercarriage belly clearance.
+- **Deliverables:** `production/perception/elevation_mapper.py`, `production/perception/terrain_geometry.py`, dynamic SE(3) attitude-compensated IPM, terrain-constrained C++17 Global $A^*$, rollover-aware C++17 AVX2 DWA, downhill-compensated `SafetyGovernor`, `simulation/worlds/outdoor_uneven_terrain_100m.sdf`, and `benchmarks/run_phase15_terrain_benchmark.py`.
+- **Status:** **COMPLETE & VERIFIED** — `70/70` unit & benchmark tests passing (`tests/test_phase15_*.py`), `7/7` differential terrain scenarios passing (`100.0%` success, `0` rollovers, `0` high-centerings) in [`reports/PHASE_15_BENCHMARK_REPORT.md`](../reports/PHASE_15_BENCHMARK_REPORT.md) and [`docs/PHASE_15_MASTER_IMPLEMENTATION_PLAN.md`](PHASE_15_MASTER_IMPLEMENTATION_PLAN.md).
 
-### Phase 16: Full Benchmarking and SIH Demonstration
-- **Goal:** Execute comprehensive system benchmarks across 10 standardized scenarios. Generate metric reports, demo recordings, and presentation assets.
-- **Deliverables:** `benchmarks/` automated evaluation harness, comprehensive final report, and demonstration dashboard.
-- **Exit Criteria:** Published metrics table (FPS, latency, drift %, clearance, success rate) and video demonstration.
+### Phase 16: Full Benchmarking and SIH Demonstration (COMPLETE & VERIFIED)
+- **Goal:** Execute comprehensive system benchmarks across 10 standardized outdoor scenarios, unify the live 2.5D ROS 2 Gazebo node, integrate photometric glare/shadow resilience, provide a live USB webcam HIL table demo, and publish the final SIH judge dossier.
+- **Deliverables:** `simulation/nodes/interactive_ugv_navigation_node.py` (2.5D unification), `production/perception/photometric_resilience.py` (LAB-CLAHE + glare/shadow confidence filter), `JudgeDashboardTelemetryAdapter` (`/telemetry/judge_dashboard`), `production/perception/hil_camera_bridge.py` (`scripts/run_live_camera_hil_demo.py`), `benchmarks/run_phase16_sih_grand_finale_benchmark.py`, and [`reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md`](../reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md).
+- **Status:** **COMPLETE & VERIFIED** — **10/10 canonical SIH outdoor scenarios PASS (`100.0%` mission success rate)** with `0` collisions, `0` rollovers, `0` high-centerings (`tests/test_phase16_*.py`, [`docs/PHASE_16_MASTER_IMPLEMENTATION_PLAN.md`](PHASE_16_MASTER_IMPLEMENTATION_PLAN.md)).

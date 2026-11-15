@@ -376,6 +376,10 @@ class CPPDWABackend(DWABackend):
             w_terrain=float(dwa_cfg.get("terrain_cost_weight", 0.20)),
         )
 
+        # Preallocated output buffers to eliminate per-cycle allocation overhead
+        self._c_diagnostics = (C_CandidateDiagnostic * self.total_k)()
+        self._out_traj = np.zeros((self.total_k, self.steps, 3), dtype=np.float64)
+
         # Behavioral state machine
         behavior_cfg = getattr(self.config, "behavior", None)
         self.behavioral_state_machine = BehavioralStateMachine(behavior_cfg)
@@ -550,9 +554,18 @@ class CPPDWABackend(DWABackend):
             is_cartesian=is_cartesian,
         )
 
-        # Costmap layer arrays
-        obs_arr = np.ascontiguousarray(costmap.obstacle, dtype=np.uint8) if hasattr(costmap, "obstacle") else None
-        obs_ptr = obs_arr.ctypes.data_as(POINTER(c_uint8)) if obs_arr is not None else None
+        # Sync live vehicle velocity limits in case caller adjusted config dynamically
+        self.c_vehicle.max_linear_velocity_mps = float(self.config.vehicle.max_linear_velocity_mps)
+        self.c_vehicle.min_linear_velocity_mps = float(self.config.vehicle.min_linear_velocity_mps)
+
+        # Costmap layer arrays (zero-copy view when contiguous bool/float32)
+        if hasattr(costmap, "obstacle"):
+            raw_obs = costmap.obstacle
+            obs_arr = raw_obs.view(np.uint8) if (raw_obs.dtype == np.bool_ and raw_obs.flags.c_contiguous) else np.ascontiguousarray(raw_obs, dtype=np.uint8)
+            obs_ptr = obs_arr.ctypes.data_as(POINTER(c_uint8))
+        else:
+            obs_arr = None
+            obs_ptr = None
 
         cost_arr = np.ascontiguousarray(costmap.cost, dtype=np.float32) if hasattr(costmap, "cost") else None
         cost_ptr = cost_arr.ctypes.data_as(POINTER(c_float)) if cost_arr is not None else None
@@ -560,19 +573,24 @@ class CPPDWABackend(DWABackend):
         haz_arr = np.ascontiguousarray(costmap.hazard, dtype=np.float32) if hasattr(costmap, "hazard") else None
         haz_ptr = haz_arr.ctypes.data_as(POINTER(c_float)) if haz_arr is not None else None
 
-        unk_arr = np.ascontiguousarray(costmap.unknown, dtype=np.uint8) if hasattr(costmap, "unknown") else None
-        unk_ptr = unk_arr.ctypes.data_as(POINTER(c_uint8)) if unk_arr is not None else None
+        if hasattr(costmap, "unknown"):
+            raw_unk = costmap.unknown
+            unk_arr = raw_unk.view(np.uint8) if (raw_unk.dtype == np.bool_ and raw_unk.flags.c_contiguous) else np.ascontiguousarray(raw_unk, dtype=np.uint8)
+            unk_ptr = unk_arr.ctypes.data_as(POINTER(c_uint8))
+        else:
+            unk_arr = None
+            unk_ptr = None
 
         trav_arr = np.ascontiguousarray(costmap.traversability, dtype=np.float32) if hasattr(costmap, "traversability") else None
         trav_ptr = trav_arr.ctypes.data_as(POINTER(c_float)) if trav_arr is not None else None
 
-        slope_arr = np.ascontiguousarray(costmap.slope_deg if hasattr(costmap, "slope_deg") else (costmap.slope if hasattr(costmap, "slope") else np.zeros((n_rows, n_cols))), dtype=np.float32)
+        slope_arr = np.ascontiguousarray(costmap.slope_deg if hasattr(costmap, "slope_deg") else (costmap.slope if hasattr(costmap, "slope") else np.zeros((n_rows, n_cols), dtype=np.float32)), dtype=np.float32)
         slope_ptr = slope_arr.ctypes.data_as(POINTER(c_float))
 
-        rough_arr = np.ascontiguousarray(costmap.roughness if hasattr(costmap, "roughness") else np.zeros((n_rows, n_cols)), dtype=np.float32)
+        rough_arr = np.ascontiguousarray(costmap.roughness if hasattr(costmap, "roughness") else np.zeros((n_rows, n_cols), dtype=np.float32), dtype=np.float32)
         rough_ptr = rough_arr.ctypes.data_as(POINTER(c_float))
 
-        hvar_arr = np.ascontiguousarray(costmap.height_var if hasattr(costmap, "height_var") else np.zeros((n_rows, n_cols)), dtype=np.float32)
+        hvar_arr = np.ascontiguousarray(costmap.height_var if hasattr(costmap, "height_var") else np.zeros((n_rows, n_cols), dtype=np.float32), dtype=np.float32)
         hvar_ptr = hvar_arr.ctypes.data_as(POINTER(c_float))
 
         # Dynamic configuration
@@ -631,8 +649,8 @@ class CPPDWABackend(DWABackend):
 
         # Output buffers
         c_result = C_DWAResult()
-        c_diagnostics = (C_CandidateDiagnostic * self.total_k)()
-        out_traj = np.zeros((self.total_k, self.steps, 3), dtype=np.float64)
+        c_diagnostics = self._c_diagnostics
+        out_traj = self._out_traj
         out_traj_ptr = out_traj.ctypes.data_as(POINTER(c_double))
 
         # Invoke native C++ planner

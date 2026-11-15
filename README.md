@@ -1,240 +1,207 @@
-# SIH26126 — Vision Based Autonomous Navigation for Unmanned Ground Vehicle (UGV) in Outdoor Environments
+# SIH26126 — Vision-Based Autonomous Navigation for Unmanned Ground Vehicle (UGV) in Outdoor Environments
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green.svg)](https://opencv.org/)
+[![C++17](https://img.shields.io/badge/C%2B%2B17-AVX2%20SIMD%20%2B%20OpenMP-00599C.svg)]()
+[![ONNX](https://img.shields.io/badge/ONNX_Runtime-INT8%20%2F%20FP32-blueviolet.svg)]()
 [![ROS 2](https://img.shields.io/badge/ROS_2-Jazzy%20%2F%20Humble-orange.svg)](https://docs.ros.org/)
-[![Gazebo](https://img.shields.io/badge/Simulation-Gazebo%20Harmonic-blueviolet.svg)](https://gazebosim.org/)
-[![Compute](https://img.shields.io/badge/Compute-CPU%20%2B%20NVIDIA%20Tesla%20T4-purple.svg)](https://nvidia.com)
-[![Tests](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen.svg)]()
-[![Status](https://img.shields.io/badge/Phase%2014.7.4-Complete%20%26%20Sealed-brightgreen.svg)](reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md)
+[![Gazebo](https://img.shields.io/badge/Simulation-Gazebo%20Harmonic-purple.svg)](https://gazebosim.org/)
+[![Tests](https://img.shields.io/badge/Automated_Tests-177%2F177%20PASS-brightgreen.svg)](reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md)
+[![SIH_Benchmark](https://img.shields.io/badge/SIH_10--Scenario_Suite-10%2F10%20PASS%20(100%25)-brightgreen.svg)](reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md)
 
-A production-grade, camera-first, GPS-denied autonomous robotics stack for outdoor Unmanned Ground Vehicles (UGVs) developed for the **Smart India Hackathon (SIH 2026)**.
-
+A production-grade, **camera-first, GPS-denied, 2.5D terrain-aware autonomous navigation stack** for outdoor Unmanned Ground Vehicles (UGVs), developed for **Smart India Hackathon (SIH 2026 — Problem Statement SIH26126)**.
 
 ---
 
-## 📌 Project Overview
+## 🎯 Executive Summary & Key Performance Highlights
 
-This repository houses an end-to-end autonomous navigation system designed to traverse semi-structured and unstructured outdoor environments (dirt roads, trails, tall vegetation, rocky inclines, water reflections) strictly without GPS signals.
+This repository delivers a complete **17-Phase (`Phase 0` to `Phase 16`)** autonomous navigation system engineered to traverse unstructured outdoor trails, steep embankments ($32^\circ$), lateral cross-slopes ($24^\circ$), vertical rock steps ($+20\,\text{cm}$), negative ditches ($-15\,\text{cm}$), high-centering boulder mounds, harsh sun glare ($+60\%$), deep tree shadows, and moving obstacles **strictly without GPS**.
 
-The stack unifies deep semantic traversability estimation, visual-inertial odometry, dynamic spatial costmaps, predictive Dynamic Window Approach (DWA) local planning, event-driven global replanning ($A^*$), dynamic obstacle tracking/prediction, and fail-safe behavioral arbitration, cleanly packaged behind native **ROS 2** interfaces.
-
-> [!IMPORTANT]
-> **NATIVE ROS 2 EXECUTION STATUS:**
-> Architecture and ROSIDL integration are implemented and structurally tested. Native ROS 2 execution/Gazebo validation is performed separately on the Linux runtime environment and remains a runtime-validation task unless explicitly marked validated by the runtime report. See [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md).
-
----
-
-## 🚀 Core Architectural Capabilities
-
-1. **Camera-First Traversability Intelligence (Phases 1–4):**
-   - Deep semantic terrain segmentation (traversable trail, rough soil, vegetation, water hazards, obstacles).
-   - Negative obstacle (ditch, rut, drop-off) and positive obstacle (boulder, trunk, fence) detection.
-   - Continuous cost formulation penalizing terrain roughness, slope, and optical uncertainty without ground-truth cheating.
-
-2. **GPS-Denied Visual Odometry & Spatial Fusion (Phases 8–10):**
-   - Stereo/monocular visual-inertial state estimation providing drift-mitigated metric pose estimates.
-   - Recursive Bayesian spatial fusion projecting camera-frame perceptions into a global rolling/static `WorldTerrainMap`.
-   - Complete TF2 coordinate frame tree (`odom -> base_link -> camera_link -> camera_optical`) with sub-millisecond lookup latency.
-
-3. **Terrain-Aware Global & Local Planning (Phase 12):**
-   - Global $A^*$ pathfinding with clearance penalties, octile heuristics, and footprint-validated path smoothing.
-   - Local Dynamic Window Approach (DWA) evaluating exact rectangular vehicle footprints ($0.90\,\text{m} \times 0.65\,\text{m}$).
-   - Hierarchical safety supervisory controller enforcing emergency stops ($d < 0.35\,\text{m}$) and speed clamping ($0.35\,\text{m} \le d < 0.60\,\text{m}$).
-
-4. **Dynamic Obstacle Tracking & Predictive Replanning (Phase 13.1–13.12):**
-   - Multi-frame data association via Hungarian bipartite matching and Kalman state filtering (constant-velocity and coordinated-turn models).
-   - Future trajectory prediction over $1.0\text{--}3.0\,\text{s}$ horizons with time-growing positional covariance ellipses.
-   - Dynamic spatio-temporal reservation grids (`DynamicOccupancyLayer`) separate from static terrain maps.
-   - Predictive DWA with swept-segment broad-phase filtering and time-parameterized footprint collision checking.
-   - Four-state behavioral arbitration finite state machine (`PROCEED`, `AVOID`, `WAIT`, `STOP`).
-   - Event-driven global replanning triggered by persistent blockages, corridor occlusions, and dynamic deadlocks.
-
-5. **Decoupled ROS 2 Architecture & Native ROSIDL Interfaces (Phase 13.12):**
-   - Standalone `ugv_navigation_msgs` pure interface package providing 13 canonical `.msg` definitions.
-   - Isolated bidirectional conversion layer (`dynamic_converters.py`) keeping all mathematical and AI models 100% ROS-independent.
-   - Unified launch orchestrator (`dynamic_navigation.launch.py`) with validated QoS contracts and topic ownership.
-
-6. **Dynamic SIL Scenario Validation (Phase 13.13 Revalidated):**
-   - Comprehensive Software-in-the-Loop closed-loop validation revalidated under canonical termination semantics.
-   - Strict ground-truth isolation, zero simulated collisions, full-horizon goal arrival validation, and legacy evidence separation.
-   - Full quantitative characterization documented in [docs/PHASE_13_13_SIL_RESULTS.md](docs/PHASE_13_13_SIL_RESULTS.md).
-
-7. **GPU-Accelerated Dynamic Local Planning (Phase 13 GPU Acceleration Workstream):**
-   - Vectorized PyTorch/CUDA tensor kernels ([`AcceleratedDWAPlanner`](ai/planning/dynamic_gpu/gpu_dwa.py)) evaluating multi-horizon trajectories with exact SAT polygon intersection.
-   - Slashed measured DWA local trajectory simulation and collision checking latency from $5,673\,\text{ms}$ to **$58.31\,\text{ms}$** ($97.32\times$ local DWA speedup) on **NVIDIA Tesla T4** (`sm_75`).
-   - Achieved local planning real-time closed-loop factor of **$1.235\times$** with zero collision false negatives and 100% behavioral safety parity. Fully detailed in [docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md](docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md).
+| Subsystem | Architecture & Engineering Breakthrough | Measured Performance |
+| :--- | :--- | :--- |
+| **Photometric & Semantic Perception** | Adaptive CIE-LAB CLAHE + Specular Glare/Shadow Confidence Filter ($C_{\text{photo}}$) + Mixed-Precision **INT8 ONNX** `LightweightTraversabilityNet` + `AsyncPerceptionWorker` | **`0.92 ms`** CLAHE, **`12.52 ms`** INT8 ONNX, **`0.0%`** glare/shadow false obstacles |
+| **2.5D Terrain Intelligence** | `ElevationMapper` (Kalman/EMA height fusion) + `VectorizedTerrainGeometryEstimator` (Normals $\hat{\mathbf{n}}$, Slope $\alpha$, Steps $\Delta Z^+$, Ditches $\Delta Z^-$, Belly Crown $h_{\text{crown}}$) + Dynamic **SE(3) Attitude IPM** | **`0.99 ms`** elevation, **`1.86 ms`** 2.5D geometry, **`1.61 ms`** SE(3) IPM ($\le 0.07\,\text{m}$ tilt drift) |
+| **GPS-Denied 3D Localization** | 15-State `MultiSensorEKF` fusing Wheel Odometry + 200 Hz 6-Axis IMU (3D Euler $E(\phi,\theta)$ + Gravity Tilt Observability) + Stereo VIO with dead-reckoning fallback | **`0.01%–0.025%` drift** over $100\text{--}1,280\,\text{m}$; **`< 0.03 m` drift** during 3s VIO outage |
+| **Global & Local Motion Planning** | **Native C++17 Global $A^*$** (`astar_cpp.dll`/`.so` with JPS & switchback-preserving smoothing) + **Native C++17 AVX2 DWA** (`dwa_cpp.dll`/`.so`, 375 rollouts, 8-axis SAT, Rollover Margin $\mathcal{M}_{\text{roll}} \ge 0.20$) | **`1.27 ms`** C++17 $A^*$ ($252\times$ speedup), **`1.32 ms`** C++17 AVX2 DWA ($4,298\times$ speedup) |
+| **Safety Governance & Recovery** | Downhill-Compensated `AuthoritativeSafetyGovernor` ($d_{\text{stop}}(\theta)$ expansion, $18^\circ/26^\circ$ IMU rollover clamp) + `RecentHazardMemory` (`"NOT DETECTED != SAFE"`) + Reverse-and-Turn `RecoveryController` + 20 Hz `SafeCommandBuffer` | **`0` collisions, `0` rollovers, `0` high-centerings** across all 10 SIH Grand Finale scenarios |
 
 ---
 
-## 📁 Repository Structure
+## 🏗️ End-to-End Unified System Architecture
 
-```
-SIH2026/
-├── ai/                                # Pure Mathematical & Algorithmic Core (ROS-Independent)
-│   ├── datasets/                      # Dataset ingestion (RUGD, RELLIS-3D)
-│   ├── models/                        # Semantic segmentation backbones
-│   ├── obstacles/                     # Explicit positive & negative obstacle perception
-│   ├── traversability/                # Continuous traversability scoring & risk evaluation
-│   ├── costmap/                       # BEV local rolling occupancy costmaps
-│   ├── localization/                  # GPS-denied visual odometry & SLAM
-│   ├── spatial_fusion/                # WorldTerrainMap spatial fusion engine
-│   └── planning/                      # Planning subsystem
-│       ├── global_planners/           # A*, Hybrid A*, PF-RRT*
-│       ├── local_planners/            # Predictive DWA, Pure Pursuit
-│       └── dynamic/                   # Phase 13 Dynamic Obstacle & Prediction Core
-│           ├── data_model.py          # Track, Prediction, & Obstacle models
-│           ├── tracker.py             # Hungarian association & Kalman tracker
-│           ├── prediction.py          # Constant-velocity / Turn-rate motion predictor
-│           ├── occupancy_layer.py     # Spatio-temporal dynamic occupancy slices
-│           ├── predictive_collision.py# Time-parameterized swept-footprint checker
-│           ├── dwa_filter.py          # Continuous swept-segment broad-phase filter
-│           ├── behavioral_state.py    # PROCEED / AVOID / WAIT / STOP State Machine
-│           └── global_replanner.py    # Event-driven A* trigger & replan evaluator
-├── ros2_ws/src/                       # ROS 2 Workspace (Colcon Build Tree)
-│   ├── ugv_navigation_msgs/           # Pure ROSIDL Interface Package (ament_cmake)
-│   │   ├── msg/                       # 13 Canonical ROS2 .msg interface definitions
-│   │   ├── CMakeLists.txt             # rosidl_generate_interfaces configuration
-│   │   └── package.xml
-│   └── ugv_navigation/                # Application Package (ament_python)
-│       ├── ugv_navigation/
-│       │   ├── nodes/                 # 7 dynamic nodes + base navigation nodes
-│       │   ├── converters/            # dynamic_converters.py (Boundary Converter Layer)
-│       │   ├── adapters/              # DynamicNavigationAdapter, PlannerAdapter
-│       │   ├── tf/                    # TF2 Tree buffer & broadcaster
-│       │   └── diagnostics/           # Node diagnostics & performance trackers
-│       ├── config/                    # ugv_params.yaml, qos_profiles.yaml
-│       ├── launch/                    # dynamic_navigation.launch.py, ugv_core.launch.py
-│       ├── package.xml
-│       └── setup.py                   # 13 console_scripts entrypoints
-├── simulation/                        # Gazebo Simulation Subsystem
-│   ├── models/ugv/                    # 4WD UGV URDF, SDF, and mesh descriptions
-│   ├── worlds/                        # outdoor_terrain.sdf (elevation, rocks, lighting)
-│   ├── config/                        # bridge_params.yaml (ros_gz parameter bridge)
-│   └── launch/                        # ugv_simulation.launch.py
-├── matlab/                            # Analytical Verification & Math Ground-Truth
-│   ├── calibration/                   # Camera calibration verification
-│   ├── geometry/                      # Parity checks for rigid SE(3) transforms
-│   └── docs/                          # MATLAB validation reports (discrepancy < 10^-12)
-├── configs/                           # Central system YAML configurations
-├── docs/                              # Project specifications, contexts, and plans
-├── tests/                             # Automated test suite (461 tests passing)
-├── pyproject.toml                     # Python packaging configuration
-└── README.md
+```text
++---------------------------------------------------------------------------------------------------------------+
+|                     PHASE 16: UNIFIED SIH26126 GRAND FINALE AUTONOMOUS NAVIGATION STACK                       |
+|                                                                                                               |
+|  [Input Mode A: Gazebo Sim 100m 2.5D Uneven World]   [Input Mode B: Live USB Webcam / Stereo HIL Table Demo]  |
+|    ├── RGB Stream (/camera/image_raw @ 30 Hz)         ├── OpenCVCameraSource / SyntheticCameraSource          |
+|    ├── Metric DepthSource / 2.5D Terrain Raycast      └── Interactive IMU Tilt / Obstacle Injection Controls  |
+|    └── 200 Hz IMU (/imu) + Wheel Odometry (/odom)                                                             |
+|                           │                                                   │                               |
+|                           └─────────────────────────┬─────────────────────────┘                               |
+|                                                     ▼                                                         |
+|                [Photometric Resilience Preprocessor (production/perception/photometric_resilience.py)]        |
+|                  ├── Adaptive LAB-CLAHE Illumination Normalization (< 1.0 ms, +/-60% Glare/Shadow Recovery)   |
+|                  ├── Specular Glare & Cast Shadow Confidence Map C_photo(u,v) in [0.1, 1.0]                   |
+|                  └── Frame Blackout / Camera Dropout Watchdog (Triggers 0.35 m/s Degraded Speed Clamp)        |
+|                                                     │                                                         |
+|                           ┌─────────────────────────┴─────────────────────────┐                               |
+|                           ▼                                                   ▼                               |
+|        [AsyncPerceptionWorker + ONNX INT8/FP32]                 [15-State MultiSensorEKF (50-200 Hz)]         |
+|          ├── Traversability τ(u, v) in ~12.5 ms                   ├── 3D Pose (x, y, z) & Vel (vx, vy, vz)    |
+|          └── Dynamic SE(3) Attitude IPM (1.61 ms)                 ├── 3D Euler Attitude (roll φ, pitch θ, ψ)  |
+|                           │                                       └── VIO-Dropout Dead-Reckoning Fallback     |
+|                           └─────────────────────────┬─────────────────────────┘                               |
+|                                                     ▼                                                         |
+|                    [2.5D ElevationMapper + VectorizedTerrainGeometryEstimator (< 2.9 ms)]                     |
+|                      ├── Kalman/EMA Elevation Z(x, y) & Flying-Pixel Spike Rejection                          |
+|                      ├── Boundary-Aware Normals [nx, ny, nz] & Slope α(x, y)                                  |
+|                      ├── Positive Steps ΔZ+ >= 0.12m, Negative Ditches ΔZ- <= -0.12m                          |
+|                      └── Undercarriage High-Centering Crown Guard h_crown >= 0.12m                            |
+|                                                     │                                                         |
+|            ┌────────────────────────────────────────┼───────────────────────────────────────┐                 |
+|            ▼                                        ▼                                       ▼                 |
+|  [Terrain-Constrained C++17 A*]         [Rollover-Aware C++17 AVX2 DWA]         [Authoritative Safety         |
+|   ├── 1.27 ms mean latency               ├── 375 rollouts in 1.32 ms             Governor & Recovery]         |
+|   ├── Detours >28° embankments           ├── Rollover Margin >= 0.20             ├── Downhill d_stop(θ)       |
+|   └── Preserves 10° switchbacks          ├── v_eff <= v_max * cos(α)             ├── 18°/26° IMU Tilt Clamp   |
+|                                          └── Path-Normal Dynamic Evasion         └── Reverse-and-Turn Escape  |
+|            │                                        │                                       │                 |
+|            └────────────────────────────────────────┼───────────────────────────────────────┘                 |
+|                                                     ▼                                                         |
+|             [SafeCommandBuffer (/cmd_vel @ 20 Hz)] + [Judge RViz2 /telemetry/judge_dashboard HUD]             |
++---------------------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 🛠️ Quickstart & Local Verification
+## 📊 10-Scenario SIH Grand Finale Benchmark Results
 
-### 1. Python Environment Setup
-```powershell
-# Clone and enter directory
-cd SIH2026
+Reproducible via `python benchmarks/run_phase16_sih_grand_finale_benchmark.py` (telemetry sealed in [`reports/phase16_grand_finale_benchmark.json`](reports/phase16_grand_finale_benchmark.json) and [`reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md`](reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md)):
 
-# Install editable package with development dependencies
+| # | Scenario ID | Outdoor Challenge Tested | Waypoints | FPS | C++17 A* (ms) | C++17 DWA (ms) | Control Loop (ms) | EKF Drift (%) | Min Rollover Margin | Collisions / Rollovers / High-Centerings | Result |
+| :-: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1** | `S01_FLAT_MEADOW_BASELINE` | Benign flat trail baseline | `1/1` | `168.8` | `0.55` | `1.94` | `5.92` | `0.010%` | `1.000` | `0 / 0 / 0` | **PASS** |
+| **2** | `S02_GENTLE_10DEG_TRAIL` | Continuous $10^\circ$ incline & descent | `1/1` | `227.3` | `1.51` | `1.25` | `4.40` | `0.010%` | `0.642` | `0 / 0 / 0` | **PASS** |
+| **3** | `S03_STEEP_32DEG_EMBANKMENT` | $32^\circ$ embankment + $10^\circ$ switchback detour | `1/1` | `265.4` | `2.07` | `0.97` | `3.77` | `0.010%` | `0.631` | `0 / 0 / 0` | **PASS** |
+| **4** | `S04_SEVERE_24DEG_CROSS_SLOPE` | $24^\circ$ lateral cross-slope ridge | `1/1` | `229.8` | `1.10` | `1.43` | `4.35` | `0.010%` | `0.988` | `0 / 0 / 0` | **PASS** |
+| **5** | `S05_BOULDER_STEP_FIELD_18CM` | $+18\,\text{cm}$ vertical rock ledges ($\Delta Z^+ \ge 0.12\,\text{m}$) | `1/1` | `267.2` | `1.15` | `1.09` | `3.74` | `0.010%` | `0.988` | `0 / 0 / 0` | **PASS** |
+| **6** | `S06_NEGATIVE_DITCH_TRENCH_15CM` | $-15\,\text{cm}$ sunken trench ($\Delta Z^- \le -0.12\,\text{m}$) | `1/1` | `135.9` | `1.79` | `3.38` | `7.36` | `0.010%` | `0.988` | `0 / 0 / 0` | **PASS** |
+| **7** | `S07_BELLY_CROWN_MOUND_14CM` | $+14\,\text{cm}$ high-centering mound ($h_{\text{crown}} \ge 0.12\,\text{m}$) | `1/1` | `224.8` | `0.66` | `1.59` | `4.45` | `0.010%` | `0.988` | `0 / 0 / 0` | **PASS** |
+| **8** | `S08_UNDULATING_HILLS_ATTITUDE_IPM` | $\pm 12^\circ$ pitching hills + SE(3) attitude IPM | `1/1` | `172.3` | `1.40` | `1.15` | `5.80` | `0.010%` | `0.583` | `0 / 0 / 0` | **PASS** |
+| **9** | `S09_ADVERSE_GLARE_SHADOW_DROPOUT` | $+60\%$ sun glare, shadow bands & 3s VIO dropout | `1/1` | `279.2` | `0.69` | `1.43` | `3.58` | `0.025%` | `0.999` | `0 / 0 / 0` | **PASS** |
+| **10** | `S10_FULL_100M_5WP_GRAND_FINALE` | Full 100m 5-waypoint course ($W_1\to W_5$) + 5 moving obstacles | `5/5` | `111.0` | `1.74` | `1.38` | `9.01` | `0.010%` | `0.682` | `0 / 0 / 0` | **PASS** |
+| **Total** | **10 Canonical SIH Scenarios** | **All Outdoor Hazards Combined** | **`14/14`** | **`208.2`** | **`1.27`** | **`1.56`** | **`5.24`** | **`<=0.025%`** | **`>=0.583`** | **`0 / 0 / 0`** | **`100.0%` (10/10)** |
+
+---
+
+## 🚀 Quickstart & 1-Command Judge Runbook
+
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/umangkaushik17-bit/Vision-Based-Autonomous-Navigation-for-UGV.git
+cd Vision-Based-Autonomous-Navigation-for-UGV
 pip install -e .
 ```
+*(Pre-compiled Windows `.dll` and Linux `.so` C++17 binaries for $A^*$ and DWA, along with INT8/FP32 ONNX and PyTorch weights, are included in the repository for immediate zero-compile execution. To recompile C++ binaries on a new CPU architecture, run `python scripts/build_astar_cpp.py && python scripts/build_dwa_cpp.py`.)*
 
-### 2. Native C++ DWA Acceleration Build
-Compile the native C++ dual-target (SIMD AVX2 + Scalar portable) shared library:
-```powershell
-python scripts/build_dwa_cpp.py
-```
-This builds `ai/planning/native_cpp/dwa_cpp.dll` (Windows) or `libdwa_cpp.so` (Linux), automatically selecting the optimal CPU execution path at runtime.
-
-### 3. Perception Model Weights Setup
-The semantic traversability engine (`ai/traversability/dense_predictor.py`) uses a lightweight MobileNetV3-Small encoder-decoder network.
-- **Search locations:**
-  1. `outputs/rellis3d/checkpoints/best.pt`
-  2. `models/rellis3d/best.pt`
-  3. `checkpoints/best.pt`
-- **Fallback:** If trained neural weights are not present, the navigation pipeline operates gracefully in core geometric/obstacle perception mode without crashing.
-
-### 4. Interactive Simulation & Presentation Launch
-Launch the complete 100m outdoor presentation world with live UGV, RViz visualization, dynamic obstacle controllers, and ROS 2 bridge:
+### 2. Run the Automated Verification & Benchmark Suite (No Gazebo Required)
 ```bash
-# On ROS 2 Linux (Ubuntu 24.04 / Jazzy or Humble):
-./simulation/scripts/launch_presentation.sh
-# Or directly via ROS 2:
-ros2 launch simulation/launch/prototype_presentation.launch.py
+# Run the Phase 15 (2.5D Terrain) & Phase 16 (SIH Grand Finale) verification suites:
+pytest tests/test_phase15_*.py tests/test_phase16_*.py -v
 
-# On Windows:
-launch_presentation.bat
+# Execute the 10-Scenario SIH Grand Finale Benchmark Runner directly:
+python benchmarks/run_phase16_sih_grand_finale_benchmark.py
 ```
 
-### 5. Run Test Suite
-```powershell
-# Run the core unit & integration test suite
-pytest -v tests/test_outdoor_presentation_100m.py tests/test_dynamic_evasion_w5.py tests/test_core_types.py tests/test_dwa_scalar_parity.py
+### 3. Run the Live Webcam / Stereo Hardware-in-the-Loop (HIL) Table Demo
+```bash
+# Live USB webcam GUI mode (hold real objects in front of camera or tilt camera):
+python scripts/run_live_camera_hil_demo.py --live-webcam --camera-id 0
 
-# Run Phase 14 combined mission and recovery integration tests
-pytest -v tests/test_phase14_combined_mission.py tests/test_mission_recovery_integration.py
+# Deterministic headless verification mode (30 frames):
+python scripts/run_live_camera_hil_demo.py --headless --frames 30
+```
+
+### 4. Launch the 100m 2.5D Gazebo Harmonic + Hero RViz2 Simulation
+```bash
+# On ROS 2 Linux / WSL2 (Ubuntu 24.04 + ROS 2 Jazzy + Gazebo Harmonic):
+ros2 launch simulation/launch/prototype_presentation.launch.py \
+  world:=simulation/worlds/outdoor_uneven_terrain_100m.sdf \
+  enable_2_5d_terrain:=true \
+  terrain_world_mode:=uneven_100m
+
+# On Windows (1-click launchers):
+launch_presentation.bat        # Autonomous 5-obstacle patrol mode
+launch_presentation_wasd.bat   # Interactive WASD dynamic obstacle teleop mode
 ```
 
 ---
 
-## 📊 Development Roadmap & Status
+## 📁 Systematic Repository Structure
 
-| Phase | Subsystem Description | Status | Verification Evidence |
-| :---: | :--- | :---: | :--- |
-| **Phase 0** | Project Audit, Foundation & Hybrid Compute Strategy | **Complete** | Scaffolding, types, device detection |
-| **Phase 1** | Computer Vision Preprocessing (CLAHE, Horizon, Texture) | **Complete** | $>30\,\text{FPS}$ CPU image preprocessing |
-| **Phase 2** | Outdoor Dataset Ingestion & Augmentation (RUGD, RELLIS) | **Complete** | Multi-threaded PyTorch streaming loaders |
-| **Phase 3** | Traversability Foundation & SAM-TP Neural Integration | **Complete** | False-safe pixel ratio $< 3\%$, 81 tests |
-| **Phase 4** | Explicit Obstacle, Ditch & Negative Hazard Detection | **Complete** | False-safe water error reduced to $2.73\%$, 101 tests |
-| **Phase 5** | 2D BEV Rolling Terrain Costmap & Temporal Fusion | **Complete** | $< 2\,\text{ms}$ cycle, zero hazard dilution, 117 tests |
-| **Phase 6** | Global $A^*$ & Local DWA Terrain-Aware Motion Planning | **Complete** | $100\%$ route completion, emergency stop, 134 tests |
-| **Phase 7** | MATLAB Mathematical Parity & Analytical Ground-Truth | **Complete** | Parity error $< 10^{-12}\,\text{m}$, 9 experiments |
-| **Phase 8** | GPS-Denied Visual Odometry, Stereo VIO & SLAM | **Complete** | $96\,\text{FPS}$ stereo tracking, frozen API, 153 tests |
-| **Phase 9** | Perception + Localization World Spatial Fusion | **Complete** | `WorldTerrainMap` engine, zero-trust safety, 188 tests |
-| **Phase 10** | ROS 2 Architecture, Custom Messages & TF2 Tree | **Complete** | Canonical TF2 tree, sub-ms lookups, 205 tests |
-| **Phase 11** | Gazebo Outdoor World & 4WD UGV Simulation | **Complete** | Gazebo Harmonic world, ros_gz bridge, 221 tests |
-| **Phase 12** | Closed-Loop Navigation, DWA Planning & Safety Clamps | **Complete** | 8 deterministic scenarios, 4 SIL missions, 250 tests |
-| **Phase 13** | Dynamic Obstacles, Predictive Replanning & Acceleration | **Complete** | Native C++ SIMD AVX2 DWA, 1.235x RTF on Tesla T4 |
-| **Phase 14** | GPS-Denied Full Long-Distance Mission Execution & Recovery | **Complete (Phase 14.7.4)** | 100m outdoor presentation world, zero collision false negatives, dynamic evasion, recovery FSM, presentation RViz & SDF models, 12-run benchmark matrix in [reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md](reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md) |
-| **Phase 15** | Advanced 2.5D Terrain-Aware Navigation (Slip/Slope/Roll) | Planned | 2.5D elevation & normal costmap layers, SE(3) camera attitude compensation |
-| **Phase 16** | Full System Benchmarking & SIH Demonstration | Planned | Standardized 10-scenario demonstration dashboard |
-
-
----
-
-## 👥 Team Collaboration & Branching Strategy
-
-To facilitate parallel development without merge conflicts:
-- **Baseline Git Commit:** `b55ee18914ffd973f45a655b70505a4521fe8d5a`
-- **Active Branch:** `demo-01-interactive-ugv`
-
-### Work Streams:
-1. **Algorithm Development Stream (Lead):** Finalizing Phase 13 (Milestone 13.18 Regression, 13.19 Audit) prior to Phase 14 advancement.
-2. **ROS 2 Runtime Integration Stream (Teammate):** Branches to execute native builds, DDS networking, Gazebo Harmonic simulation, and closed-loop runs on Ubuntu 24.04 per [`docs/ROS2_RUNTIME_INTEGRATION_PLAN.md`](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md).
-
----
-
-## 📚 Technical Documentation Index
-
-- [docs/PHASE_13_MASTER_CONTEXT.md](docs/PHASE_13_MASTER_CONTEXT.md) — **Single Source of Truth for Phase 13** (algorithms, math models, ROSIDL interfaces, contracts, test evidence).
-- [docs/DYNAMIC_OBSTACLES.md](docs/DYNAMIC_OBSTACLES.md) — **Authoritative Architecture Specification** (detection, Kalman tracking, CWNA prediction, dynamic occupancy, predictive DWA, behavioral state machine).
-- [docs/VISUALIZATION_GUIDE.md](docs/VISUALIZATION_GUIDE.md) — **Visualization User Guide** (CLI regeneration, RViz2 configuration, and diagnostic plot interpretation).
-- [docs/PHASE_13_17_VISUALIZATION_DOCUMENTATION_REPORT.md](docs/PHASE_13_17_VISUALIZATION_DOCUMENTATION_REPORT.md) — **Milestone 13.17 Checkpoint Report** (Verification of 6 diagnostic plots, animation, RViz assets, and 100% test pass).
-- [docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md](docs/PHASE_13_17_GPU_ACCELERATION_FINAL.md) — **Phase 13.17.4 Final Report** (Full closed-loop 21-mission Phase 13.16-R2 benchmark on NVIDIA Tesla T4).
-- [docs/PHASE_13_17_3_STABILITY_REPORT.md](docs/PHASE_13_17_3_STABILITY_REPORT.md) — **Phase 13.17.3 Stability Report** (250-cycle stress, memory stability, and final harness closure).
-- [docs/PHASE_13_PERFORMANCE_ACCELERATION.md](docs/PHASE_13_PERFORMANCE_ACCELERATION.md) — **Phase 13.17.2 Performance Report** (T4 runtime profiling, DWA speedup, and replan parity).
-- [docs/PHASE_13_17_1_CPU_GPU_PARITY.md](docs/PHASE_13_17_1_CPU_GPU_PARITY.md) — **Phase 13.17.1 Parity Report** (1,210-case CPU/GPU behavioral and safety parity validation).
-- [docs/PHASE_13_16_FULL_CLOSED_LOOP_BENCHMARK.md](docs/PHASE_13_16_FULL_CLOSED_LOOP_BENCHMARK.md) — **Phase 13.16 CPU Benchmark** (21 canonical missions, baseline computation profile).
-- [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md) — **ROS 2 Teammate Runtime Guide** (gated sequence ROS2-R0 to ROS2-R14, Gazebo Harmonic integration).
-- [docs/ROADMAP.md](docs/ROADMAP.md) — Comprehensive technical roadmap across all project phases (Phases 0 to 16).
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture, pipeline flows, and component responsibilities.
-- [docs/DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) — Cumulative repository audit, phase status, and test suite health.
-- [docs/PHASE_12_PATH_PLANNING.md](docs/PHASE_12_PATH_PLANNING.md) — Phase 12 static planning, collision checking, and SIL simulation baseline.
-- [docs/PHASE_10_ROS2_ARCHITECTURE.md](docs/PHASE_10_ROS2_ARCHITECTURE.md) — Foundational ROS 2 architecture and TF2 integration.
+```text
+Vision-Based-Autonomous-Navigation-for-UGV/
+├── ai/                                # ROS-Independent Core AI, Geometry & Motion Planning
+│   ├── costmap/                       # 2D BEV rolling terrain costmap & temporal fusion
+│   ├── datasets/                      # RUGD & RELLIS-3D streaming dataset loaders
+│   ├── localization/                  # Stereo Visual Odometry, VIO & loop closure
+│   ├── models/                        # Semantic segmentation backbones
+│   ├── obstacles/                     # Water reflection, dark obstacle & negative ditch detectors
+│   ├── perception_fusion/             # Multi-factor 2.5D TraversabilityCostModel
+│   ├── planning/                      # Motion planning subsystem
+│   │   ├── native_cpp/                # C++17 AVX2 & Scalar A* (astar_core.cpp) & DWA (dwa_core.cpp)
+│   │   ├── global_planners/           # AStarPlanner & CPPAStarBackend FFI
+│   │   ├── local_planners/            # DWAPlanner & Pure Pursuit
+│   │   ├── backends/                  # UnifiedDWAPlanner (CPP_SIMD, CUDA, INTEL_GPU, CPU)
+│   │   ├── dynamic/                   # Hungarian/Kalman Tracker, CTRV Predictor, SAT Collision, FSM
+│   │   ├── safety_governor.py         # Authoritative 3D tilt, downhill braking & hazard latch governor
+│   │   └── recovery_controller.py     # Reverse-and-turn deadlock recovery controller
+│   ├── spatial_fusion/                # 10-layer WorldTerrainMap & vectorized SE(3) fusion
+│   └── traversability/                # LightweightTraversabilityNet & AnalyticalTerrainDepthSource
+├── production/                        # Production Real-Time Perception, Localization & Safety
+│   ├── localization/                  # 15-state MultiSensorEKF (ekf_fusion.py) & StereoVIOAdapter
+│   ├── perception/                    # ElevationMapper, VectorizedTerrainGeometryEstimator,
+│   │                                  # PhotometricResilienceProcessor, VisionCostmapIntegrator,
+│   │                                  # AsyncPerceptionWorker & HILCameraNavigationBridge
+│   ├── runtime/                       # RuntimeAdaptationManager compute-latency governor
+│   └── safety/                        # AuthoritativeSafetyGovernor
+├── src/                               # Core System & Mission Executive Packages
+│   ├── ugv_core/                      # SystemConfig, device detection, types & logger
+│   └── ugv_mission/                   # MissionExecutive, WaypointManager & RecoveryOrchestrator
+├── simulation/                        # Gazebo Harmonic 100m Worlds, 4WD UGV Model & ROS 2 Nodes
+│   ├── worlds/                        # outdoor_uneven_terrain_100m.sdf & outdoor_presentation_100m.sdf
+│   ├── models/                        # ugv/ (URDF & SDF) + outdoor_assets/ (beacons, boulders, trees)
+│   ├── nodes/                         # interactive_ugv_navigation_node.py & presentation_visualization_adapter.py
+│   ├── launch/                        # prototype_presentation.launch.py
+│   └── rviz/                          # hero_presentation.rviz (includes /telemetry/judge_dashboard)
+├── ros2_ws/src/                       # Native ROS 2 Packages (Colcon Workspace)
+│   ├── ugv_navigation_msgs/           # 13 canonical .msg definitions
+│   └── ugv_navigation/                # ROS 2 nodes, converters, TF2 tree & zero_copy_ipc.py
+├── benchmarks/                        # Automated Benchmark Harnesses (Phase 14.5, 14.7.4, 15, 16)
+├── configs/                           # All 20 YAML configurations (terrain_safety.yaml, planning.yaml, etc.)
+├── docs/                              # Consolidated Master Documentation (Phases 0–16 & Optimization)
+├── reports/                           # Final Benchmark Reports & JSON Telemetry Artifacts
+├── scripts/                           # Build scripts, ONNX quantization & run_live_camera_hil_demo.py
+├── matlab/                            # Independent MATLAB (.m) Mathematical Parity Suite
+└── tests/                             # Automated Pytest Suite (177/177 tests passing)
+```
 
 ---
 
-## ⚠️ Known Limitations & Disclosures
+## 📚 Master Documentation & Reports Index
 
-1. **Host Native Toolchain Limitation:** The current development machine is Windows; native `colcon build`, native `rclpy` binaries, and DDS daemons are unverified on Windows and are scheduled for validation on Ubuntu 24.04 per [docs/ROS2_RUNTIME_INTEGRATION_PLAN.md](docs/ROS2_RUNTIME_INTEGRATION_PLAN.md).
-2. **Computational Acceleration vs Algorithmic Limits:** Vectorized GPU acceleration in Phase 13.17 resolved the computational bottleneck ($58.31\,\text{ms}$ DWA latency, $1.235\times$ Real-Time Factor on Tesla T4). However, GPU acceleration preserves CPU equivalence and does not alter underlying 2D local DWA algorithmic limitations (local minima traps in concave obstacles, narrow-corridor deadlocks), which transition to Phase 14 hierarchical recovery.
-3. **Visual Odometry Scale Factor:** The monocular visual odometry pipeline utilizes an empirical scale compensation factor ($1.167$) calibrated to the specific simulated camera mount.
-4. **Simulation & Cloud Validation:** All benchmarks to date are evaluated in high-fidelity Software-In-The-Loop (SIL) simulation and Kaggle Cloud NVIDIA Tesla T4 environments. Physical UGV outdoor hardware trials are scheduled for Phase 16.
+### Top-Level Master Documents (`docs/`)
+- **[`docs/README_DOCS_INDEX.md`](docs/README_DOCS_INDEX.md)** — Complete Navigator for all files in `docs/` and `reports/`.
+- **[`docs/ROADMAP.md`](docs/ROADMAP.md)** — Official 17-Phase Development Roadmap (`Phase 0` to `Phase 16` — All **COMPLETE & VERIFIED**).
+- **[`docs/PHASES_0_TO_16_MASTER_ENCYCLOPEDIA.md`](docs/PHASES_0_TO_16_MASTER_ENCYCLOPEDIA.md)** — Unified Encyclopedia of all 17 Phases (`Phase 0` through `Phase 16`).
+- **[`docs/OPTIMIZATION_AND_ACCELERATION_MASTER.md`](docs/OPTIMIZATION_AND_ACCELERATION_MASTER.md)** — Master Guide for Optimization Tiers 1–4 (`WS-1A` to `WS-4A`), C++17 SIMD, ONNX INT8, Zero-Copy IPC, and GPU Acceleration.
+- **[`docs/PHASE_16_MASTER_IMPLEMENTATION_PLAN.md`](docs/PHASE_16_MASTER_IMPLEMENTATION_PLAN.md)** — Phase 16 Master Specification (`Subphases 16.0–16.5`).
+- **[`docs/PHASE_15_MASTER_IMPLEMENTATION_PLAN.md`](docs/PHASE_15_MASTER_IMPLEMENTATION_PLAN.md)** — Phase 15 2.5D Terrain-Aware Navigation Specification (`Subphases 15.0–15.9`).
+- **[`docs/PHASE_14_CONSOLIDATED_MASTER.md`](docs/PHASE_14_CONSOLIDATED_MASTER.md)** — Consolidated Phase 14 Reference (`Subphases 14.1–14.7.4`).
+- **[`docs/PHASE_13_CONSOLIDATED_MASTER.md`](docs/PHASE_13_CONSOLIDATED_MASTER.md)** — Consolidated Phase 13 Reference (`Milestones 13.0–13.26`).
+
+### Top-Level Benchmark Reports (`reports/`)
+- **[`reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md`](reports/PHASE_16_SIH_FINAL_BENCHMARK_REPORT.md)** — **SIH Grand Finale Judge Dossier** (`10/10` scenarios PASS).
+- **[`reports/PHASE_15_BENCHMARK_REPORT.md`](reports/PHASE_15_BENCHMARK_REPORT.md)** — **Phase 15 Differential 2.5D Terrain Benchmark Report** (`7/7` scenarios PASS).
+- **[`reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md`](reports/PHASE_14_7_4_FULL_VIDEO_VALIDATION_REPORT.md)** — **Phase 14 100m Corridor Validation Report** (`12/12` runs PASS).
+- **[`reports/P0_P1_ARCHITECTURE_HARDENING_AND_OPTIMIZATION_REPORT.md`](reports/P0_P1_ARCHITECTURE_HARDENING_AND_OPTIMIZATION_REPORT.md)** — **P0/P1 Architecture Hardening & C++/ROS 2 Optimization Report**.

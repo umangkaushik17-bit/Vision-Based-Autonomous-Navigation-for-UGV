@@ -143,3 +143,94 @@ class SimulatedDepthSource(DepthSource):
             h, w = image_shape
             return np.full((h, w), 3.0, dtype=np.float32)
         return self._buffer.copy()
+
+
+class AnalyticalTerrainDepthSource(DepthSource):
+    """Ray-casts camera pixels against parametric 2.5D heightfields Z = f(x, y) under 3D attitude (Subphase 15.0)."""
+
+    def __init__(
+        self,
+        intrinsics: CameraIntrinsics,
+        extrinsics: CameraExtrinsics,
+        terrain_fn: Optional[Any] = None,
+        roll_rad: float = 0.0,
+        pitch_rad: float = 0.0,
+        max_depth_m: float = 10.0,
+    ) -> None:
+        self.intrinsics = intrinsics
+        self.extrinsics = extrinsics
+        self.terrain_fn = terrain_fn or (lambda x, y: np.zeros_like(x, dtype=np.float32))
+        self.roll_rad = float(roll_rad)
+        self.pitch_rad = float(pitch_rad)
+        self.max_depth_m = float(max_depth_m)
+
+    def get_depth_meters(
+        self,
+        image_shape: tuple[int, int],
+        rgb_image: Optional[np.ndarray] = None,
+        roll_rad: Optional[float] = None,
+        pitch_rad: Optional[float] = None,
+    ) -> np.ndarray:
+        """Compute optical Z depth map D(u, v) by fixed-point ray-marching against Z = terrain_fn(x, y)."""
+        h, w = image_shape
+        r_ang = self.roll_rad if roll_rad is None else float(roll_rad)
+        p_ang = self.pitch_rad if pitch_rad is None else float(pitch_rad)
+
+        scale_x = w / float(self.intrinsics.width)
+        scale_y = h / float(self.intrinsics.height)
+        fx_s = self.intrinsics.fx * scale_x
+        fy_s = self.intrinsics.fy * scale_y
+        cx_s = self.intrinsics.cx * scale_x
+        cy_s = self.intrinsics.cy * scale_y
+
+        v_idx, u_idx = np.mgrid[0:h, 0:w]
+        u_f = u_idx.ravel().astype(np.float32)
+        v_f = v_idx.ravel().astype(np.float32)
+        rays_opt = np.stack([(u_f - cx_s) / fx_s, (v_f - cy_s) / fy_s, np.ones_like(u_f)], axis=0)
+
+        R_opt_to_robot = self.extrinsics.rotation_matrix.T.astype(np.float32)
+        rays_base = R_opt_to_robot @ rays_opt
+        t_cam_base = np.array(
+            [[self.extrinsics.forward_offset_m], [0.0], [self.extrinsics.height_m]], dtype=np.float32
+        )
+
+        cr = np.float32(np.cos(r_ang))
+        sr = np.float32(np.sin(r_ang))
+        cp = np.float32(np.cos(p_ang))
+        sp = np.float32(np.sin(p_ang))
+        R_level = np.array(
+            [
+                [cp, sp * sr, sp * cr],
+                [0.0, cr, -sr],
+                [-sp, cp * sr, cp * cr],
+            ],
+            dtype=np.float32,
+        )
+        d_level = R_level @ rays_base
+        t_level = R_level @ t_cam_base
+
+        dx = d_level[0, :]
+        dy = d_level[1, :]
+        dz = d_level[2, :]
+        tx, ty, tz = float(t_level[0, 0]), float(t_level[1, 0]), float(t_level[2, 0])
+
+        # Vectorized 14-step bisection ray-marching for exact intersection tz + zc * dz = f(tx + zc * dx, ty + zc * dy)
+        lo = np.full_like(dx, 0.10, dtype=np.float32)
+        hi = np.full_like(dx, float(self.max_depth_m), dtype=np.float32)
+        for _ in range(14):
+            mid = 0.5 * (lo + hi)
+            xw = tx + mid * dx
+            yw = ty + mid * dy
+            zw = tz + mid * dz
+            z_surf = np.asarray(self.terrain_fn(xw, yw), dtype=np.float32)
+            above = zw >= z_surf
+            lo = np.where(above, mid, lo)
+            hi = np.where(above, hi, mid)
+
+        zc = 0.5 * (lo + hi)
+        xw_f = tx + zc * dx
+        yw_f = ty + zc * dy
+        zw_f = tz + zc * dz
+        res_err = np.abs(zw_f - np.asarray(self.terrain_fn(xw_f, yw_f), dtype=np.float32))
+        zc = np.where((zc > 0.15) & (zc < self.max_depth_m - 0.05) & (res_err < 0.015), zc, np.nan)
+        return zc.reshape((h, w)).astype(np.float32)

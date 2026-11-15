@@ -42,16 +42,239 @@ if os.path.isdir(_lib_dir):
 
 import numpy as np
 
-# ROS2 imports
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
-from geometry_msgs.msg import Point, PoseStamped, Quaternion, TransformStamped, Twist, Vector3
-from nav_msgs.msg import Odometry, Path
-from sensor_msgs.msg import Image as RosImage, Imu as RosImu
-from std_msgs.msg import ColorRGBA, Empty, Header
-from visualization_msgs.msg import Marker, MarkerArray
-import tf2_ros
+# ROS2 imports (with host-CPU SIL fallback stubs when rclpy is not installed)
+try:
+    import rclpy
+    from rclpy.node import Node
+    from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
+    from geometry_msgs.msg import Point, PoseStamped, Quaternion, TransformStamped, Twist, Vector3
+    from nav_msgs.msg import Odometry, Path
+    from sensor_msgs.msg import Image as RosImage, Imu as RosImu
+    from std_msgs.msg import ColorRGBA, Empty, Header
+    from visualization_msgs.msg import Marker, MarkerArray
+    import tf2_ros
+    ROS2_AVAILABLE = True
+except ImportError:
+    ROS2_AVAILABLE = False
+    rclpy = None  # type: ignore
+
+    class _StubParam:
+        def __init__(self, value: Any) -> None:
+            self.value = value
+
+    class _StubLogger:
+        def info(self, msg: str, **kwargs: Any) -> None:
+            pass
+
+        def warn(self, msg: str, **kwargs: Any) -> None:
+            pass
+
+        def error(self, msg: str, **kwargs: Any) -> None:
+            pass
+
+    class _StubTimeMsg:
+        def __init__(self, sec: int = 0, nanosec: int = 0) -> None:
+            self.sec = sec
+            self.nanosec = nanosec
+
+    class _StubClockNow:
+        def to_msg(self) -> _StubTimeMsg:
+            t = time.time()
+            sec = int(t)
+            return _StubTimeMsg(sec=sec, nanosec=int((t - sec) * 1e9))
+
+    class _StubClock:
+        def now(self) -> _StubClockNow:
+            return _StubClockNow()
+
+    class _StubPub:
+        def __init__(self, msg_type: Any, topic: str) -> None:
+            self.msg_type = msg_type
+            self.topic = topic
+            self.last_msg: Any = None
+            self.published_count: int = 0
+
+        def publish(self, msg: Any) -> None:
+            self.last_msg = msg
+            self.published_count += 1
+
+        def get_subscription_count(self) -> int:
+            return 0
+
+    class Node:  # type: ignore[no-redef]
+        def __init__(self, node_name: str = "node", **kwargs: Any) -> None:
+            self._node_name = node_name
+            self._params: Dict[str, Any] = {}
+            self._logger = _StubLogger()
+            self._clock = _StubClock()
+            self._publishers: Dict[str, _StubPub] = {}
+            self._subscriptions: List[Any] = []
+            self._timers: List[Any] = []
+
+        def declare_parameter(self, name: str, default_value: Any = None) -> _StubParam:
+            if name not in self._params:
+                self._params[name] = default_value
+            return _StubParam(self._params[name])
+
+        def get_parameter(self, name: str) -> _StubParam:
+            return _StubParam(self._params.get(name))
+
+        def get_logger(self) -> _StubLogger:
+            return self._logger
+
+        def get_clock(self) -> _StubClock:
+            return self._clock
+
+        def create_publisher(self, msg_type: Any, topic: str, qos: Any = None) -> _StubPub:
+            pub = _StubPub(msg_type, topic)
+            self._publishers[topic] = pub
+            return pub
+
+        def create_subscription(self, msg_type: Any, topic: str, callback: Any, qos: Any = None) -> Any:
+            sub = (msg_type, topic, callback, qos)
+            self._subscriptions.append(sub)
+            return sub
+
+        def create_timer(self, period_s: float, callback: Any) -> Any:
+            tmr = (period_s, callback)
+            self._timers.append(tmr)
+            return tmr
+
+        def destroy_node(self) -> None:
+            pass
+
+    class QoSDurabilityPolicy:  # type: ignore[no-redef]
+        VOLATILE = 2
+        TRANSIENT_LOCAL = 1
+
+    class QoSReliabilityPolicy:  # type: ignore[no-redef]
+        RELIABLE = 1
+        BEST_EFFORT = 2
+
+    class QoSProfile:  # type: ignore[no-redef]
+        def __init__(self, **kwargs: Any) -> None:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    class Point:  # type: ignore[no-redef]
+        def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
+            self.x, self.y, self.z = float(x), float(y), float(z)
+
+    class Vector3:  # type: ignore[no-redef]
+        def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
+            self.x, self.y, self.z = float(x), float(y), float(z)
+
+    class Quaternion:  # type: ignore[no-redef]
+        def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 1.0) -> None:
+            self.x, self.y, self.z, self.w = float(x), float(y), float(z), float(w)
+
+    class Header:  # type: ignore[no-redef]
+        def __init__(self, frame_id: str = "odom") -> None:
+            self.stamp = _StubTimeMsg()
+            self.frame_id = frame_id
+
+    class _Pose:
+        def __init__(self) -> None:
+            self.position = Point()
+            self.orientation = Quaternion()
+
+    class _PoseWithCov:
+        def __init__(self) -> None:
+            self.pose = _Pose()
+
+    class Twist:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.linear = Vector3()
+            self.angular = Vector3()
+
+    class _TwistWithCov:
+        def __init__(self) -> None:
+            self.twist = Twist()
+
+    class PoseStamped:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.pose = _Pose()
+
+    class _Transform:
+        def __init__(self) -> None:
+            self.translation = Vector3()
+            self.rotation = Quaternion()
+
+    class TransformStamped:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.child_frame_id = ""
+            self.transform = _Transform()
+
+    class Odometry:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.child_frame_id = "base_link"
+            self.pose = _PoseWithCov()
+            self.twist = _TwistWithCov()
+
+    class Path:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.poses: List[PoseStamped] = []
+
+    class RosImage:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.height = 0
+            self.width = 0
+            self.encoding = "rgb8"
+            self.step = 0
+            self.data = b""
+
+    class RosImu:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.angular_velocity = Vector3()
+            self.linear_acceleration = Vector3()
+
+    class ColorRGBA:  # type: ignore[no-redef]
+        def __init__(self, r: float = 0.0, g: float = 0.0, b: float = 0.0, a: float = 1.0) -> None:
+            self.r, self.g, self.b, self.a = float(r), float(g), float(b), float(a)
+
+    class Empty:  # type: ignore[no-redef]
+        pass
+
+    class Marker:  # type: ignore[no-redef]
+        CUBE = 1
+        SPHERE = 2
+        CYLINDER = 3
+        LINE_STRIP = 4
+        TEXT_VIEW_FACING = 9
+        ADD = 0
+
+        def __init__(self) -> None:
+            self.header = Header()
+            self.ns = ""
+            self.id = 0
+            self.type = 0
+            self.action = 0
+            self.pose = _Pose()
+            self.scale = Vector3()
+            self.color = ColorRGBA()
+            self.text = ""
+            self.points: List[Point] = []
+
+    class MarkerArray:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.markers: List[Marker] = []
+
+    class _StubTFBroadcaster:
+        def __init__(self, node: Any = None) -> None:
+            pass
+
+        def sendTransform(self, tf_msg: Any) -> None:
+            pass
+
+    class tf2_ros:  # type: ignore[no-redef]
+        TransformBroadcaster = _StubTFBroadcaster
+        StaticTransformBroadcaster = _StubTFBroadcaster
 
 try:
     from ai.traversability.dense_predictor import DenseTraversabilityPredictor
@@ -72,19 +295,110 @@ except (ImportError, ModuleNotFoundError):
     MultiSensorEKF = None
     EKF_AVAILABLE = False
 
-# Custom ROS2 Messages
-from ugv_navigation_msgs.msg import (
-    BehavioralDecision as RosBehavioralDecision,
-    DynamicObstacleDetection as RosDynamicObstacleDetection,
-    DynamicObstacleDetectionArray as RosDynamicObstacleDetectionArray,
-    DynamicOccupancyGridSlice as RosDynamicOccupancyGridSlice,
-    DynamicOccupancySliceArray as RosDynamicOccupancySliceArray,
-    LocalizationStatus as RosLocalizationStatus,
-    PredictedObstacleTrajectory as RosPredictedObstacleTrajectory,
-    PredictedTrajectoryArray as RosPredictedTrajectoryArray,
-    TrackedObstacle as RosTrackedObstacle,
-    TrackedObstacleArray as RosTrackedObstacleArray,
-    TrajectoryWaypoint as RosTrajectoryWaypoint,
+# Custom ROS2 Messages (with SIL fallback stubs)
+try:
+    from ugv_navigation_msgs.msg import (
+        BehavioralDecision as RosBehavioralDecision,
+        DynamicObstacleDetection as RosDynamicObstacleDetection,
+        DynamicObstacleDetectionArray as RosDynamicObstacleDetectionArray,
+        DynamicOccupancyGridSlice as RosDynamicOccupancyGridSlice,
+        DynamicOccupancySliceArray as RosDynamicOccupancySliceArray,
+        LocalizationStatus as RosLocalizationStatus,
+        PredictedObstacleTrajectory as RosPredictedObstacleTrajectory,
+        PredictedTrajectoryArray as RosPredictedTrajectoryArray,
+        TrackedObstacle as RosTrackedObstacle,
+        TrackedObstacleArray as RosTrackedObstacleArray,
+        TrajectoryWaypoint as RosTrajectoryWaypoint,
+    )
+except ImportError:
+    class RosBehavioralDecision:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.state = "PROCEED"
+            self.command_v = 0.0
+            self.command_omega = 0.0
+
+    class RosDynamicObstacleDetection:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.detection_id = 0
+            self.class_name = ""
+            self.confidence = 0.0
+            self.position = Point()
+            self.dimensions = Vector3()
+            self.yaw_rad = 0.0
+            self.is_valid = True
+
+    class RosDynamicObstacleDetectionArray:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.detections: List[Any] = []
+
+    class RosDynamicOccupancyGridSlice:  # type: ignore[no-redef]
+        pass
+
+    class RosDynamicOccupancySliceArray:  # type: ignore[no-redef]
+        pass
+
+    class RosLocalizationStatus:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.child_frame_id = "base_link"
+            self.tracking_state = 2
+            self.confidence = 1.0
+            self.is_pose_valid = True
+            self.allows_spatial_fusion = True
+            self.pose = _PoseWithCov()
+            self.twist = _TwistWithCov()
+
+    class RosTrajectoryWaypoint:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.relative_time_s = 0.0
+            self.position = Point()
+            self.velocity = Vector3()
+            self.confidence = 0.95
+
+    class RosPredictedObstacleTrajectory:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.track_id = 1
+            self.status = "TRACKING"
+            self.confidence = 0.95
+            self.prediction_horizon_s = 4.5
+            self.bbox_size = Vector3()
+            self.waypoints: List[Any] = []
+
+    class RosPredictedTrajectoryArray:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.trajectories: List[Any] = []
+
+    class RosTrackedObstacle:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.track_id = 1
+            self.status = "TRACKING"
+            self.is_confirmed = True
+            self.confidence = 0.95
+            self.position = Point()
+            self.velocity = Vector3()
+            self.bbox_size = Vector3()
+            self.bbox_yaw = 0.0
+
+    class RosTrackedObstacleArray:  # type: ignore[no-redef]
+        def __init__(self) -> None:
+            self.header = Header()
+            self.tracks: List[Any] = []
+
+# Phase 15 / 16 2.5D Terrain Intelligence & Photometric Resilience Stack
+from ai.perception_fusion.cost_model import CostModelWeights, TraversabilityCostModel
+from production.perception.elevation_mapper import ElevationMapper, ElevationMapperConfig
+from production.perception.photometric_resilience import PhotometricResilienceProcessor
+from production.perception.terrain_geometry import (
+    TerrainGeometryConfig,
+    TerrainGeometryResult,
+    VectorizedTerrainGeometryEstimator,
+    check_belly_clearance_grid,
 )
 
 # AI Planning Components (Frozen Reference Core)
@@ -144,8 +458,13 @@ from ai.spatial_fusion.world_map import WorldTerrainMap
 class InteractiveUGVNavigationNode(Node):
     """Integrated ROS2 Node orchestrating the judge-facing UGV demonstration."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        parameter_overrides: Optional[Dict[str, Any]] = None,
+        skip_dense_predictor: bool = False,
+    ) -> None:
         super().__init__("interactive_ugv_navigation_node")
+        self._param_overrides = dict(parameter_overrides or {})
 
         # Parameters
         self.declare_parameter("goal_x", 7.0)
@@ -165,22 +484,33 @@ class InteractiveUGVNavigationNode(Node):
         self.declare_parameter("costmap_publish_rate_hz", 5.0)
         self.declare_parameter("publish_robot_description", True)
         self.declare_parameter("enable_vision_costmap", False)
-
-        self.goal_x = float(self.get_parameter("goal_x").value)
-        self.goal_y = float(self.get_parameter("goal_y").value)
-        self.rock_x = float(self.get_parameter("rock_x").value)
-        self.rock_y = float(self.get_parameter("rock_y").value)
-        self.rock_radius = float(self.get_parameter("rock_radius").value)
-        self.control_rate_hz = float(self.get_parameter("control_rate_hz").value)
-        self.cmd_publish_rate_hz = float(self.get_parameter("cmd_publish_rate_hz").value)
-        self.mission_file = str(self.get_parameter("mission_file").value)
         self.declare_parameter("obstacles_file", "")
-        self.obstacles_file = str(self.get_parameter("obstacles_file").value)
-        self.use_ekf_fusion = bool(self.get_parameter("use_ekf_fusion").value)
-        self.enable_viz_adapter = bool(self.get_parameter("enable_visualization_adapter").value)
-        self.costmap_publish_rate_hz = float(self.get_parameter("costmap_publish_rate_hz").value)
-        self.enable_vision_costmap = bool(self.get_parameter("enable_vision_costmap").value)
-        self.publish_robot_desc = bool(self.get_parameter("publish_robot_description").value)
+        self.declare_parameter("enable_2_5d_terrain", True)
+        self.declare_parameter("terrain_world_mode", "uneven_100m")
+
+        def _p(name: str) -> Any:
+            if name in self._param_overrides:
+                return self._param_overrides[name]
+            return self.get_parameter(name).value
+
+        self.goal_x = float(_p("goal_x"))
+        self.goal_y = float(_p("goal_y"))
+        self.rock_x = float(_p("rock_x"))
+        self.rock_y = float(_p("rock_y"))
+        self.rock_radius = float(_p("rock_radius"))
+        self.control_rate_hz = float(_p("control_rate_hz"))
+        self.cmd_publish_rate_hz = float(_p("cmd_publish_rate_hz"))
+        self.mission_file = str(_p("mission_file"))
+        self.obstacles_file = str(_p("obstacles_file"))
+        self.use_ekf_fusion = bool(_p("use_ekf_fusion"))
+        self.enable_viz_adapter = bool(_p("enable_visualization_adapter"))
+        self.costmap_publish_rate_hz = float(_p("costmap_publish_rate_hz"))
+        self.enable_vision_costmap = bool(_p("enable_vision_costmap"))
+        self.publish_robot_desc = bool(_p("publish_robot_description"))
+        self.enable_2_5d_terrain = bool(_p("enable_2_5d_terrain"))
+        self.terrain_world_mode = str(_p("terrain_world_mode")).strip().lower()
+        if self.terrain_world_mode not in ("flat_100m", "uneven_100m"):
+            self.terrain_world_mode = "uneven_100m"
 
         # High-frequency continuous safe command buffer
         self.command_buffer = SafeCommandBuffer(SafeCommandBufferConfig(
@@ -193,6 +523,8 @@ class InteractiveUGVNavigationNode(Node):
         # 1. State Storage
         self.ugv_x: float = 0.0
         self.ugv_y: float = 0.0
+        self.ugv_roll: float = 0.0
+        self.ugv_pitch: float = 0.0
         self.ugv_yaw: float = 0.0
         self.ugv_v: float = 0.0
         self.ugv_w: float = 0.0
@@ -234,11 +566,11 @@ class InteractiveUGVNavigationNode(Node):
         self.bench_dynamic_encounters: int = 0
         self.bench_summary_generated: bool = False
 
-        # 2. Build World Terrain Map with Static Rock Boulders
-        map_x_min = float(self.get_parameter("map_x_min").value)
-        map_x_max = float(self.get_parameter("map_x_max").value)
-        map_y_min = float(self.get_parameter("map_y_min").value)
-        map_y_max = float(self.get_parameter("map_y_max").value)
+        # 2. Build World Terrain Map with Static Rock Boulders & Phase 15/16 2.5D Terrain Stack
+        map_x_min = float(_p("map_x_min"))
+        map_x_max = float(_p("map_x_max"))
+        map_y_min = float(_p("map_y_min"))
+        map_y_max = float(_p("map_y_max"))
         self.world_map = WorldTerrainMap(
             resolution_m=0.10,
             x_bounds_m=[map_x_min, map_x_max],
@@ -249,6 +581,37 @@ class InteractiveUGVNavigationNode(Node):
         self.world_map.obstacle.fill(False)
         self.world_map.hazard.fill(0.0)
         self.world_map.unknown.fill(False)
+
+        # 2b. Phase 15/16 2.5D Terrain Estimators & Photometric Resilience (Subphases 16.0–16.1)
+        self.elevation_mapper = ElevationMapper()
+        self.terrain_geometry_estimator = VectorizedTerrainGeometryEstimator()
+        self.photometric_processor = PhotometricResilienceProcessor()
+        safety_yaml_candidates = [
+            "configs/terrain_safety.yaml",
+            os.path.join(_ws_root, "configs", "terrain_safety.yaml"),
+        ]
+        cost_weights = None
+        for cy in safety_yaml_candidates:
+            if os.path.exists(cy):
+                try:
+                    cost_weights = CostModelWeights.from_yaml(cy)
+                    break
+                except Exception:
+                    pass
+        self.terrain_cost_model = TraversabilityCostModel(cost_weights)
+        self.ugv_z: float = 0.0
+        self.last_control_loop_ms: float = 0.0
+        self.last_terrain_2_5d_diag: Dict[str, Any] = {
+            "enabled": self.enable_2_5d_terrain,
+            "mode": self.terrain_world_mode,
+            "ugv_elevation_m": 0.0,
+            "local_slope_deg": 0.0,
+            "local_max_slope_deg": 0.0,
+            "local_max_step_m": 0.0,
+            "local_min_ditch_m": 0.0,
+            "local_max_crown_m": 0.0,
+            "terrain_update_ms": 0.0,
+        }
 
         # Resolve and load ground truth static obstacles (boulders)
         self.static_obstacles: List[Dict[str, Any]] = []
@@ -324,6 +687,17 @@ class InteractiveUGVNavigationNode(Node):
                             if not self.world_map.obstacle[rr, cc]:
                                 self.world_map.cost[rr, cc] = max(self.world_map.cost[rr, cc], 0.65)
 
+        # Snapshot baseline static obstacle mask and cost floor so 2.5D terrain updates preserve static boulders
+        self._static_obstacle_mask = self.world_map.obstacle.copy()
+        self._static_cost_floor = self.world_map.cost.copy()
+        self._terrain_heightfield = np.zeros(self.world_map.shape, dtype=np.float32)
+        self._local_patch_map = WorldTerrainMap(
+            resolution_m=self.world_map.resolution_m,
+            x_bounds_m=(-2.0, 2.0),
+            y_bounds_m=(-2.0, 2.0),
+        )
+        self._initialize_2_5d_terrain_map()
+
         # 3. Core Phase 13 Frozen Navigation Stack
         self.tracker = MultiFrameTracker(TrackerConfig(target_frame="odom", use_kalman_filter=True))
         self.predictor = MotionPredictor(PredictorConfig(default_horizon_s=4.5, default_dt_s=0.25))
@@ -342,7 +716,7 @@ class InteractiveUGVNavigationNode(Node):
         if hasattr(self.dwa_planner, "active_backend"):
             self.dwa_planner.active_backend.enable_behavioral_arbitration = True
         self.behavior_machine = BehavioralStateMachine(BehavioralConfig())
-        self.replanner = EventDrivenGlobalReplanner(GlobalReplannerConfig())
+        self.replanner = EventDrivenGlobalReplanner(GlobalReplannerConfig(), planner=self.global_planner)
 
         # Phase 13.23: Lost-Obstacle Hazard Latching & Authoritative Safety Governor
         self.hazard_memory = RecentHazardMemory(
@@ -432,7 +806,7 @@ class InteractiveUGVNavigationNode(Node):
         self.traversability_predictor = None
         self.last_trav_fps = 0.0
         self.last_trav_ms = 0.0
-        if DenseTraversabilityPredictor is not None:
+        if DenseTraversabilityPredictor is not None and not skip_dense_predictor:
             try:
                 self.traversability_predictor = DenseTraversabilityPredictor(
                     checkpoint="outputs/rellis3d/checkpoints/best.pt"
@@ -454,6 +828,20 @@ class InteractiveUGVNavigationNode(Node):
             self.get_logger().info("Loaded VisionCostmapIntegrator (calibrated for Gazebo demo_outdoor camera).")
         except Exception as e:
             self.get_logger().warn(f"Could not initialize VisionCostmapIntegrator: {e}")
+
+        # 6d. Decoupled Asynchronous Perception Worker (P1-3 Non-Blocking Executor)
+        self.async_perception_worker = None
+        if self.traversability_predictor is not None:
+            try:
+                from production.perception.async_perception_worker import AsyncPerceptionWorker
+                self.async_perception_worker = AsyncPerceptionWorker(
+                    predictor=self.traversability_predictor,
+                    costmap_integrator=self.vision_costmap_integrator,
+                    enable_bev_projection=self.enable_vision_costmap,
+                )
+                self.get_logger().info("Initialized AsyncPerceptionWorker (bounded depth-1 non-blocking inference).")
+            except Exception as e:
+                self.get_logger().warn(f"Could not initialize AsyncPerceptionWorker: {e}")
 
         # 7. Publishers
         self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", cmd_qos)
@@ -500,8 +888,283 @@ class InteractiveUGVNavigationNode(Node):
 
         self.get_logger().info(
             f"InteractiveUGVNavigationNode initialized (Planner: {self.control_rate_hz}Hz, "
-            f"Actuator: {self.cmd_publish_rate_hz}Hz). Waiting for odometry..."
+            f"Actuator: {self.cmd_publish_rate_hz}Hz, 2.5D Terrain: {self.enable_2_5d_terrain} [{self.terrain_world_mode}]). "
+            f"Waiting for odometry..."
         )
+
+    def _build_uneven_100m_heightfield(self) -> np.ndarray:
+        """Constructs the 2.5D ground-truth elevation heightfield Z(x, y) for outdoor_uneven_terrain_100m.sdf."""
+        n_rows, n_cols = self.world_map.shape
+        Z = np.zeros((n_rows, n_cols), dtype=np.float32)
+        if not self.enable_2_5d_terrain or self.terrain_world_mode == "flat_100m":
+            return Z
+
+        res = float(self.world_map.resolution_m)
+        x_max = float(self.world_map.x_bounds_m[1])
+        y_max = float(self.world_map.y_bounds_m[1])
+        rows = np.arange(n_rows, dtype=np.float32)[:, None]
+        cols = np.arange(n_cols, dtype=np.float32)[None, :]
+        xw = x_max - (rows + 0.5) * res
+        yw = y_max - (cols + 0.5) * res
+
+        # Feature 1: 32 deg Steep Grassy Embankment (blocking direct W1->W2 centerline at x=30, y=2.0)
+        u1 = np.clip(1.0 - np.abs(xw - 30.0) / 2.0, 0.0, 1.0)
+        v1 = np.clip(1.0 - np.abs(yw - 2.0) / 1.5, 0.0, 1.0)
+        Z = np.maximum(Z, (1.30 * u1 * v1).astype(np.float32))
+
+        # Feature 2: 10 deg Gentle Dirt Bypass Ramp (safe switchback corridor at x=30, y=6.2)
+        u2 = np.clip(1.0 - np.abs(xw - 30.0) / 4.0, 0.0, 1.0)
+        v2 = np.clip(1.0 - np.abs(yw - 6.2) / 3.0, 0.0, 1.0)
+        Z = np.maximum(Z, (0.42 * u2 * v2).astype(np.float32))
+
+        # Feature 3: 24 deg Severe Lateral Cross-Slope Bank (W2->W3 sector at x=50, y=3.0)
+        u3 = np.clip(1.0 - np.abs(xw - 50.0) / 3.0, 0.0, 1.0)
+        v3 = np.clip(1.0 - np.abs(yw - 3.0) / 1.6, 0.0, 1.0)
+        Z = np.maximum(Z, (0.72 * u3 * v3).astype(np.float32))
+
+        # Feature 4: 20 cm Vertical Step Boulder Cluster (high-centering hazard at x=66.0, y=-1.5)
+        m4 = (xw >= 65.3) & (xw <= 66.7) & (yw >= -2.2) & (yw <= -0.8)
+        Z = np.where(m4, np.float32(0.20), Z)
+
+        # Feature 5: -15 cm Negative Ditch / Trench Hazard (at x=73.5, y=1.2)
+        m5 = (xw >= 73.0) & (xw <= 74.0) & (yw >= 0.4) & (yw <= 2.0)
+        Z = np.where(m5, np.float32(-0.15), Z)
+
+        # Feature 6: 12 deg Undulating Pitching Hills (W4->W5 sector at x=88.0, y=1.0)
+        u6 = np.clip(1.0 - np.abs(xw - 88.0) / 3.0, 0.0, 1.0)
+        v6 = np.clip(1.0 - np.abs(yw - 1.0) / 3.5, 0.0, 1.0)
+        hill_z = (0.42 * u6 * v6).astype(np.float32)
+        Z = np.where(hill_z > 0.0, np.maximum(Z, hill_z), Z)
+
+        # Feature 7: +14 cm Undercarriage High-Centering Crown Mound (at x=10.0, y=-2.5)
+        m7 = (xw >= 9.8) & (xw <= 10.2) & (yw >= -2.7) & (yw <= -2.3)
+        Z = np.where(m7, np.float32(0.14), Z)
+
+        return Z
+
+    def _initialize_2_5d_terrain_map(self) -> None:
+        """Initializes WorldTerrainMap 2.5D elevation, normals, slope, steps, ditches, and belly clearance."""
+        self.world_map.traversability.fill(0.95)
+        self._terrain_heightfield = self._build_uneven_100m_heightfield()
+
+        if not self.enable_2_5d_terrain:
+            self.world_map.elevation.fill(0.0)
+            self.world_map.elevation_valid.fill(True)
+            self.world_map.slope.fill(0.0)
+            self.world_map.roughness.fill(0.0)
+            self.world_map.height_var.fill(0.0)
+            self.world_map.obstacle[:] = self._static_obstacle_mask
+            self.world_map.cost[:] = self._static_cost_floor
+            self.world_map._cached_infl_obstacle = None
+            return
+
+        # Populate elevation and compute 2.5D geometric risk layers across world map
+        self.world_map.elevation[:] = self._terrain_heightfield
+        self.world_map.elevation_valid.fill(True)
+        geom_res = self.terrain_geometry_estimator.update_world_map_from_elevation(
+            self.world_map,
+            elevation_m=self._terrain_heightfield,
+            elevation_valid=self.world_map.elevation_valid,
+        )
+        self.terrain_cost_model.fuse_world_map_cost(
+            self.world_map,
+            ditch_depth_grid=geom_res.ditch_depth_m,
+            crown_height_grid=geom_res.crown_height_m,
+        )
+
+        # Preserve static boulder cores and soft buffers
+        self.world_map.obstacle |= self._static_obstacle_mask
+        self.world_map.cost = np.maximum(self.world_map.cost, self._static_cost_floor)
+        self.world_map._cached_infl_obstacle = None
+
+    def ingest_local_elevation_points(
+        self,
+        points_world: np.ndarray,
+        timestamp: float = 0.0,
+    ) -> Dict[str, Any]:
+        """Ingests 3D world-frame terrain points via ElevationMapper and updates local 2.5D geometry & costmap."""
+        t0 = time.perf_counter()
+        if not self.enable_2_5d_terrain:
+            return {"cells_updated": 0, "update_ms": 0.0}
+
+        pts = np.asarray(points_world, dtype=np.float32)
+        if pts.ndim != 2 or pts.size == 0:
+            return {"cells_updated": 0, "update_ms": 0.0}
+        if pts.shape[0] == 3 and pts.shape[1] != 3:
+            pts = pts.T
+
+        elev_res = self.elevation_mapper.update_world_map(self.world_map, pts, timestamp=timestamp)
+        if elev_res.cells_updated == 0:
+            return {"cells_updated": 0, "update_ms": (time.perf_counter() - t0) * 1000.0}
+
+        # Determine bounded subgrid around updated points (+5 cells margin for 7x7 crown stencil)
+        rows, cols = self.world_map.world_to_grid_vec(pts[:, 0], pts[:, 1])
+        margin = 5
+        r0 = max(0, int(np.min(rows)) - margin)
+        r1 = min(self.world_map.n_rows, int(np.max(rows)) + margin + 1)
+        c0 = max(0, int(np.min(cols)) - margin)
+        c1 = min(self.world_map.n_cols, int(np.max(cols)) + margin + 1)
+
+        # Also sync underlying heightfield in updated cells so subsequent local scans preserve injected features
+        self._terrain_heightfield[r0:r1, c0:c1] = np.where(
+            self.world_map.elevation_valid[r0:r1, c0:c1],
+            self.world_map.elevation[r0:r1, c0:c1],
+            self._terrain_heightfield[r0:r1, c0:c1],
+        )
+
+        diag = self._recompute_subgrid_2_5d(r0, r1, c0, c1)
+        diag["cells_updated"] = elev_res.cells_updated
+        diag["update_ms"] = (time.perf_counter() - t0) * 1000.0
+        return diag
+
+    def _recompute_subgrid_2_5d(self, r0: int, r1: int, c0: int, c1: int) -> Dict[str, Any]:
+        """Computes slope, step height, negative ditch, belly crown, and fused cost on subgrid [r0:r1, c0:c1] with halo padding."""
+        pad = 4
+        rp0 = max(0, r0 - pad)
+        rp1 = min(self.world_map.n_rows, r1 + pad)
+        cp0 = max(0, c0 - pad)
+        cp1 = min(self.world_map.n_cols, c1 + pad)
+
+        sub_elev_pad = self.world_map.elevation[rp0:rp1, cp0:cp1]
+        sub_valid_pad = self.world_map.elevation_valid[rp0:rp1, cp0:cp1]
+        res = float(self.world_map.resolution_m)
+
+        geom_pad = self.terrain_geometry_estimator.estimate_from_elevation(
+            sub_elev_pad,
+            resolution_m=res,
+            elevation_valid=sub_valid_pad if not np.all(sub_valid_pad) else None,
+        )
+        crown_pad, belly_pad = self.terrain_geometry_estimator.check_belly_clearance_grid(
+            sub_elev_pad,
+            resolution_m=res,
+            elevation_valid=sub_valid_pad if not np.all(sub_valid_pad) else None,
+            dz_dx=geom_pad.dz_dx,
+            dz_dy=geom_pad.dz_dy,
+        )
+        ditch_pad = geom_pad.ditch_depth_m
+
+        # Slice interior [r0:r1, c0:c1] free of boundary halo artifacts
+        ir0 = r0 - rp0
+        ir1 = ir0 + (r1 - r0)
+        ic0 = c0 - cp0
+        ic1 = ic0 + (c1 - c0)
+
+        slope_sub = geom_pad.slope_deg[ir0:ir1, ic0:ic1]
+        rough_sub = geom_pad.roughness_m[ir0:ir1, ic0:ic1]
+        step_sub = geom_pad.step_height_m[ir0:ir1, ic0:ic1]
+        crown_h = crown_pad[ir0:ir1, ic0:ic1]
+        lethal_belly = belly_pad[ir0:ir1, ic0:ic1]
+        ditch_d = ditch_pad[ir0:ir1, ic0:ic1]
+        sub_hvar = np.maximum(step_sub, crown_h)
+
+        self.world_map.slope[r0:r1, c0:c1] = slope_sub
+        self.world_map.roughness[r0:r1, c0:c1] = rough_sub
+        self.world_map.height_var[r0:r1, c0:c1] = sub_hvar
+        self.world_map.surface_normal[r0:r1, c0:c1] = geom_pad.normals[ir0:ir1, ic0:ic1]
+
+        old_obs = self.world_map.obstacle[r0:r1, c0:c1].copy()
+        base_obs = self._static_obstacle_mask[r0:r1, c0:c1]
+        fused_sub_cost = self.terrain_cost_model.compute_grid_cost(
+            bev_traversability=self.world_map.traversability[r0:r1, c0:c1],
+            unknown_mask=self.world_map.unknown[r0:r1, c0:c1],
+            slope_grid=slope_sub,
+            flatness_grid=rough_sub,
+            height_var_grid=sub_hvar,
+            obstacle_grid=base_obs.astype(np.float32),
+            ditch_depth_grid=ditch_d,
+            crown_height_grid=crown_h,
+        )
+
+        lethal_sub = (
+            base_obs
+            | geom_pad.lethal_slope_mask[ir0:ir1, ic0:ic1]
+            | geom_pad.lethal_step_mask[ir0:ir1, ic0:ic1]
+            | lethal_belly
+            | (fused_sub_cost >= 1.0)
+        )
+        if geom_pad.negative_step_mask is not None:
+            lethal_sub = lethal_sub | geom_pad.negative_step_mask[ir0:ir1, ic0:ic1]
+
+        self.world_map.obstacle[r0:r1, c0:c1] = lethal_sub
+        self.world_map.cost[r0:r1, c0:c1] = np.where(
+            lethal_sub,
+            np.float32(1.0),
+            np.maximum(self._static_cost_floor[r0:r1, c0:c1], fused_sub_cost),
+        )
+        self.world_map.hazard[r0:r1, c0:c1] = np.where(lethal_sub, np.float32(1.0), np.float32(0.0))
+
+        if not np.array_equal(old_obs, lethal_sub):
+            cached_infl = getattr(self.world_map, "_cached_infl_obstacle", None)
+            cached_cells = getattr(self.world_map, "_cached_infl_cells", None)
+            if cached_infl is not None and cached_cells is not None:
+                ic = int(cached_cells)
+                dr0 = max(0, r0 - ic)
+                dr1 = min(self.world_map.n_rows, r1 + ic)
+                dc0 = max(0, c0 - ic)
+                dc1 = min(self.world_map.n_cols, c1 + ic)
+                from scipy.ndimage import binary_dilation
+                cached_infl[dr0:dr1, dc0:dc1] = binary_dilation(
+                    self.world_map.obstacle[dr0:dr1, dc0:dc1], iterations=ic
+                )
+            else:
+                self.world_map._cached_infl_obstacle = None
+
+        return {
+            "local_max_slope_deg": float(np.max(slope_sub)) if slope_sub.size > 0 else 0.0,
+            "local_max_step_m": float(np.max(step_sub)) if step_sub.size > 0 else 0.0,
+            "local_min_ditch_m": float(np.min(ditch_d)) if ditch_d.size > 0 else 0.0,
+            "local_max_crown_m": float(np.max(crown_h)) if crown_h.size > 0 else 0.0,
+        }
+
+    def _update_local_2_5d_terrain(self, t_now: float) -> Dict[str, Any]:
+        """Updates local 2.5D elevation around UGV and computes slope, step, ditch, and crown layers (< 1.0 ms)."""
+        if not self.enable_2_5d_terrain:
+            self.last_terrain_2_5d_diag["enabled"] = False
+            self.last_terrain_2_5d_diag["terrain_update_ms"] = 0.0
+            return self.last_terrain_2_5d_diag
+
+        t0 = time.perf_counter()
+        res = float(self.world_map.resolution_m)
+        r_ugv, c_ugv = self.world_map.world_to_grid(self.ugv_x, self.ugv_y)
+        r_ugv = max(0, min(self.world_map.n_rows - 1, r_ugv))
+        c_ugv = max(0, min(self.world_map.n_cols - 1, c_ugv))
+
+        # Local 2.0m x 2.0m active sensing window (20x20 cells) around UGV
+        half_w = 10
+        r0 = max(0, r_ugv - half_w)
+        r1 = min(self.world_map.n_rows, r_ugv + half_w)
+        c0 = max(0, c_ugv - half_w)
+        c1 = min(self.world_map.n_cols, c_ugv + half_w)
+
+        sub_elev = self.world_map.elevation[r0:r1, c0:c1]
+        geom_res = self.terrain_geometry_estimator.estimate_from_elevation(
+            sub_elev,
+            resolution_m=res,
+        )
+        crown_h, _ = self.terrain_geometry_estimator.check_belly_clearance_grid(
+            sub_elev,
+            resolution_m=res,
+            dz_dx=geom_res.dz_dx,
+            dz_dy=geom_res.dz_dy,
+        )
+        ditch_d = geom_res.ditch_depth_m
+
+        self.ugv_z = float(self.world_map.elevation[r_ugv, c_ugv])
+        curr_slope_deg = float(self.world_map.slope[r_ugv, c_ugv])
+        dt_ms = (time.perf_counter() - t0) * 1000.0
+
+        self.last_terrain_2_5d_diag = {
+            "enabled": True,
+            "mode": self.terrain_world_mode,
+            "ugv_elevation_m": round(self.ugv_z, 4),
+            "local_slope_deg": round(curr_slope_deg, 2),
+            "local_max_slope_deg": round(float(np.max(geom_res.slope_deg)) if geom_res.slope_deg.size > 0 else 0.0, 2),
+            "local_max_step_m": round(float(np.max(geom_res.step_height_m)) if geom_res.step_height_m.size > 0 else 0.0, 4),
+            "local_min_ditch_m": round(float(np.min(ditch_d)) if ditch_d.size > 0 else 0.0, 4),
+            "local_max_crown_m": round(float(np.max(crown_h)) if crown_h.size > 0 else 0.0, 4),
+            "terrain_update_ms": round(dt_ms, 3),
+        }
+        return self.last_terrain_2_5d_diag
 
     def _preplan_nominal_corridors(self) -> None:
         """Precomputes collision-free nominal global paths across the 5 canonical waypoints."""
@@ -575,12 +1238,19 @@ class InteractiveUGVNavigationNode(Node):
         """Processes UGV odometry, tracks state, and broadcasts dynamic TF."""
         t_now = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         q = msg.pose.pose.orientation
+        sinr_cosp = 2.0 * (q.w * q.x + q.y * q.z)
+        cosr_cosp = 1.0 - 2.0 * (q.x * q.x + q.y * q.y)
+        raw_roll = math.atan2(sinr_cosp, cosr_cosp)
+
+        sinp = 2.0 * (q.w * q.y - q.z * q.x)
+        raw_pitch = math.copysign(math.pi / 2.0, sinp) if abs(sinp) >= 1.0 else math.asin(sinp)
+
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
         cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         raw_yaw = math.atan2(siny_cosp, cosy_cosp)
 
         if self.ekf is not None:
-            # Update wheel odometry in EKF
+            # Update wheel odometry and metric pose observation in EKF
             wheel_meas = WheelOdometryMeasurement(
                 timestamp=t_now,
                 vx=msg.twist.twist.linear.x,
@@ -590,11 +1260,29 @@ class InteractiveUGVNavigationNode(Node):
                 pose_yaw=raw_yaw,
             )
             self.ekf.update_wheel_odom(wheel_meas)
+            vio_meas = StereoVIOMeasurement(
+                timestamp=t_now,
+                x=msg.pose.pose.position.x,
+                y=msg.pose.pose.position.y,
+                z=msg.pose.pose.position.z,
+                roll=raw_roll,
+                pitch=raw_pitch,
+                yaw=raw_yaw,
+                vx=msg.twist.twist.linear.x * math.cos(raw_yaw),
+                vy=msg.twist.twist.linear.x * math.sin(raw_yaw),
+                vz=msg.twist.twist.linear.z,
+                inliers=100,
+                tracking_state="TRACKING_OK",
+                valid=True,
+            )
+            self.ekf.update_stereo_vio(vio_meas)
             fused = self.ekf.get_state(t_now)
             self.ugv_x = fused.x
             self.ugv_y = fused.y
+            self.ugv_roll = fused.roll
+            self.ugv_pitch = fused.pitch
             self.ugv_yaw = fused.yaw
-            self.ugv_v = fused.vx
+            self.ugv_v = msg.twist.twist.linear.x
             self.ugv_w = fused.vyaw
             confidence = fused.confidence
             tracking_state_val = 2 if fused.tracking_state == "FUSED_TRACKING_OK" else 1
@@ -610,6 +1298,8 @@ class InteractiveUGVNavigationNode(Node):
         else:
             self.ugv_x = msg.pose.pose.position.x
             self.ugv_y = msg.pose.pose.position.y
+            self.ugv_roll = raw_roll
+            self.ugv_pitch = raw_pitch
             self.ugv_yaw = raw_yaw
             self.ugv_v = msg.twist.twist.linear.x
             self.ugv_w = msg.twist.twist.angular.z
@@ -682,11 +1372,43 @@ class InteractiveUGVNavigationNode(Node):
         self._on_multi_obs_odom(msg, "dynamic_obs_w3")
 
     def _on_camera_image(self, msg: RosImage) -> None:
-        """Processes camera feed through the RELLIS-3D Dense Traversability Net."""
+        """Processes camera feed asynchronously via AsyncPerceptionWorker without blocking ROS2 timers."""
         if self.traversability_predictor is None:
             return
 
-        # Rate throttle PyTorch inference to max 5 Hz to conserve CPU for Gazebo physics
+        # 1. Harvest any completed background inference & BEV projection result (< 0.1 ms)
+        if self.async_perception_worker is not None:
+            completed = self.async_perception_worker.pop_latest_result()
+            if completed is not None and completed.traversability_result is not None:
+                res = completed.traversability_result
+                self.last_trav_ms = completed.inference_ms
+                self.last_trav_fps = 1000.0 / max(completed.inference_ms, 1e-3)
+
+                if self.enable_vision_costmap and self.vision_costmap_integrator is not None and self.odom_received:
+                    bev_costmap = completed.bev_costmap
+                    if bev_costmap is None:
+                        bev_costmap = self.vision_costmap_integrator.project_traversability(
+                            res,
+                            current_time_s=completed.timestamp_s,
+                            roll_rad=completed.roll_rad,
+                            pitch_rad=completed.pitch_rad,
+                        )
+                    self.vision_costmap_integrator.fuse_into_world_map(
+                        bev_costmap,
+                        completed.ugv_pose_xy_yaw,
+                        self.world_map,
+                    )
+
+                if res.overlay is not None and res.overlay.size > 0:
+                    out_msg = RosImage()
+                    out_msg.header = completed.header if completed.header is not None else msg.header
+                    out_msg.height, out_msg.width = res.overlay.shape[:2]
+                    out_msg.encoding = "rgb8"
+                    out_msg.step = out_msg.width * 3
+                    out_msg.data = res.overlay.tobytes()
+                    self.overlay_pub.publish(out_msg)
+
+        # Rate throttle camera submission to max 5 Hz to conserve CPU for Gazebo physics
         now_perf = time.perf_counter()
         if hasattr(self, "_last_cam_process_t") and (now_perf - self._last_cam_process_t) < 0.18:
             return
@@ -695,11 +1417,24 @@ class InteractiveUGVNavigationNode(Node):
             h, w = msg.height, msg.width
             if msg.encoding in ("rgb8", "bgr8"):
                 arr = np.frombuffer(msg.data, dtype=np.uint8).reshape((h, w, 3))
-                rgb = arr if msg.encoding == "rgb8" else arr[:, :, ::-1]
+                rgb = arr.copy() if msg.encoding == "rgb8" else arr[:, :, ::-1].copy()
             elif msg.encoding == "mono8":
                 mono = np.frombuffer(msg.data, dtype=np.uint8).reshape((h, w))
                 rgb = np.stack([mono, mono, mono], axis=-1)
             else:
+                return
+
+            t_img_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+            if self.async_perception_worker is not None:
+                self.async_perception_worker.enable_bev_projection = self.enable_vision_costmap
+                self.async_perception_worker.submit_frame(
+                    rgb=rgb,
+                    timestamp_s=t_img_s,
+                    ugv_pose_xy_yaw=(self.ugv_x, self.ugv_y, self.ugv_yaw),
+                    roll_rad=self.ugv_roll,
+                    pitch_rad=self.ugv_pitch,
+                    header=msg.header,
+                )
                 return
 
             t0 = time.perf_counter()
@@ -708,10 +1443,14 @@ class InteractiveUGVNavigationNode(Node):
             self.last_trav_ms = dt_ms
             self.last_trav_fps = 1000.0 / max(dt_ms, 1e-3)
 
-            # Phase 14.3 Vision-in-the-Loop: Metric Ground Projection & Costmap Fusion
+            # Phase 14.3 / WS-1B Vision-in-the-Loop: Attitude-Compensated Metric Ground Projection & Costmap Fusion
             if self.enable_vision_costmap and self.vision_costmap_integrator is not None and self.odom_received:
-                t_img_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-                bev_costmap = self.vision_costmap_integrator.project_traversability(res, current_time_s=t_img_s)
+                bev_costmap = self.vision_costmap_integrator.project_traversability(
+                    res,
+                    current_time_s=t_img_s,
+                    roll_rad=self.ugv_roll,
+                    pitch_rad=self.ugv_pitch,
+                )
                 self.vision_costmap_integrator.fuse_into_world_map(
                     bev_costmap,
                     (self.ugv_x, self.ugv_y, self.ugv_yaw),
@@ -958,7 +1697,10 @@ class InteractiveUGVNavigationNode(Node):
                 self._publish_visualizations(None, [], [], [], "MISSION COMPLETE", dist_to_goal)
                 return
 
-        # 2. Perception & Tracking (Phase 13 Pipeline)
+        # 2. Local 2.5D Terrain Update & Perception/Tracking (Phase 13/15/16 Pipeline)
+        t_terrain_diag = self._update_local_2_5d_terrain(t_now)
+        t_terrain_ms = float(t_terrain_diag.get("terrain_update_ms", 0.0))
+
         t0 = time.perf_counter()
         detections = self._generate_sensor_observation(t_now)
         tracked_array = self.tracker.update(detections, t_now)
@@ -1040,8 +1782,31 @@ class InteractiveUGVNavigationNode(Node):
         self.occupancy_layer.update_predictions(active_predictions, header_timestamp=t_now)
         t_occ = (time.perf_counter() - t0) * 1000.0
 
-        # 5. Global Path Generation (Routing around static rock)
+        # 5. Global Path Generation & 2.5D Terrain Validity Check (Routing around boulders & 2.5D hazards)
         t0 = time.perf_counter()
+        if self.active_global_path is not None and len(self.active_global_path.points) > 0 and self.enable_2_5d_terrain:
+            xy_chk = self.active_global_path.waypoints_xy
+            rr_chk, cc_chk = self.world_map.world_to_grid_vec(xy_chk[:, 0], xy_chk[:, 1])
+            in_b = (
+                (rr_chk >= 0)
+                & (rr_chk < self.world_map.n_rows)
+                & (cc_chk >= 0)
+                & (cc_chk < self.world_map.n_cols)
+            )
+            if np.any(in_b) and np.any(self.world_map.obstacle[rr_chk[in_b], cc_chk[in_b]]):
+                replan_res = self.replanner.execute_replan(
+                    current_pose=(robot_state.x, robot_state.y, robot_state.yaw),
+                    goal=(self.goal_x, self.goal_y),
+                    base_map=self.world_map,
+                    dynamic_obstacles=confirmed_tracks,
+                )
+                if replan_res.success and replan_res.path is not None:
+                    self.active_global_path = replan_res.path.interpolate(step_m=0.50)
+                    self.replanner.set_global_path(self.active_global_path)
+                    self.get_logger().info(
+                        f"[2.5D REPLAN] Active path intersected 2.5D terrain hazard; replanned ({len(self.active_global_path.points)} pts)."
+                    )
+
         if self.active_global_path is None or len(self.active_global_path.points) == 0:
             active_wp_id = "W1"
             if self.mission_executive and self.mission_executive.active_waypoint:
@@ -1163,8 +1928,21 @@ class InteractiveUGVNavigationNode(Node):
                         d_other_left = min(d_other_left, math.hypot(p_left[0] - other_tr.x, p_left[1] - other_tr.y) - other_r)
                         d_other_right = min(d_other_right, math.hypot(p_right[0] - other_tr.x, p_right[1] - other_tr.y) - other_r)
 
-                    clearance_left = min(d_obs_self_left, min_boulder_left, d_other_left)
-                    clearance_right = min(d_obs_self_right, min_boulder_right, d_other_right)
+                    # Clearance to 2.5D terrain hazards (steep embankments >= 28 deg, steps >= 0.12 m, ditches)
+                    d_terr_left = 999.0
+                    d_terr_right = 999.0
+                    if self.enable_2_5d_terrain:
+                        if self.world_map.is_in_bounds(p_left[0], p_left[1]):
+                            rl, cl = self.world_map.world_to_grid(p_left[0], p_left[1])
+                            if self.world_map.obstacle[rl, cl] or self.world_map.slope[rl, cl] >= 28.0 or self.world_map.height_var[rl, cl] >= 0.12:
+                                d_terr_left = 0.0
+                        if self.world_map.is_in_bounds(p_right[0], p_right[1]):
+                            rr_t, cr_t = self.world_map.world_to_grid(p_right[0], p_right[1])
+                            if self.world_map.obstacle[rr_t, cr_t] or self.world_map.slope[rr_t, cr_t] >= 28.0 or self.world_map.height_var[rr_t, cr_t] >= 0.12:
+                                d_terr_right = 0.0
+
+                    clearance_left = min(d_obs_self_left, min_boulder_left, d_other_left, d_terr_left)
+                    clearance_right = min(d_obs_self_right, min_boulder_right, d_other_right, d_terr_right)
 
                     # Direction hysteresis & clearance verification
                     latch = self._evasion_latches.get(tr_id)
@@ -1366,10 +2144,10 @@ class InteractiveUGVNavigationNode(Node):
                 self.recovery_controller.reset()
                 self._pose_history.clear()
 
-        if rec_state == RecoveryState.REVERSING and rec_v is not None:
+        if rec_state in (RecoveryState.REVERSING, RecoveryState.TURNING) and rec_v is not None:
             cand_v = rec_v
             cand_w = rec_w or 0.0
-            decision_str = f"RECOVERY_REVERSE"
+            decision_str = "RECOVERY_REVERSE" if rec_state == RecoveryState.REVERSING else "RECOVERY_TURN"
 
         behavior_msg = RosBehavioralDecision()
         behavior_msg.header.stamp = self.get_clock().now().to_msg()
@@ -1386,7 +2164,10 @@ class InteractiveUGVNavigationNode(Node):
             robot_pose=(self.ugv_x, self.ugv_y, self.ugv_yaw),
             hazards=all_hazards,
             current_time_s=t_now,
+            robot_roll_pitch=(self.ugv_roll, self.ugv_pitch),
+            costmap=self.world_map,
         )
+        self.last_safety_governor_diag = gov_diag
 
         is_safe_cmd = (
             (decision_str not in ("STOP", "EMERGENCY_STOP"))
@@ -1447,10 +2228,11 @@ class InteractiveUGVNavigationNode(Node):
                 self.get_logger().warn(f"[VIZ] Step publish exception (non-fatal): {e}", throttle_duration_sec=5.0)
 
         dt_ms = (time.perf_counter() - t_loop_start) * 1000.0
+        self.last_control_loop_ms = dt_ms
         self.get_logger().info(
             f"Step: pose=({self.ugv_x:.2f}, {self.ugv_y:.2f}, yaw={self.ugv_yaw:.2f}) "
             f"cmd=(v={cand_v:.2f}, w={cand_w:.2f}) dec={decision_str} | "
-            f"tr={t_track:.0f}ms pr={t_pred:.0f}ms occ={t_occ:.0f}ms dwa={t_dwa:.0f}ms viz={t_viz:.0f}ms tot={dt_ms:.0f}ms"
+            f"2.5d={t_terrain_ms:.1f}ms tr={t_track:.0f}ms pr={t_pred:.0f}ms occ={t_occ:.0f}ms dwa={t_dwa:.0f}ms viz={t_viz:.0f}ms tot={dt_ms:.0f}ms"
         )
 
     def _publish_visualizations(
@@ -1466,47 +2248,49 @@ class InteractiveUGVNavigationNode(Node):
         m_array = MarkerArray()
         now = self.get_clock().now().to_msg()
 
-        # Marker 1 & 2: Static Rock Boulders (All Boulders from Registry)
-        m_id = 1
-        for obs in self.static_obstacles:
-            pos = obs.get("position", [0.0, 0.0, 0.0])
-            dims = obs.get("dimensions", [1.2, 1.2, 0.8])
-            name = obs.get("name", f"Boulder {m_id}")
-            ox, oy, oz = float(pos[0]), float(pos[1]), float(pos[2])
-            dx, dy, dz = float(dims[0]), float(dims[1]), float(dims[2])
+        # Marker 1 & 2: Static Rock Boulders (Cached for zero per-step allocation overhead)
+        if not hasattr(self, "_cached_static_rock_markers") or self._cached_static_rock_markers is None:
+            cached_rocks: List[Marker] = []
+            m_id = 1
+            for obs in self.static_obstacles:
+                pos = obs.get("position", [0.0, 0.0, 0.0])
+                dims = obs.get("dimensions", [1.2, 1.2, 0.8])
+                name = obs.get("name", f"Boulder {m_id}")
+                ox, oy, oz = float(pos[0]), float(pos[1]), float(pos[2])
+                dx, dy, dz = float(dims[0]), float(dims[1]), float(dims[2])
 
-            # 3D Rock Visual Cube
-            rock_m = Marker()
-            rock_m.header.stamp = now
-            rock_m.header.frame_id = "odom"
-            rock_m.ns = "static_rock"
-            rock_m.id = m_id
-            rock_m.type = Marker.CUBE
-            rock_m.action = Marker.ADD
-            rock_m.pose.position.x = ox
-            rock_m.pose.position.y = oy
-            rock_m.pose.position.z = oz + dz / 2.0
-            rock_m.scale.x = dx
-            rock_m.scale.y = dy
-            rock_m.scale.z = dz
-            rock_m.color = ColorRGBA(r=0.48, g=0.44, b=0.40, a=0.95)
-            m_array.markers.append(rock_m)
+                rock_m = Marker()
+                rock_m.header.stamp = now
+                rock_m.header.frame_id = "odom"
+                rock_m.ns = "static_rock"
+                rock_m.id = m_id
+                rock_m.type = Marker.CUBE
+                rock_m.action = Marker.ADD
+                rock_m.pose.position.x = ox
+                rock_m.pose.position.y = oy
+                rock_m.pose.position.z = oz + dz / 2.0
+                rock_m.scale.x = dx
+                rock_m.scale.y = dy
+                rock_m.scale.z = dz
+                rock_m.color = ColorRGBA(r=0.48, g=0.44, b=0.40, a=0.95)
+                cached_rocks.append(rock_m)
 
-            # Floating Text Label
-            lbl_m = Marker()
-            lbl_m.header = rock_m.header
-            lbl_m.ns = "static_rock_label"
-            lbl_m.id = m_id + 50
-            lbl_m.type = Marker.TEXT_VIEW_FACING
-            lbl_m.action = Marker.ADD
-            lbl_m.pose.position.x = ox
-            lbl_m.pose.position.y = oy
-            lbl_m.pose.position.z = oz + dz + 0.35
-            lbl_m.scale.z = 0.35
-            lbl_m.color = ColorRGBA(r=1.0, g=0.90, b=0.40, a=1.0)
-            lbl_m.text = name
-            m_array.markers.append(lbl_m)
-            m_id += 1
+                lbl_m = Marker()
+                lbl_m.header = rock_m.header
+                lbl_m.ns = "static_rock_label"
+                lbl_m.id = m_id + 50
+                lbl_m.type = Marker.TEXT_VIEW_FACING
+                lbl_m.action = Marker.ADD
+                lbl_m.pose.position.x = ox
+                lbl_m.pose.position.y = oy
+                lbl_m.pose.position.z = oz + dz + 0.35
+                lbl_m.scale.z = 0.35
+                lbl_m.color = ColorRGBA(r=1.0, g=0.90, b=0.40, a=1.0)
+                lbl_m.text = name
+                cached_rocks.append(lbl_m)
+                m_id += 1
+            self._cached_static_rock_markers = cached_rocks
+        m_array.markers.extend(self._cached_static_rock_markers)
 
         # Fallback for single-rock test if static_obstacles is empty
         if not self.static_obstacles and self.rock_radius > 0.05 and self.rock_x > -50.0:

@@ -726,9 +726,9 @@ def dynamic_occupancy_grid_slice_to_ros(
     target_time = timestamp_to_ros_time(obj.timestamp, time_cls=time_cls)
 
     h, w = obj.cost.shape
-    flat_data = [float(v) for v in obj.cost.flatten()]
+    flat_data = np.asarray(obj.cost, dtype=np.float32).ravel().tolist()
     if hasattr(obj, "unknown_mask") and obj.unknown_mask is not None:
-        unknown_mask = [bool(v) for v in np.asarray(obj.unknown_mask).flatten()]
+        unknown_mask = np.asarray(obj.unknown_mask, dtype=bool).ravel().tolist()
     else:
         unknown_mask = [False] * len(flat_data)
 
@@ -1095,16 +1095,16 @@ def world_terrain_map_to_ros(
     msg.origin = origin
     msg.width = int(W)
     msg.height = int(H)
-    msg.cost = [float(v) for v in wmap.cost.flatten()]
-    msg.traversability = [float(v) for v in wmap.traversability.flatten()]
-    msg.obstacle = [bool(v) for v in wmap.obstacle.flatten()]
-    msg.hazard = [float(v) for v in wmap.hazard.flatten()]
-    msg.unknown = [bool(v) for v in wmap.unknown.flatten()]
-    msg.confidence = [float(v) for v in wmap.confidence.flatten()]
-    msg.slope = [float(v) for v in wmap.slope.flatten()]
-    msg.roughness = [float(v) for v in wmap.roughness.flatten()]
-    msg.height_var = [float(v) for v in wmap.height_var.flatten()]
-    msg.observation_count = [int(v) for v in wmap.observation_count.flatten()]
+    msg.cost = np.asarray(wmap.cost, dtype=np.float32).ravel().tolist()
+    msg.traversability = np.asarray(wmap.traversability, dtype=np.float32).ravel().tolist()
+    msg.obstacle = np.asarray(wmap.obstacle, dtype=bool).ravel().tolist()
+    msg.hazard = np.asarray(wmap.hazard, dtype=np.float32).ravel().tolist()
+    msg.unknown = np.asarray(wmap.unknown, dtype=bool).ravel().tolist()
+    msg.confidence = np.asarray(wmap.confidence, dtype=np.float32).ravel().tolist()
+    msg.slope = np.asarray(wmap.slope, dtype=np.float32).ravel().tolist()
+    msg.roughness = np.asarray(wmap.roughness, dtype=np.float32).ravel().tolist()
+    msg.height_var = np.asarray(wmap.height_var, dtype=np.float32).ravel().tolist()
+    msg.observation_count = np.asarray(wmap.observation_count, dtype=np.int32).ravel().tolist()
     return msg
 
 

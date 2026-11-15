@@ -1,0 +1,46 @@
+{
+  "dataset_name": "RELLIS-3D",
+  "created_at": "2026-09-29T10:06:21.847570+00:00",
+  "all_resources_verified": true,
+  "resources": [
+    {
+      "name": "Full Images",
+      "filename": "Rellis_3D_pylon_camera_node.zip",
+      "source_url": "https://drive.google.com/file/d/1F3Leu0H_m6aPVpZITragfreO_SGtL2yV/view",
+      "drive_id": "1F3Leu0H_m6aPVpZITragfreO_SGtL2yV",
+      "download_timestamp": "2026-09-29T10:06:09.987788+00:00",
+      "size_bytes": 11610983413,
+      "expected_size_bytes": 11610983413,
+      "checksum_sha256": "be25e4dfb0e324a046267011c938d01b2cb80b56c69f1c2aee54c57d8fdccc59",
+      "local_path": "/tmp/rellis3d/Rellis_3D_pylon_camera_node.zip",
+      "extraction_status": "EXTRACTED",
+      "extract_path": "/tmp/rellis3d/extracted"
+    },
+    {
+      "name": "Full Image Annotations ID Format",
+      "filename": "Rellis_3D_pylon_camera_node_label_id.zip",
+      "source_url": "https://drive.google.com/file/d/16URBUQn_VOGvUqfms-0I8HHKMtjPHsu5/view",
+      "drive_id": "16URBUQn_VOGvUqfms-0I8HHKMtjPHsu5",
+      "download_timestamp": "2026-09-29T10:06:19.897114+00:00",
+      "size_bytes": 98850316,
+      "expected_size_bytes": 98850316,
+      "checksum_sha256": "bc6533b6756019d4f2cb4f41736472469cddece4157d3014b41e68659bfdb158",
+      "local_path": "/tmp/rellis3d/Rellis_3D_pylon_camera_node_label_id.zip",
+      "extraction_status": "EXTRACTED",
+      "extract_path": "/tmp/rellis3d/extracted"
+    },
+    {
+      "name": "Image Split File",
+      "filename": "Rellis_3D_image_split.zip",
+      "source_url": "https://drive.google.com/file/d/1zHmnVaItcYJAWat3Yti1W_5Nfux194WQ/view",
+      "drive_id": "1zHmnVaItcYJAWat3Yti1W_5Nfux194WQ",
+      "download_timestamp": "2026-09-29T10:06:21.847467+00:00",
+      "size_bytes": 44657,
+      "expected_size_bytes": 44657,
+      "checksum_sha256": "3aeefd5f0878f737cd82ef9890fb5e67b21d7bbd04c4dd2b29aa6eac887023eb",
+      "local_path": "/tmp/rellis3d/Rellis_3D_image_split.zip",
+      "extraction_status": "EXTRACTED",
+      "extract_path": "/tmp/rellis3d/extracted"
+    }
+  ]
+}

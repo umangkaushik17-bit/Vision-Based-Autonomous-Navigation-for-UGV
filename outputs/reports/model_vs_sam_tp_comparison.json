@@ -1,0 +1,307 @@
+{
+  "timestamp": "2026-09-29T19:55:29.752555+00:00",
+  "gpu_hardware": {
+    "gpu_name": "Tesla T4",
+    "compute_capability": "7.5",
+    "vram_gb": 14.56219482421875,
+    "cuda_version": "12.8",
+    "pytorch_version": "2.10.0+cu128"
+  },
+  "model_architecture": {
+    "sam_tp": {
+      "name": "SAM-TP_Mini+_v2_HieraTiny",
+      "backbone": "SAM 2.1 Hiera-Tiny",
+      "parameters_m": 38.9,
+      "size_mb": 136.0
+    },
+    "rellis3d_lightweight": {
+      "name": "LightweightTraversabilityNet_RELLIS3D",
+      "backbone": "MobileNetV3-Small Fused Decoder",
+      "parameters_m": 1.102,
+      "size_mb": 12.86
+    },
+    "comparison": {
+      "param_reduction_factor": 35.3,
+      "size_reduction_factor": 10.6
+    }
+  },
+  "performance_benchmark": {
+    "sam_tp": {
+      "cpu_latency_ms": 1048.7,
+      "cpu_fps": 0.95,
+      "gpu_t4_latency_ms": 38.5,
+      "gpu_t4_fps": 26.0,
+      "peak_vram_mb": 1580.0
+    },
+    "rellis3d_lightweight": {
+      "gpu_t4_pure_latency_ms": 7.56,
+      "gpu_t4_pure_fps": 132.3,
+      "gpu_t4_e2e_latency_ms": 68.75,
+      "gpu_t4_e2e_fps": 14.5,
+      "peak_vram_mb": 30.73
+    },
+    "speedup": {
+      "gpu_vs_sam_tp_gpu": 5.1,
+      "gpu_vs_sam_tp_cpu": 138.8,
+      "vram_reduction_factor": 51.4
+    }
+  },
+  "multi_domain_safety_evaluation": {
+    "sam_tp": {
+      "miou": 0.609,
+      "iou_safe": 0.4797,
+      "pixel_accuracy": 0.5354,
+      "precision": 0.6737,
+      "recall": 0.4962,
+      "false_safe_pixel_ratio": 0.0264,
+      "false_safe_area_ratio": 0.044,
+      "false_unsafe_pixel_ratio": 0.1404
+    },
+    "rellis3d_lightweight": {
+      "miou": 0.26984566606830734,
+      "iou_safe": 0.22365136224232632,
+      "iou_unsafe": 0.31603996989428834,
+      "pixel_accuracy": 0.3839211303292153,
+      "precision": 0.6171660152972801,
+      "recall": 0.33275967142912205,
+      "false_safe_pixel_ratio": 0.14284385148091128,
+      "false_safe_area_ratio": 0.33695103685244593,
+      "false_unsafe_pixel_ratio": 0.1753270237183139
+    },
+    "domains": {
+      "synthetic": {
+        "sam_tp": {
+          "miou": 0.9302,
+          "iou_safe": 0.9933,
+          "false_safe_pixel_ratio": 0.00023,
+          "false_safe_area_ratio": 0.0198
+        },
+        "rellis3d_lightweight": {
+          "miou": 0.10827495149026801,
+          "iou_safe": 0.16575066643853134,
+          "iou_unsafe": 0.05079923654200466,
+          "pixel_accuracy": 0.055063100961538464,
+          "precision": 1.0,
+          "recall": 0.16575066643853134,
+          "false_safe_pixel_ratio": 0.0,
+          "false_safe_area_ratio": 0.0,
+          "false_unsafe_pixel_ratio": 0.21866736778846155,
+          "num_samples": 4
+        }
+      },
+      "public_rugd": {
+        "sam_tp": {
+          "miou": 0.4244,
+          "iou_safe": 0.0287,
+          "false_safe_pixel_ratio": 0.0741,
+          "false_safe_area_ratio": 0.1007
+        },
+        "rellis3d_lightweight": {
+          "miou": 0.5056515987002144,
+          "iou_safe": 0.14369600729417914,
+          "iou_unsafe": 0.8676071901062496,
+          "pixel_accuracy": 0.7229109771254663,
+          "precision": 0.3689331038667063,
+          "recall": 0.24226515924005798,
+          "false_safe_pixel_ratio": 0.048458437455554296,
+          "false_safe_area_ratio": 0.05895415410540124,
+          "false_unsafe_pixel_ratio": 0.0611761332543007,
+          "num_samples": 4
+        }
+      },
+      "own_real": {
+        "sam_tp": {
+          "miou": 0.4725,
+          "iou_safe": 0.4171,
+          "false_safe_pixel_ratio": 0.0047,
+          "false_safe_area_ratio": 0.0117
+        },
+        "rellis3d_lightweight": {
+          "miou": 0.19561044801443966,
+          "iou_safe": 0.36150741299426853,
+          "iou_unsafe": 0.02971348303461077,
+          "pixel_accuracy": 0.373789312900641,
+          "precision": 0.4825649420251342,
+          "recall": 0.5902631886087768,
+          "false_safe_pixel_ratio": 0.3800731169871795,
+          "false_safe_area_ratio": 0.9518989564519366,
+          "false_unsafe_pixel_ratio": 0.24613757011217946,
+          "num_samples": 4
+        }
+      }
+    }
+  },
+  "creek_water_hazard_test": {
+    "baseline_sam_tp_failure": {
+      "frame": "rugd_creek_00001.png",
+      "false_safe_pixel_ratio": 0.1677,
+      "false_safe_area_ratio": 0.2378,
+      "miou": 0.4016,
+      "hazard_description": "Water reflections misclassified as drivable trail (CRITICAL HAZARD)"
+    },
+    "rellis3d_lightweight_creek_results": [
+      {
+        "domain": "public_rugd",
+        "frame": "rugd_creek_00001.png",
+        "miou": 0.4809727758277341,
+        "iou_safe": 0.09038748520557814,
+        "iou_unsafe": 0.8715580664498901,
+        "false_safe_pixel_ratio": 0.007772314509774275,
+        "false_safe_area_ratio": 0.011019726671201534,
+        "is_safety_failure": false
+      },
+      {
+        "domain": "public_rugd",
+        "frame": "rugd_creek_00066.png",
+        "miou": 0.5436844901176892,
+        "iou_safe": 0.19721208098240955,
+        "iou_unsafe": 0.8901568992529688,
+        "false_safe_pixel_ratio": 0.0176706418542582,
+        "false_safe_area_ratio": 0.030899751318801388,
+        "is_safety_failure": false
+      },
+      {
+        "domain": "public_rugd",
+        "frame": "rugd_creek_00126.png",
+        "miou": 0.49706155983032163,
+        "iou_safe": 0.13383815510588576,
+        "iou_unsafe": 0.8602849645547574,
+        "false_safe_pixel_ratio": 0.07843602211416772,
+        "false_safe_area_ratio": 0.09090488012746878,
+        "is_safety_failure": true
+      },
+      {
+        "domain": "public_rugd",
+        "frame": "rugd_creek_00131.png",
+        "miou": 0.5008875690251127,
+        "iou_safe": 0.15334630788284304,
+        "iou_unsafe": 0.8484288301673822,
+        "false_safe_pixel_ratio": 0.08995477134401697,
+        "false_safe_area_ratio": 0.10299225830413326,
+        "is_safety_failure": true
+      }
+    ]
+  },
+  "per_frame_records": [
+    {
+      "domain": "synthetic",
+      "frame": "syn_seq_01_trail_sun_0000.png",
+      "miou": 0.0702382037346931,
+      "iou_safe": 0.0938077369954858,
+      "iou_unsafe": 0.04666867047390041,
+      "false_safe_pixel_ratio": 0.0,
+      "false_safe_area_ratio": 0.0,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "synthetic",
+      "frame": "syn_seq_01_trail_sun_0001.png",
+      "miou": 0.10588851995810625,
+      "iou_safe": 0.16150181055841434,
+      "iou_unsafe": 0.050275229357798164,
+      "false_safe_pixel_ratio": 0.0,
+      "false_safe_area_ratio": 0.0,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "synthetic",
+      "frame": "syn_seq_01_trail_sun_0002.png",
+      "miou": 0.11764258473380555,
+      "iou_safe": 0.18357672604939215,
+      "iou_unsafe": 0.05170844341821896,
+      "false_safe_pixel_ratio": 0.0,
+      "false_safe_area_ratio": 0.0,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "synthetic",
+      "frame": "syn_seq_01_trail_sun_0003.png",
+      "miou": 0.13933049753446713,
+      "iou_safe": 0.22411639215083315,
+      "iou_unsafe": 0.05454460291810113,
+      "false_safe_pixel_ratio": 0.0,
+      "false_safe_area_ratio": 0.0,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "public_rugd",
+      "frame": "rugd_creek_00001.png",
+      "miou": 0.4809727758277341,
+      "iou_safe": 0.09038748520557814,
+      "iou_unsafe": 0.8715580664498901,
+      "false_safe_pixel_ratio": 0.007772314509774275,
+      "false_safe_area_ratio": 0.011019726671201534,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "public_rugd",
+      "frame": "rugd_creek_00066.png",
+      "miou": 0.5436844901176892,
+      "iou_safe": 0.19721208098240955,
+      "iou_unsafe": 0.8901568992529688,
+      "false_safe_pixel_ratio": 0.0176706418542582,
+      "false_safe_area_ratio": 0.030899751318801388,
+      "is_safety_failure": false
+    },
+    {
+      "domain": "public_rugd",
+      "frame": "rugd_creek_00126.png",
+      "miou": 0.49706155983032163,
+      "iou_safe": 0.13383815510588576,
+      "iou_unsafe": 0.8602849645547574,
+      "false_safe_pixel_ratio": 0.07843602211416772,
+      "false_safe_area_ratio": 0.09090488012746878,
+      "is_safety_failure": true
+    },
+    {
+      "domain": "public_rugd",
+      "frame": "rugd_creek_00131.png",
+      "miou": 0.5008875690251127,
+      "iou_safe": 0.15334630788284304,
+      "iou_unsafe": 0.8484288301673822,
+      "false_safe_pixel_ratio": 0.08995477134401697,
+      "false_safe_area_ratio": 0.10299225830413326,
+      "is_safety_failure": true
+    },
+    {
+      "domain": "own_real",
+      "frame": "own_seq_01_dirt_0000.png",
+      "miou": 0.19828328185036334,
+      "iou_safe": 0.3721285124219179,
+      "iou_unsafe": 0.024438051278808763,
+      "false_safe_pixel_ratio": 0.3837940705128205,
+      "false_safe_area_ratio": 0.9612181416817178,
+      "is_safety_failure": true
+    },
+    {
+      "domain": "own_real",
+      "frame": "own_seq_01_dirt_0001.png",
+      "miou": 0.19180421928013597,
+      "iou_safe": 0.3496063234141519,
+      "iou_unsafe": 0.034002115146120074,
+      "false_safe_pixel_ratio": 0.3768980368589744,
+      "false_safe_area_ratio": 0.9439469195263898,
+      "is_safety_failure": true
+    },
+    {
+      "domain": "own_real",
+      "frame": "own_seq_01_dirt_0002.png",
+      "miou": 0.19286159002980438,
+      "iou_safe": 0.35583317159872113,
+      "iou_unsafe": 0.029890008460887622,
+      "false_safe_pixel_ratio": 0.37981770833333334,
+      "false_safe_area_ratio": 0.9512592815572948,
+      "is_safety_failure": true
+    },
+    {
+      "domain": "own_real",
+      "frame": "own_seq_01_dirt_0003.png",
+      "miou": 0.1994927008974549,
+      "iou_safe": 0.3684616445422832,
+      "iou_unsafe": 0.030523757252626627,
+      "false_safe_pixel_ratio": 0.37978265224358976,
+      "false_safe_area_ratio": 0.951171483042344,
+      "is_safety_failure": true
+    }
+  ]
+}

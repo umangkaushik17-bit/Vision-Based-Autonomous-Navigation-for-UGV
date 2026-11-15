@@ -290,7 +290,7 @@
     </joint>
 
     <link name="camera_optical">
-      <pose>0.15 0.0 0.525 -1.57079632679 0 -1.57079632679</pose>
+      <pose relative_to="camera_link">0 0 0 -1.57079632679 0 -1.57079632679</pose>
       <inertial>
         <mass>0.01</mass>
         <inertia>
@@ -303,9 +303,12 @@
         </inertia>
       </inertial>
       <sensor name="rgb_camera" type="camera">
+        <pose relative_to="camera_link">0 0 0 0 0 0</pose>
         <always_on>true</always_on>
         <update_rate>30.0</update_rate>
+        <gz_frame_id>camera_optical</gz_frame_id>
         <camera>
+          <optical_frame_id>camera_optical</optical_frame_id>
           <horizontal_fov>1.3962634</horizontal_fov>
           <image>
             <width>640</width>

@@ -32,14 +32,12 @@ dev = [
 ]
 cloud = [
     "onnx>=1.14.0",
-    "onnxruntime>=1.15.0",
-    "timm>=0.9.0",
-    "segmentation-models-pytorch>=0.3.0"
+    "onnxruntime>=1.15.0"
 ]
 
 [tool.setuptools.packages.find]
 where = ["src", "."]
-include = ["ugv_*", "ai*"]
+include = ["ugv_*", "ai*", "production*", "simulation*"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

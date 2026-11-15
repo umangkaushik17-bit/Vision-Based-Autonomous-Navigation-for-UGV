@@ -71,7 +71,7 @@ class CameraExtrinsics:
             [1.0, 0.0, 0.0]
         ], dtype=np.float32)
 
-        # Pitch rotation around robot Y axis (tilt down = negative pitch angle in standard Euler)
+        # Pitch rotation around robot Y axis (tilt down = positive pitch_deg in extrinsics)
         cp = np.cos(pitch)
         sp = np.sin(pitch)
         R_pitch = np.array([
@@ -80,7 +80,26 @@ class CameraExtrinsics:
             [sp, 0.0, cp]
         ], dtype=np.float32)
 
-        return R_robot_to_optical @ R_pitch
+        if abs(roll) < 1e-7 and abs(yaw) < 1e-7:
+            return R_robot_to_optical @ R_pitch
+
+        cr = np.cos(roll)
+        sr = np.sin(roll)
+        R_roll = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, cr, sr],
+            [0.0, -sr, cr]
+        ], dtype=np.float32)
+
+        cy = np.cos(yaw)
+        sy = np.sin(yaw)
+        R_yaw = np.array([
+            [cy, sy, 0.0],
+            [-sy, cy, 0.0],
+            [0.0, 0.0, 1.0]
+        ], dtype=np.float32)
+
+        return R_robot_to_optical @ R_roll @ R_pitch @ R_yaw
 
     @property
     def translation_vector(self) -> np.ndarray:

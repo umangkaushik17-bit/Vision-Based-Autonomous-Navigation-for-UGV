@@ -208,3 +208,36 @@ def test_computational_safety_rule_speed_limits() -> None:
     lost_limit = ekf_lost.get_safe_speed_limit(nominal_max_speed=0.55)
     assert lost_limit == 0.0, f"Lost localization allowed nonzero speed: {lost_limit}"
     assert lost_limit < nominal_limit
+
+
+def test_imu_gravity_vector_roll_pitch_tilt_observability() -> None:
+    """Verifies that 6-axis IMU gravity vector corrects roll and pitch on inclined terrain
+    and prevents gravity from leaking into horizontal world acceleration.
+    """
+    ekf = MultiSensorEKF()
+    ekf.reset()
+
+    true_roll = math.radians(8.0)
+    true_pitch = math.radians(-10.0)
+    g = 9.80665
+
+    # Proper acceleration in body frame on a stationary tilted slope:
+    # a_meas = R_body_to_world^T @ [0, 0, +g]
+    ax = -g * math.sin(true_pitch)
+    ay = g * math.cos(true_pitch) * math.sin(true_roll)
+    az = g * math.cos(true_pitch) * math.cos(true_roll)
+
+    for i in range(1, 25):
+        t = i * 0.02
+        ekf.update_imu(IMUMeasurement(
+            timestamp=t,
+            angular_velocity=np.zeros(3, dtype=np.float64),
+            linear_acceleration=np.array([ax, ay, az], dtype=np.float64),
+        ))
+
+    state = ekf.get_state(0.50)
+    assert math.isclose(state.roll, true_roll, abs_tol=math.radians(1.0))
+    assert math.isclose(state.pitch, true_pitch, abs_tol=math.radians(1.0))
+    # World horizontal acceleration should remain near 0 (no gravity leakage)
+    assert abs(state.ax) < 0.15
+    assert abs(state.ay) < 0.15

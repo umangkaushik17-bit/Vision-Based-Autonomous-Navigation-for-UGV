@@ -28,6 +28,7 @@ class RecoveryState(str, Enum):
     INACTIVE = "INACTIVE"
     ASSESSING_REAR = "ASSESSING_REAR"
     REVERSING = "REVERSING"
+    TURNING = "TURNING"
     SETTLING = "SETTLING"
     REPLAN_READY = "REPLAN_READY"
     ABORTED_REAR_BLOCKED = "ABORTED_REAR_BLOCKED"
@@ -47,6 +48,11 @@ class RecoveryConfig:
     vehicle_width_m: float = 0.45              # Vehicle width
     lethal_cost_threshold: float = 0.85        # Static costmap lethal threshold
     deadlock_stop_cycles: int = 4              # Consecutive stop ticks before recovery triggered
+    enable_reverse_turn: bool = True           # Apply angular escape steering during reverse
+    reverse_turn_rate_radps: float = 0.35      # Angular velocity for reverse-and-turn disengagement
+    enable_turn_in_place_phase: bool = False   # Optional explicit post-reverse turn-in-place state
+    target_turn_angle_rad: float = 0.45        # Target heading change during TURNING phase
+    max_turn_duration_s: float = 2.50          # Bounded timeout for TURNING phase
 
 
 class RecoveryController:
@@ -60,12 +66,75 @@ class RecoveryController:
         self._reverse_start_time_s: float = 0.0
         self._reverse_start_x: float = 0.0
         self._reverse_start_y: float = 0.0
+        self._reverse_start_yaw: float = 0.0
+        self._turn_start_time_s: float = 0.0
+        self._turn_start_yaw: float = 0.0
+        self._escape_turn_dir: float = 0.0
         self._settle_start_time_s: float = 0.0
         self._consecutive_stop_ticks: int = 0
         self._last_state_transition_time_s: float = 0.0
 
         # Safety Governor for continuous reverse monitoring
         self.safety_governor = SafetyGovernor()
+
+    def compute_escape_turn_direction(
+        self,
+        robot_pose: Tuple[float, float, float],
+        hazards: Sequence[Union[TrackedObstacleState, LatchedHazard]],
+        costmap: Any = None,
+    ) -> float:
+        """Determine the freer lateral direction (+1.0 for LEFT, -1.0 for RIGHT, 0.0 if symmetric)
+        to steer the vehicle heading away from forward/lateral obstructions during recovery.
+        """
+        rx, ry, ryaw = robot_pose
+        cos_yaw = math.cos(ryaw)
+        sin_yaw = math.sin(ryaw)
+
+        min_left_clr = 5.0
+        min_right_clr = 5.0
+
+        # 1. Inspect forward/lateral hazards in robot frame
+        for h in hazards:
+            dx = float(h.x) - rx
+            dy = float(h.y) - ry
+            x_rel = dx * cos_yaw + dy * sin_yaw
+            y_rel = -dx * sin_yaw + dy * cos_yaw
+            if -0.20 <= x_rel <= 2.50 and abs(y_rel) <= 2.00:
+                d = math.hypot(x_rel, y_rel)
+                if y_rel >= 0.0:
+                    min_left_clr = min(min_left_clr, d)
+                else:
+                    min_right_clr = min(min_right_clr, d)
+
+        # 2. Sample static costmap left vs right flanks ahead of robot
+        if costmap is not None and hasattr(costmap, "world_to_grid"):
+            for x_rel in (0.40, 0.80, 1.20, 1.60):
+                for y_mag in (0.35, 0.70, 1.05):
+                    # Left sample (+y_mag)
+                    lx = rx + x_rel * cos_yaw - y_mag * sin_yaw
+                    ly = ry + x_rel * sin_yaw + y_mag * cos_yaw
+                    if not hasattr(costmap, "is_in_bounds") or costmap.is_in_bounds(lx, ly):
+                        lr, lc = costmap.world_to_grid(lx, ly)
+                        if 0 <= lr < costmap.shape[0] and 0 <= lc < costmap.shape[1]:
+                            if (hasattr(costmap, "obstacle") and costmap.obstacle[lr, lc]) or (
+                                hasattr(costmap, "cost") and costmap.cost[lr, lc] >= self.config.lethal_cost_threshold
+                            ):
+                                min_left_clr = min(min_left_clr, math.hypot(x_rel, y_mag))
+                    # Right sample (-y_mag)
+                    rx_s = rx + x_rel * cos_yaw - (-y_mag) * sin_yaw
+                    ry_s = ry + x_rel * sin_yaw + (-y_mag) * cos_yaw
+                    if not hasattr(costmap, "is_in_bounds") or costmap.is_in_bounds(rx_s, ry_s):
+                        rr, rc = costmap.world_to_grid(rx_s, ry_s)
+                        if 0 <= rr < costmap.shape[0] and 0 <= rc < costmap.shape[1]:
+                            if (hasattr(costmap, "obstacle") and costmap.obstacle[rr, rc]) or (
+                                hasattr(costmap, "cost") and costmap.cost[rr, rc] >= self.config.lethal_cost_threshold
+                            ):
+                                min_right_clr = min(min_right_clr, math.hypot(x_rel, y_mag))
+
+        if abs(min_left_clr - min_right_clr) < 0.05:
+            return 0.0
+        # Steer heading toward the side with strictly larger clearance
+        return 1.0 if min_left_clr > min_right_clr else -1.0
 
     def check_rear_clearance(
         self,
@@ -185,17 +254,21 @@ class RecoveryController:
             self._reverse_start_time_s = now
             self._reverse_start_x = rx
             self._reverse_start_y = ry
+            self._reverse_start_yaw = ryaw
+            self._escape_turn_dir = self.compute_escape_turn_direction(robot_pose, hazards, costmap)
             self._last_state_transition_time_s = now
-            return self.config.reverse_velocity_mps, 0.0, self.state, "Starting controlled reverse recovery"
+            rev_w = (self._escape_turn_dir * self.config.reverse_turn_rate_radps) if self.config.enable_reverse_turn else 0.0
+            return self.config.reverse_velocity_mps, rev_w, self.state, "Starting controlled reverse recovery"
 
         # ---------------------------------------------------------------------
         # State: REVERSING
         # ---------------------------------------------------------------------
         if self.state == RecoveryState.REVERSING:
+            rev_w = (self._escape_turn_dir * self.config.reverse_turn_rate_radps) if self.config.enable_reverse_turn else 0.0
             # 1. Continuous Safety Governor Inspection: check if rear became blocked
             gov_v, gov_w, gov_dec, _ = self.safety_governor.evaluate(
                 requested_v=self.config.reverse_velocity_mps,
-                requested_w=0.0,
+                requested_w=rev_w,
                 robot_pose=robot_pose,
                 hazards=hazards,
                 current_time_s=now,
@@ -208,22 +281,43 @@ class RecoveryController:
             disp = math.hypot(rx - self._reverse_start_x, ry - self._reverse_start_y)
             dur = now - self._reverse_start_time_s
 
-            if disp >= self.config.target_reverse_distance_m:
-                # Target reverse distance achieved
+            if disp >= self.config.target_reverse_distance_m or dur >= self.config.max_reverse_duration_s:
+                reason_prefix = (
+                    f"Reverse complete (disp={disp:.2f}m)"
+                    if disp >= self.config.target_reverse_distance_m
+                    else f"Reverse duration timeout ({dur:.2f}s)"
+                )
+                if self.config.enable_turn_in_place_phase and self.config.target_turn_angle_rad > 0.0:
+                    self.state = RecoveryState.TURNING
+                    self._turn_start_time_s = now
+                    self._turn_start_yaw = ryaw
+                    if self._escape_turn_dir == 0.0:
+                        self._escape_turn_dir = 1.0
+                    self._last_state_transition_time_s = now
+                    turn_w = self._escape_turn_dir * max(0.25, self.config.reverse_turn_rate_radps)
+                    return 0.0, turn_w, self.state, f"{reason_prefix}; executing escape turn"
+
                 self.state = RecoveryState.SETTLING
                 self._settle_start_time_s = now
                 self._last_state_transition_time_s = now
-                return 0.0, 0.0, self.state, f"Reverse complete (disp={disp:.2f}m); settling"
+                return 0.0, 0.0, self.state, f"{reason_prefix}; settling"
 
-            if dur >= self.config.max_reverse_duration_s:
-                # Timeout
+            # Continue controlled reverse (with optional turn steering)
+            return self.config.reverse_velocity_mps, rev_w, self.state, f"Reversing (disp={disp:.2f}m/{self.config.target_reverse_distance_m:.2f}m)"
+
+        # ---------------------------------------------------------------------
+        # State: TURNING (Post-Reverse Angular Escape)
+        # ---------------------------------------------------------------------
+        if self.state == RecoveryState.TURNING:
+            yaw_diff = abs(math.atan2(math.sin(ryaw - self._turn_start_yaw), math.cos(ryaw - self._turn_start_yaw)))
+            dur = now - self._turn_start_time_s
+            if yaw_diff >= self.config.target_turn_angle_rad or dur >= self.config.max_turn_duration_s:
                 self.state = RecoveryState.SETTLING
                 self._settle_start_time_s = now
                 self._last_state_transition_time_s = now
-                return 0.0, 0.0, self.state, f"Reverse duration timeout ({dur:.2f}s); settling"
-
-            # Continue controlled reverse
-            return self.config.reverse_velocity_mps, 0.0, self.state, f"Reversing (disp={disp:.2f}m/{self.config.target_reverse_distance_m:.2f}m)"
+                return 0.0, 0.0, self.state, f"Turn escape complete (dyaw={yaw_diff:.2f}rad); settling"
+            turn_w = self._escape_turn_dir * max(0.25, self.config.reverse_turn_rate_radps)
+            return 0.0, turn_w, self.state, f"Turning to clear trap (dyaw={yaw_diff:.2f}/{self.config.target_turn_angle_rad:.2f}rad)"
 
         # ---------------------------------------------------------------------
         # State: SETTLING
@@ -256,5 +350,9 @@ class RecoveryController:
         self._reverse_start_time_s = 0.0
         self._reverse_start_x = 0.0
         self._reverse_start_y = 0.0
+        self._reverse_start_yaw = 0.0
+        self._turn_start_time_s = 0.0
+        self._turn_start_yaw = 0.0
+        self._escape_turn_dir = 0.0
         self._settle_start_time_s = 0.0
         self._consecutive_stop_ticks = 0

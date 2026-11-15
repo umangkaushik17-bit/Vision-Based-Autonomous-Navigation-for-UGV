@@ -315,6 +315,29 @@ void DWAPlannerCore::plan(
         v_low, v_high, w_low, w_high
     );
 
+    // Subphase 15.6: Slope-Adaptive Velocity Derating v_eff_max(alpha) = v_max * max(0.25, cos(alpha))
+    if (slope_grid != nullptr && costmap_meta.n_rows > 0 && costmap_meta.n_cols > 0) {
+        int32_t r0, c0;
+        if (costmap_meta.is_cartesian) {
+            r0 = static_cast<int32_t>(std::floor((current_state.y - costmap_meta.y_min) / costmap_meta.resolution_m));
+            c0 = static_cast<int32_t>(std::floor((current_state.x - costmap_meta.x_min) / costmap_meta.resolution_m));
+        } else {
+            r0 = static_cast<int32_t>(std::floor((costmap_meta.x_max - current_state.x) / costmap_meta.resolution_m));
+            c0 = static_cast<int32_t>(std::floor((costmap_meta.y_max - current_state.y) / costmap_meta.resolution_m));
+        }
+        if (r0 >= 0 && r0 < costmap_meta.n_rows && c0 >= 0 && c0 < costmap_meta.n_cols) {
+            double curr_slope = static_cast<double>(slope_grid[r0 * costmap_meta.n_cols + c0]);
+            if (curr_slope > 0.5 && curr_slope < 28.0) {
+                double v_slope_cap = vehicle_.max_linear_velocity_mps *
+                    std::max(0.25, std::cos(curr_slope * (M_PI / 180.0)));
+                v_high = std::min(v_high, v_slope_cap);
+                if (v_high < v_low) {
+                    v_low = std::min(v_low, v_high);
+                }
+            }
+        }
+    }
+
     int32_t n_v = dwa_cfg_.v_samples;
     int32_t n_w = dwa_cfg_.omega_samples;
     int32_t total_k = n_v * n_w;
@@ -435,7 +458,27 @@ void DWAPlannerCore::plan(
                                    0.60 * c_rough + 1.00 * std::clamp(c_hvar / 0.12, 0.0, 2.0) +
                                    1.00 * c_unk;
 
-                if (c_base >= 0.85f || c_haz >= 0.70f || (obstacle_grid != nullptr && obstacle_grid[cell_idx] != 0)) {
+                // Subphase 15.6: Quasi-Static Rollover Stability Margin & Slope Velocity Derating
+                bool terrain_rollover_or_step = false;
+                if (c_hvar >= 0.12 || c_slope >= 28.0) {
+                    terrain_rollover_or_step = true;
+                } else if (c_slope > 0.5) {
+                    double v_step_max = max_v * std::max(0.25, std::cos(c_slope * (M_PI / 180.0)));
+                    if (v > v_step_max + 1e-4) {
+                        terrain_rollover_or_step = true;
+                    } else {
+                        double alpha_eff = c_slope * (0.82 + 0.22 * std::min(1.0, std::abs(w) / 0.20));
+                        double kappa_abs = std::abs(w) / std::max(std::abs(v), 0.10);
+                        double lat_accel = (v * v) * kappa_abs;
+                        // g * (W / (2 * h_cg)) = 9.81 * (0.45 / (2 * 0.18)) = 12.2625 m/s^2
+                        double rollover_margin = 1.0 - (alpha_eff / 28.0) - (lat_accel / 12.2625);
+                        if (rollover_margin < 0.20) {
+                            terrain_rollover_or_step = true;
+                        }
+                    }
+                }
+
+                if (terrain_rollover_or_step || c_base >= 0.85f || c_haz >= 0.70f || (obstacle_grid != nullptr && obstacle_grid[cell_idx] != 0)) {
                     static_collision = true;
                 } else {
                     accum_terrain += step_cost;

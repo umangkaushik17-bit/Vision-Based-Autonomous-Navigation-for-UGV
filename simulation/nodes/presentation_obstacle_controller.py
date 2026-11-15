@@ -18,12 +18,44 @@ import math
 import time
 from typing import Dict, Tuple
 
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty
+try:
+    import rclpy
+    from rclpy.node import Node
+    from rclpy.qos import QoSDurabilityPolicy, QoSProfile, QoSReliabilityPolicy
+    from geometry_msgs.msg import Twist
+    from nav_msgs.msg import Odometry
+    from std_msgs.msg import Empty
+except ImportError:
+    rclpy = None  # type: ignore
+    Node = object  # type: ignore
+
+    class QoSDurabilityPolicy:
+        VOLATILE = 2
+
+    class QoSReliabilityPolicy:
+        BEST_EFFORT = 2
+        RELIABLE = 1
+
+    class QoSProfile:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    class _Vec3:
+        def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Twist:
+        def __init__(self):
+            self.linear = _Vec3()
+            self.angular = _Vec3()
+
+    class Odometry:
+        pass
+
+    class Empty:
+        pass
+
 
 PATROL_CONFIGS = {
     "dynamic_obs_w1": {

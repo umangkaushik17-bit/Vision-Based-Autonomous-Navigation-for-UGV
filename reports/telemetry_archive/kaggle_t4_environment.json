@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-09-29T10:01:26.065018+00:00",
+  "kaggle_environment_detected": true,
+  "python_version": "3.12.13",
+  "os": "Linux-6.12.90+-x86_64-with-glibc2.35",
+  "pytorch_version": "2.10.0+cu128",
+  "cuda_version": "12.8",
+  "nvidia_driver_information": "580.159.04",
+  "gpu_name": "Tesla T4",
+  "gpu_count": 2,
+  "gpu_index": 0,
+  "gpu_vram_gb": 14.56,
+  "cuda_available": true,
+  "compute_capability": "7.5",
+  "available_ram_gb": 29.6,
+  "available_disk_space_gb": 1119.06,
+  "current_working_directory": "/tmp/SIH2026",
+  "kaggle_input_directory": "/kaggle/input",
+  "kaggle_working_directory": "/kaggle/working",
+  "internet_availability": true,
+  "real_cuda_computation_test": {
+    "success": true,
+    "error": "",
+    "allocated_mb": 56.12
+  },
+  "target_hardware_verified": true,
+  "decision_status": "VERIFIED_KAGGLE_T4_READY",
+  "decision_message": "Kaggle NVIDIA Tesla T4 environment verified and fully operational.",
+  "t4_ready_for_training": true
+}

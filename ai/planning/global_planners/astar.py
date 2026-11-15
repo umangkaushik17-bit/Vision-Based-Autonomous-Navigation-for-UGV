@@ -18,7 +18,11 @@ from ai.planning.path import Path
 class AStarPlanner(GlobalPlanner):
     """Terrain-aware A* graph search operating on WorldTerrainMap and BEVTerrainCostmap."""
 
-    def __init__(self, config: Optional[PlanningConfig] = None) -> None:
+    def __init__(
+        self,
+        config: Optional[PlanningConfig] = None,
+        backend: str = "auto",
+    ) -> None:
         super().__init__(name="A*", config=config)
         self.cost_evaluator = TerrainAwareCostEvaluator(self.config)
         self.collision_checker = FootprintCollisionChecker(self.config.vehicle)
@@ -35,6 +39,23 @@ class AStarPlanner(GlobalPlanner):
             (-1, 0, 1.0), (1, 0, 1.0), (0, -1, 1.0), (0, 1, 1.0),
             (-1, -1, sqrt2), (-1, 1, sqrt2), (1, -1, sqrt2), (1, 1, sqrt2)
         ]
+
+        self.backend_mode = backend.lower().strip()
+        self.cpp_backend = None
+        if self.backend_mode != "python":
+            try:
+                from ai.planning.global_planners.cpp_astar_backend import CPPAStarBackend
+                variant = (
+                    "simd" if "simd" in self.backend_mode
+                    else ("scalar" if "scalar" in self.backend_mode else "auto")
+                )
+                self.cpp_backend = CPPAStarBackend(config=self.config, variant=variant)
+            except Exception as e:
+                if self.backend_mode in ("cpp", "cpp_simd", "cpp_scalar"):
+                    raise RuntimeError(
+                        f"C++ A* backend requested ({self.backend_mode}) but failed to load: {e}"
+                    ) from e
+                self.cpp_backend = None
 
     def _grid_coords(self, map_obj: Any, x_m: float, y_m: float) -> Tuple[int, int]:
         """Convert metric coordinate to (row, col) across WorldTerrainMap and BEVTerrainCostmap."""
@@ -111,9 +132,20 @@ class AStarPlanner(GlobalPlanner):
             while next_idx > curr_idx + 1:
                 p1 = (float(pruned_xy[curr_idx, 0]), float(pruned_xy[curr_idx, 1]))
                 p2 = (float(pruned_xy[next_idx, 0]), float(pruned_xy[next_idx, 1]))
+                eff_max_cost = 0.65
+                if hasattr(costmap, "cost"):
+                    r1, c1 = self._grid_coords(costmap, p1[0], p1[1])
+                    r2, c2 = self._grid_coords(costmap, p2[0], p2[1])
+                    h_m, w_m = costmap.cost.shape
+                    r1 = max(0, min(h_m - 1, r1))
+                    c1 = max(0, min(w_m - 1, c1))
+                    r2 = max(0, min(h_m - 1, r2))
+                    c2 = max(0, min(w_m - 1, c2))
+                    end_cost = max(float(costmap.cost[r1, c1]), float(costmap.cost[r2, c2]))
+                    eff_max_cost = min(0.65, end_cost + 0.12)
                 # Check segment with footprint clearance
                 if not self.collision_checker.is_segment_collision(
-                    p1, p2, costmap, step_m=0.08, check_footprint=True
+                    p1, p2, costmap, step_m=0.08, check_footprint=True, max_cost=eff_max_cost
                 ):
                     # Valid collision-free shortcut found
                     break
@@ -131,6 +163,23 @@ class AStarPlanner(GlobalPlanner):
         goal: Union[GoalPose, GoalState, Tuple[float, float]],
     ) -> Tuple[Optional[Path], PlannerStatus, Dict[str, Any]]:
         """Execute A* search on WorldTerrainMap or BEVTerrainCostmap."""
+        if self.cpp_backend is not None:
+            try:
+                return self.cpp_backend.plan(costmap, start, goal)
+            except Exception as e:
+                if self.backend_mode in ("cpp", "cpp_simd", "cpp_scalar"):
+                    raise
+                # Graceful fallback to golden Python reference
+                return self._search_python(costmap, start, goal)
+        return self._search_python(costmap, start, goal)
+
+    def _search_python(
+        self,
+        costmap: Any,
+        start: Union[RobotState, GoalPose, Tuple[float, float]],
+        goal: Union[GoalPose, GoalState, Tuple[float, float]],
+    ) -> Tuple[Optional[Path], PlannerStatus, Dict[str, Any]]:
+        """Golden reference pure-Python 8-connected A* search."""
         t_start = time.perf_counter()
 
         # Map validation
@@ -152,6 +201,27 @@ class AStarPlanner(GlobalPlanner):
         res = self._get_resolution(costmap)
         shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
 
+        # Enforce hard 2.5D terrain safety cutoffs on slope >= 28 deg and step >= 0.12 m
+        slope_layer = getattr(costmap, "slope_deg", getattr(costmap, "slope", None))
+        hvar_layer = getattr(costmap, "height_var", None)
+        lethal_terrain = None
+        if slope_layer is not None:
+            s_mask = slope_layer >= 28.0
+            if np.any(s_mask):
+                lethal_terrain = s_mask
+        if hvar_layer is not None:
+            h_mask = hvar_layer >= self.cost_evaluator.max_safe_step_m
+            if np.any(h_mask):
+                lethal_terrain = h_mask if lethal_terrain is None else (lethal_terrain | h_mask)
+        if lethal_terrain is not None and hasattr(costmap, "obstacle") and not np.all(costmap.obstacle[lethal_terrain]):
+            costmap.obstacle[lethal_terrain] = True
+            if hasattr(costmap, "cost"):
+                costmap.cost[lethal_terrain] = 1.0
+            try:
+                costmap._cached_infl_obstacle = None
+            except Exception:
+                pass
+
         # Footprint inflation for chassis obstacle & critical hazard clearance (circumscribed radius ensures full rotation clearance)
         infl_radius = self.config.vehicle.circumscribed_radius_m + self.config.vehicle.collision_margin_m
         infl_cells = max(4, int(np.ceil(infl_radius / res)))
@@ -172,9 +242,19 @@ class AStarPlanner(GlobalPlanner):
 
         infl_hazard: Optional[np.ndarray] = None
         if hasattr(costmap, "hazard") and (costmap.hazard >= self.cost_evaluator.critical_hazard_threshold).any():
-            from scipy.ndimage import binary_dilation
-            crit_mask = costmap.hazard >= self.cost_evaluator.critical_hazard_threshold
-            infl_hazard = binary_dilation(crit_mask, iterations=infl_cells)
+            cached_h = getattr(costmap, "_cached_infl_hazard", None)
+            cached_h_cells = getattr(costmap, "_cached_infl_hazard_cells", None)
+            if cached_h is not None and cached_h_cells == infl_cells:
+                infl_hazard = cached_h
+            else:
+                from scipy.ndimage import binary_dilation
+                crit_mask = costmap.hazard >= self.cost_evaluator.critical_hazard_threshold
+                infl_hazard = binary_dilation(crit_mask, iterations=infl_cells)
+                try:
+                    costmap._cached_infl_hazard = infl_hazard
+                    costmap._cached_infl_hazard_cells = infl_cells
+                except Exception:
+                    pass
 
         r_start, c_start = self._grid_coords(costmap, start_x, start_y)
         r_goal, c_goal = self._grid_coords(costmap, goal_x, goal_y)

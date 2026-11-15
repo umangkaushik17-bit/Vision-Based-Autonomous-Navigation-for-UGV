@@ -84,6 +84,10 @@ class TerrainAwareCostEvaluator:
         h_var = float(costmap.height_var[r, c]) if hasattr(costmap, "height_var") else 0.0
         unk_val = self.unknown_cost_penalty if is_unknown else 0.0
 
+        # 5. Hard 2.5D Terrain Safety Cutoffs (Subphase 15.5: slope >= 28 deg or step >= 0.12 m)
+        if slope >= 28.0 or h_var >= self.max_safe_step_m:
+            return float("inf")
+
         cell_cost = (
             self.w_cost * base_c +
             self.w_trav * (1.0 - trav) +

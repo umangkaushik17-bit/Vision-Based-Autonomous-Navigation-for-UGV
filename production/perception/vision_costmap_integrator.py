@@ -19,6 +19,7 @@ import math
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import cv2
 import numpy as np
 
 from ai.spatial_fusion.world_map import WorldTerrainMap
@@ -93,6 +94,8 @@ class LocalBEVCostmap:
     frame_id: str = "base_link"
     valid: bool = True
     status_message: str = "OK"
+    elevation: Optional[np.ndarray] = None        # (nx, ny) float32 metric elevation Z(x, y)
+    elevation_valid: Optional[np.ndarray] = None  # (nx, ny) bool mask of valid elevation cells
 
     @property
     def shape(self) -> Tuple[int, int]:
@@ -135,15 +138,31 @@ class VisionCostmapIntegrator:
         self.grid_x_m = (x_max - (row_indices + 0.5) * self.config.resolution_m).astype(np.float32)
         self.grid_y_m = (y_max - (col_indices + 0.5) * self.config.resolution_m).astype(np.float32)
 
-        # Precomputed ray-projection lookup tables (LUT)
+        # Precomputed ray-projection lookup tables (LUT) with shape cache
+        self._lut_cache: Dict[Tuple[int, int], Dict[str, Any]] = {}
         self._lut_shape: Optional[Tuple[int, int]] = None
         self._lut_valid_v: Optional[np.ndarray] = None
         self._lut_valid_u: Optional[np.ndarray] = None
         self._lut_rows: Optional[np.ndarray] = None
         self._lut_cols: Optional[np.ndarray] = None
+        self._rays_base: Optional[np.ndarray] = None
+        self._rx_base: Optional[np.ndarray] = None
+        self._ry_base: Optional[np.ndarray] = None
+        self._rz_base: Optional[np.ndarray] = None
+        self._u_flat: Optional[np.ndarray] = None
+        self._v_flat: Optional[np.ndarray] = None
+        self._t_cam_base: Optional[np.ndarray] = None
 
-        # Precompute for default 240x320 model output resolution
+        # Precompute for standard 480x640 camera and default 240x320 model output resolution
+        self.precompute_projection((480, 640))
         self.precompute_projection((240, 320))
+
+        # Precompute radial obstacle inflation structuring kernel (WS-2A)
+        self._radial_kernel: Optional[np.ndarray] = None
+        if self.config.obstacle_inflation_radius_m > 0:
+            r_cells = int(np.ceil(self.config.obstacle_inflation_radius_m / self.config.resolution_m))
+            yg, xg = np.ogrid[-r_cells : r_cells + 1, -r_cells : r_cells + 1]
+            self._radial_kernel = (xg * xg + yg * yg <= r_cells * r_cells).astype(np.uint8)
 
         # Persistent obstacle tracking in world map: (row, col) -> consecutive clear count
         self._obstacle_clear_counter: Dict[Tuple[int, int], int] = {}
@@ -205,6 +224,22 @@ class VisionCostmapIntegrator:
 
     def precompute_projection(self, image_shape: Tuple[int, int]) -> None:
         """Precomputes analytical ground-plane intersection rays for given input shape."""
+        if image_shape in self._lut_cache:
+            entry = self._lut_cache[image_shape]
+            self._lut_shape = image_shape
+            self._lut_valid_v = entry["valid_v"]
+            self._lut_valid_u = entry["valid_u"]
+            self._lut_rows = entry["rows"]
+            self._lut_cols = entry["cols"]
+            self._rays_base = entry["rays_base"]
+            self._rx_base = entry["rx_base"]
+            self._ry_base = entry["ry_base"]
+            self._rz_base = entry["rz_base"]
+            self._u_flat = entry["u_flat"]
+            self._v_flat = entry["v_flat"]
+            self._t_cam_base = entry["t_cam_base"]
+            return
+
         h, w = image_shape
         intr = self.config.intrinsics
         extr = self.config.extrinsics
@@ -267,20 +302,166 @@ class VisionCostmapIntegrator:
         rows = np.clip(((x_max - x_in) / res).astype(np.int32), 0, self.nx - 1)
         cols = np.clip(((y_max - y_in) / res).astype(np.int32), 0, self.ny - 1)
 
+        # Precompute 3D camera ray vectors in nominal base_link frame for SE(3) attitude compensation
+        # Pre-cull sky rays (> +20 deg above horizon, dz >= 0.35) which cannot hit ground under +/-20 deg pitch/roll
+        u_flat = u_indices.ravel().astype(np.float32)
+        v_flat = v_indices.ravel().astype(np.float32)
+        rays_opt = np.stack([
+            (u_flat - cx_scaled) / fx_scaled,
+            (v_flat - cy_scaled) / fy_scaled,
+            np.ones_like(u_flat),
+        ], axis=0)  # (3, H*W)
+        rays_base_all = (R_opt_to_robot @ rays_opt).astype(np.float32)
+        u_raw = u_indices.ravel()
+        v_raw = v_indices.ravel()
+        # Keep 100% of mid/far-field pixels (v < 0.50*h, x >= 2.1m) and 2x2 subsample in ultra-dense near field
+        near_keep = (v_raw < int(h * 0.50)) | (((u_raw & 1) == 0) & ((v_raw & 1) == 0))
+        cand_mask = (rays_base_all[2, :] < 0.35) & near_keep
+        self._rays_base = np.ascontiguousarray(rays_base_all[:, cand_mask])
+        self._rx_base = np.ascontiguousarray(self._rays_base[0, :])
+        self._ry_base = np.ascontiguousarray(self._rays_base[1, :])
+        self._rz_base = np.ascontiguousarray(self._rays_base[2, :])
+        self._u_flat = np.ascontiguousarray(u_raw[cand_mask])
+        self._v_flat = np.ascontiguousarray(v_raw[cand_mask])
+        self._t_cam_base = t_robot.astype(np.float32)
+
         self._lut_shape = (h, w)
         self._lut_valid_v = valid_v_in
         self._lut_valid_u = valid_u_in
         self._lut_rows = rows
         self._lut_cols = cols
+        self._lut_cache[(h, w)] = {
+            "valid_v": self._lut_valid_v,
+            "valid_u": self._lut_valid_u,
+            "rows": self._lut_rows,
+            "cols": self._lut_cols,
+            "rays_base": self._rays_base,
+            "rx_base": self._rx_base,
+            "ry_base": self._ry_base,
+            "rz_base": self._rz_base,
+            "u_flat": self._u_flat,
+            "v_flat": self._v_flat,
+            "t_cam_base": self._t_cam_base,
+        }
+
+    @staticmethod
+    def _attitude_rotation_matrix(roll_rad: float, pitch_rad: float) -> np.ndarray:
+        """Constructs 3x3 rigid-body rotation R_y(pitch) @ R_x(roll) from tilted base_link to level ground frame."""
+        cr = math.cos(roll_rad)
+        sr = math.sin(roll_rad)
+        cp = math.cos(pitch_rad)
+        sp = math.sin(pitch_rad)
+        return np.array([
+            [cp, sp * sr, sp * cr],
+            [0.0, cr, -sr],
+            [-sp, cp * sr, cp * cr],
+        ], dtype=np.float32)
+
+    def compute_attitude_compensated_lut(
+        self,
+        roll_rad: float,
+        pitch_rad: float,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Computes dynamic SE(3) attitude-compensated ground-plane projection indices.
+
+        Compensates camera ray directions and optical center height for instantaneous
+        vehicle chassis roll and pitch (REP-103: X-forward, Y-left, Z-up).
+        """
+        if abs(roll_rad) <= 1e-4 and abs(pitch_rad) <= 1e-4:
+            return self._lut_valid_v, self._lut_valid_u, self._lut_rows, self._lut_cols
+
+        R_level = self._attitude_rotation_matrix(roll_rad, pitch_rad)
+        t_level = R_level @ self._t_cam_base  # (3, 1)
+        h_eff = np.float32(t_level[2, 0])
+        if h_eff <= 0.0:
+            empty_i = np.empty(0, dtype=np.int32)
+            return empty_i, empty_i, empty_i, empty_i
+
+        rx = self._rx_base
+        ry = self._ry_base
+        rz = self._rz_base
+
+        r00, r01, r02 = np.float32(R_level[0, 0]), np.float32(R_level[0, 1]), np.float32(R_level[0, 2])
+        r11, r12 = np.float32(R_level[1, 1]), np.float32(R_level[1, 2])
+        r20, r21, r22 = np.float32(R_level[2, 0]), np.float32(R_level[2, 1]), np.float32(R_level[2, 2])
+
+        dz = r20 * rx + r21 * ry + r22 * rz
+        zc = -h_eff / np.minimum(dz, np.float32(-1e-5))
+        x_r = np.float32(t_level[0, 0]) + zc * (r00 * rx + r01 * ry + r02 * rz)
+        y_r = np.float32(t_level[1, 0]) + zc * (r11 * ry + r12 * rz)
+
+        x_min, x_max = self.config.x_range_m
+        y_min, y_max = self.config.y_range_m
+        dz_thresh = min(-1e-4, float(-h_eff / 12.0))
+        in_bounds = (
+            (dz <= dz_thresh)
+            & (x_r >= x_min)
+            & (x_r < x_max)
+            & (y_r >= y_min)
+            & (y_r < y_max)
+        )
+        idx_in = np.nonzero(in_bounds)[0]
+        if idx_in.size == 0:
+            empty_i = np.empty(0, dtype=np.int32)
+            return empty_i, empty_i, empty_i, empty_i
+
+        inv_res = np.float32(1.0 / self.config.resolution_m)
+        rows = ((np.float32(x_max) - x_r[idx_in]) * inv_res).astype(np.int32)
+        cols = ((np.float32(y_max) - y_r[idx_in]) * inv_res).astype(np.int32)
+
+        return self._v_flat[idx_in], self._u_flat[idx_in], rows, cols
+
+    def project_ground_point_to_pixel(
+        self,
+        x_ground_m: float,
+        y_ground_m: float,
+        roll_rad: float = 0.0,
+        pitch_rad: float = 0.0,
+        image_shape: Optional[Tuple[int, int]] = None,
+    ) -> Optional[Tuple[int, int]]:
+        """Projects a 3D point (x_ground_m, y_ground_m, 0.0) on the level ground plane into image pixel (v, u)
+        under chassis attitude (roll_rad, pitch_rad). Useful for synthetic testing and calibration verification.
+        """
+        h, w = image_shape if image_shape is not None else (self._lut_shape or (240, 320))
+        intr = self.config.intrinsics
+        extr = self.config.extrinsics
+
+        scale_x = w / float(intr.width)
+        scale_y = h / float(intr.height)
+        fx_s = intr.fx * scale_x
+        fy_s = intr.fy * scale_y
+        cx_s = intr.cx * scale_x
+        cy_s = intr.cy * scale_y
+
+        R_level = self._attitude_rotation_matrix(roll_rad, pitch_rad)
+        p_level = np.array([x_ground_m, y_ground_m, 0.0], dtype=np.float32)
+        p_base = R_level.T @ p_level
+
+        t_cam = np.array([extr.forward_offset_m, 0.0, extr.height_m], dtype=np.float32)
+        p_opt = extr.rotation_matrix @ (p_base - t_cam)
+
+        if p_opt[2] <= 0.05:
+            return None
+
+        u = int(round(fx_s * (p_opt[0] / p_opt[2]) + cx_s))
+        v = int(round(fy_s * (p_opt[1] / p_opt[2]) + cy_s))
+        if 0 <= v < h and 0 <= u < w:
+            return v, u
+        return None
 
     def project_traversability(
         self,
         trav_result: TraversabilityResult,
         current_time_s: Optional[float] = None,
+        roll_rad: float = 0.0,
+        pitch_rad: float = 0.0,
+        photometric_confidence: Optional[np.ndarray] = None,
     ) -> LocalBEVCostmap:
         """Projects a TraversabilityResult into a local metric BEV costmap.
 
-        Enforces fail-safe degradation on missing/invalid/stale inputs.
+        Supports real-time 3D SE(3) attitude compensation (roll_rad, pitch_rad),
+        photometric glare/shadow confidence attenuation, and fail-safe degradation
+        on missing/invalid/stale inputs.
         """
         now_s = current_time_s if current_time_s is not None else time.time()
 
@@ -306,34 +487,50 @@ class VisionCostmapIntegrator:
         if self._lut_shape != (h, w):
             self.precompute_projection((h, w))
 
-        # 2. Extract valid ground ray scores
-        scores_in = mask[self._lut_valid_v, self._lut_valid_u]
+        # 1b. Photometric glare/shadow confidence attenuation (Subphase 16.1)
+        conf_src = photometric_confidence if photometric_confidence is not None else trav_result.confidence
+        if conf_src is not None:
+            conf_arr = np.asarray(conf_src, dtype=np.float32)
+            if conf_arr.shape != (h, w):
+                conf_arr = cv2.resize(conf_arr, (w, h), interpolation=cv2.INTER_NEAREST)
+            low_conf = conf_arr < np.float32(0.45)
+            if np.any(low_conf):
+                mask = np.where(
+                    low_conf & (mask < np.float32(self.config.safe_prob_thresh)),
+                    conf_arr * mask + (np.float32(1.0) - conf_arr) * np.float32(0.75),
+                    mask,
+                )
 
-        # Vectorized accumulator
-        grid_sum = np.zeros((self.nx, self.ny), dtype=np.float32)
-        grid_count = np.zeros((self.nx, self.ny), dtype=np.int32)
-        grid_min = np.full((self.nx, self.ny), 1.0, dtype=np.float32)
+        # 2. Extract valid ground ray scores (using attitude-compensated LUT when tilted)
+        if abs(roll_rad) > 1e-4 or abs(pitch_rad) > 1e-4:
+            lut_v, lut_u, lut_rows, lut_cols = self.compute_attitude_compensated_lut(roll_rad, pitch_rad)
+        else:
+            lut_v = self._lut_valid_v
+            lut_u = self._lut_valid_u
+            lut_rows = self._lut_rows
+            lut_cols = self._lut_cols
 
-        # Use conservative min-pooling for safety (any obstacle observation dominates)
-        np.add.at(grid_sum, (self._lut_rows, self._lut_cols), scores_in)
-        np.add.at(grid_count, (self._lut_rows, self._lut_cols), 1)
+        scores_in = mask.ravel()[lut_v * w + lut_u]
 
-        # Compute minimum score per cell via bincount or grouped min
-        flat_idx = self._lut_rows * self.ny + self._lut_cols
+        # Compute flat cell index and fast bincount observation count
+        flat_idx = lut_rows * self.ny + lut_cols
         total_cells = self.nx * self.ny
+        flat_count = np.bincount(flat_idx, minlength=total_cells)
+        grid_count = flat_count.reshape((self.nx, self.ny))
 
-        # Vectorized minimum score per cell
-        # Initialize flat minimum array
-        flat_min = np.full(total_cells, 1.0, dtype=np.float32)
-        np.minimum.at(flat_min, flat_idx, scores_in)
+        # Exact O(1)-seeded min-pooling: seed each cell with a valid ray score in that cell,
+        # then only invoke unbuffered minimum.at on rays strictly smaller than the seed
+        flat_min = np.ones(total_cells, dtype=np.float32)
+        flat_min[flat_idx] = scores_in
+        lower_mask = scores_in < flat_min[flat_idx]
+        if np.any(lower_mask):
+            np.minimum.at(flat_min, flat_idx[lower_mask], scores_in[lower_mask])
         grid_min = flat_min.reshape((self.nx, self.ny))
 
         observed_mask = grid_count > 0
         unknown_mask = ~observed_mask
 
         # Drivability score: use conservative min-pooling
-        mean_trav = np.zeros((self.nx, self.ny), dtype=np.float32)
-        mean_trav[observed_mask] = grid_sum[observed_mask] / grid_count[observed_mask]
         trav_score = np.where(observed_mask, grid_min, 0.0)
 
         # 3. Cost Mapping
@@ -374,28 +571,11 @@ class VisionCostmapIntegrator:
             obstacle[observed_mask] = is_lethal
             confidence[observed_mask] = np.clip(grid_count[observed_mask] / 10.0, 0.2, 1.0)
 
-        # 4. Obstacle Inflation Buffer
-        if self.config.obstacle_inflation_radius_m > 0 and np.any(obstacle):
-            r_cells = int(np.ceil(self.config.obstacle_inflation_radius_m / self.config.resolution_m))
-            inflated_cost = cost.copy()
-            obs_rows, obs_cols = np.where(obstacle)
-            for dr in range(-r_cells, r_cells + 1):
-                for dc in range(-r_cells, r_cells + 1):
-                    if dr == 0 and dc == 0:
-                        continue
-                    if dr * dr + dc * dc <= r_cells * r_cells:
-                        nr = obs_rows + dr
-                        nc = obs_cols + dc
-                        valid_nbr = (nr >= 0) & (nr < self.nx) & (nc >= 0) & (nc < self.ny)
-                        nr_val = nr[valid_nbr]
-                        nc_val = nc[valid_nbr]
-                        # Set inflation cost on non-obstacle cells
-                        non_obs = ~obstacle[nr_val, nc_val]
-                        inflated_cost[nr_val[non_obs], nc_val[non_obs]] = np.maximum(
-                            inflated_cost[nr_val[non_obs], nc_val[non_obs]],
-                            self.config.inflation_cost
-                        )
-            cost = inflated_cost
+        # 4. Obstacle Inflation Buffer (WS-2A Native C++ Radial Dilation)
+        if self._radial_kernel is not None and np.any(obstacle):
+            dilated = cv2.dilate(obstacle.astype(np.uint8), self._radial_kernel) > 0
+            inflated_ring = dilated & (~obstacle)
+            cost[inflated_ring] = np.maximum(cost[inflated_ring], self.config.inflation_cost)
 
         return LocalBEVCostmap(
             cost=cost,
@@ -513,52 +693,85 @@ class VisionCostmapIntegrator:
         conf_in = conf_val[in_grid]
 
         cells_updated = len(rows_in)
-        obstacles_marked = 0
-
-        # Update layers with persistent hazard latching
         now_ts = bev_costmap.timestamp
-        for i in range(cells_updated):
-            r = rows_in[i]
-            c = cols_in[i]
-            is_obstacle = obs_in[i]
-            cell_cost = cost_in[i]
-            cell_hazard = haz_in[i]
 
-            if is_obstacle:
-                # Mark as obstacle and latch
-                world_map.obstacle[r, c] = True
-                world_map.cost[r, c] = 1.0
-                world_map.hazard[r, c] = 1.0
-                world_map.traversability[r, c] = 0.0
+        # 1. Vectorized fast-path for non-obstacle observations on non-latched cells
+        existing_obs = world_map.obstacle[rows_in, cols_in]
+        free_direct_mask = (~obs_in) & (~existing_obs)
+        if np.any(free_direct_mask):
+            rf = rows_in[free_direct_mask]
+            cf = cols_in[free_direct_mask]
+            world_map.cost[rf, cf] = cost_in[free_direct_mask]
+            world_map.hazard[rf, cf] = haz_in[free_direct_mask]
+            world_map.traversability[rf, cf] = trav_in[free_direct_mask]
+            world_map.unknown[rf, cf] = False
+            world_map.confidence[rf, cf] = np.maximum(world_map.confidence[rf, cf], conf_in[free_direct_mask])
+            world_map.last_observed_timestamp[rf, cf] = now_ts
+            world_map.observation_count[rf, cf] += 1
+
+        # 2. Vectorized fast-path for new/confirmed obstacle observations
+        obstacles_marked = int(np.sum(obs_in))
+        if obstacles_marked > 0:
+            ro = rows_in[obs_in]
+            co = cols_in[obs_in]
+            world_map.obstacle[ro, co] = True
+            world_map.cost[ro, co] = 1.0
+            world_map.hazard[ro, co] = 1.0
+            world_map.traversability[ro, co] = 0.0
+            world_map.unknown[ro, co] = False
+            world_map.confidence[ro, co] = np.maximum(world_map.confidence[ro, co], conf_in[obs_in])
+            world_map.last_observed_timestamp[ro, co] = now_ts
+            world_map.observation_count[ro, co] += 1
+            for r_val, c_val in zip(ro.tolist(), co.tolist()):
+                self._obstacle_clear_counter[(r_val, c_val)] = 0
+
+        # 3. Persistent hazard latch hysteresis only for previously-latched obstacle cells now seen as clear
+        latched_check_mask = (~obs_in) & existing_obs
+        if np.any(latched_check_mask):
+            for idx in np.nonzero(latched_check_mask)[0]:
+                r = int(rows_in[idx])
+                c = int(cols_in[idx])
+                if self.config.persistent_hazard_latch:
+                    count = self._obstacle_clear_counter.get((r, c), 0) + 1
+                    self._obstacle_clear_counter[(r, c)] = count
+                    if count < self.config.min_clear_observations_to_erase:
+                        # Keep obstacle latched!
+                        continue
+                    else:
+                        # Safely unlatch after sustained confirmation
+                        world_map.obstacle[r, c] = False
+                        self._obstacle_clear_counter.pop((r, c), None)
+                else:
+                    world_map.obstacle[r, c] = False
+
+                world_map.cost[r, c] = cost_in[idx]
+                world_map.hazard[r, c] = haz_in[idx]
+                world_map.traversability[r, c] = trav_in[idx]
                 world_map.unknown[r, c] = False
-                world_map.confidence[r, c] = max(world_map.confidence[r, c], conf_in[i])
+                world_map.confidence[r, c] = max(world_map.confidence[r, c], conf_in[idx])
                 world_map.last_observed_timestamp[r, c] = now_ts
                 world_map.observation_count[r, c] += 1
-                self._obstacle_clear_counter[(r, c)] = 0
-                obstacles_marked += 1
-            else:
-                # Non-obstacle observation
-                if world_map.obstacle[r, c]:
-                    # Persistent hazard check: requires multiple consecutive clear observations
-                    if self.config.persistent_hazard_latch:
-                        count = self._obstacle_clear_counter.get((r, c), 0) + 1
-                        self._obstacle_clear_counter[(r, c)] = count
-                        if count < self.config.min_clear_observations_to_erase:
-                            # Keep obstacle latched!
-                            continue
-                        else:
-                            # Safely unlatch after sustained confirmation
-                            world_map.obstacle[r, c] = False
-                            self._obstacle_clear_counter.pop((r, c), None)
 
-                # Update nominal terrain cost
-                world_map.cost[r, c] = cell_cost
-                world_map.hazard[r, c] = cell_hazard
-                world_map.traversability[r, c] = trav_in[i]
-                world_map.unknown[r, c] = False
-                world_map.confidence[r, c] = max(world_map.confidence[r, c], conf_in[i])
-                world_map.last_observed_timestamp[r, c] = now_ts
-                world_map.observation_count[r, c] += 1
+        # 4. Fuse 2.5D elevation layer if populated on bev_costmap
+        if bev_costmap.elevation is not None:
+            elev_obs_mask = (
+                bev_costmap.elevation_valid
+                if bev_costmap.elevation_valid is not None
+                else observed
+            )
+            elev_valid_obs = elev_obs_mask[observed][in_grid]
+            if np.any(elev_valid_obs):
+                elev_vals = bev_costmap.elevation[observed][in_grid][elev_valid_obs].astype(np.float32)
+                re = rows_in[elev_valid_obs]
+                ce = cols_in[elev_valid_obs]
+                was_valid = world_map.elevation_valid[re, ce]
+                alpha = np.float32(0.35)
+                world_map.elevation[re, ce] = np.where(
+                    was_valid,
+                    (np.float32(1.0) - alpha) * world_map.elevation[re, ce] + alpha * elev_vals,
+                    elev_vals,
+                )
+                world_map.elevation_valid[re, ce] = True
 
         fusion_ms = (time.perf_counter() - t0) * 1000.0
         self.last_update_timestamp = now_ts

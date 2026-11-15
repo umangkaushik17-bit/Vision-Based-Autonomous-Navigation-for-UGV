@@ -42,8 +42,10 @@ class AuthoritativeSafetyGovernor(SafetyGovernor):
         hazards: Sequence[Union[TrackedObstacleState, LatchedHazard]],
         metrics: RuntimeMetrics,
         current_time_s: float = 0.0,
+        robot_roll_pitch: Tuple[float, float] = (0.0, 0.0),
+        costmap: Any = None,
     ) -> Tuple[float, float, str, Dict[str, Any]]:
-        """Jointly evaluate obstacle safety and computational latency degradation.
+        """Jointly evaluate obstacle safety, 3D tilt rollover limits, and computational latency degradation.
 
         Returns:
             Tuple of (governed_v, governed_w, final_decision, combined_diagnostics)
@@ -55,13 +57,15 @@ class AuthoritativeSafetyGovernor(SafetyGovernor):
             raw_cmd_w=requested_w,
         )
 
-        # 2. Evaluate physical obstacle safety with clamped velocity
+        # 2. Evaluate physical obstacle & rollover safety with clamped velocity
         gov_v, gov_w, obs_decision, obs_diag = self.evaluate(
             requested_v=adapt_decision.command_v,
             requested_w=adapt_decision.command_w,
             robot_pose=robot_pose,
             hazards=hazards,
             current_time_s=current_time_s,
+            robot_roll_pitch=robot_roll_pitch,
+            costmap=costmap,
         )
 
         # 3. Combine decisions: SAFE_STOP or physical STOP overrides everything

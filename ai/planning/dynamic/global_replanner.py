@@ -206,6 +206,18 @@ class DynamicPlanningMapOverlay:
         self.slope = getattr(base_map, "slope", getattr(base_map, "slope_deg", np.zeros((self.n_rows, self.n_cols), dtype=np.float32)))
         self.roughness = getattr(base_map, "roughness", np.zeros((self.n_rows, self.n_cols), dtype=np.float32))
         self.height_var = getattr(base_map, "height_var", np.zeros((self.n_rows, self.n_cols), dtype=np.float32))
+        self.elevation = getattr(base_map, "elevation", np.zeros((self.n_rows, self.n_cols), dtype=np.float32))
+        self.elevation_valid = getattr(base_map, "elevation_valid", np.zeros((self.n_rows, self.n_cols), dtype=bool))
+
+        # Preserve pre-cached static obstacle inflation from base_map when available
+        base_infl = getattr(base_map, "_cached_infl_obstacle", None)
+        base_infl_cells = getattr(base_map, "_cached_infl_cells", None)
+        if base_infl is not None and base_infl_cells is not None:
+            self._cached_infl_obstacle = base_infl.copy() if dynamic_obstacles else base_infl
+            self._cached_infl_cells = int(base_infl_cells)
+        else:
+            self._cached_infl_obstacle = None
+            self._cached_infl_cells = None
 
         # Dynamic obstacles rasterization
         if dynamic_obstacles:
@@ -330,30 +342,51 @@ class DynamicPlanningMapOverlay:
             c_start = max(0, min(c_left, c_right))
             c_end = min(self.n_cols, max(c_left, c_right) + 1)
 
-            # Compute OBB corners for exact physical check
-            obb_corners = compute_obb_corners((x, y), (length, width), yaw)
+            if r_start >= r_end or c_start >= c_end:
+                continue
 
-            for r in range(r_start, r_end):
-                for c in range(c_start, c_end):
-                    cx, cy = self.grid_to_world(r, c)
-                    dx = cx - x
-                    dy = cy - y
-                    dist = math.hypot(dx, dy)
+            # Vectorized OBB & radial risk rasterization over subgrid [r_start:r_end, c_start:c_end]
+            rows_idx = np.arange(r_start, r_end, dtype=np.float32)[:, None]
+            cols_idx = np.arange(c_start, c_end, dtype=np.float32)[None, :]
+            cx = self.x_bounds_m[1] - (rows_idx + 0.5) * self.resolution_m
+            cy = self.y_bounds_m[1] - (cols_idx + 0.5) * self.resolution_m
 
-                    if dist > radius_infl:
-                        continue
+            dx = cx - x
+            dy = cy - y
+            dist_sq = dx * dx + dy * dy
+            in_infl = dist_sq <= (radius_infl * radius_infl)
 
-                    # Exact OBB or inscribed check for lethal footprint
-                    if point_in_polygon((cx, cy), obb_corners) or dist <= min(length, width) / 2.0:
-                        self.obstacle[r, c] = True
-                    else:
-                        # Inflated risk zone
-                        self.cost[r, c] = min(1.0, self.cost[r, c] + risk_penalty)
-                        self.hazard[r, c] = max(self.hazard[r, c], 0.50)
+            cos_y = math.cos(yaw)
+            sin_y = math.sin(yaw)
+            lx = np.abs(dx * cos_y + dy * sin_y)
+            ly = np.abs(-dx * sin_y + dy * cos_y)
+            r_inscribed = min(length, width) / 2.0
+            in_obb = ((lx <= (length / 2.0 + 1e-6)) & (ly <= (width / 2.0 + 1e-6))) | (dist_sq <= (r_inscribed * r_inscribed))
 
-                    # Unknown dynamic space: flag unknown, NEVER clear static unknown
-                    if is_unknown:
-                        self.unknown[r, c] = True
+            lethal_mask = in_infl & in_obb
+            risk_mask = in_infl & (~in_obb)
+
+            sub_obs = self.obstacle[r_start:r_end, c_start:c_end]
+            sub_cost = self.cost[r_start:r_end, c_start:c_end]
+            sub_haz = self.hazard[r_start:r_end, c_start:c_end]
+
+            sub_obs[lethal_mask] = True
+            sub_cost[risk_mask] = np.minimum(1.0, sub_cost[risk_mask] + risk_penalty)
+            sub_haz[risk_mask] = np.maximum(sub_haz[risk_mask], 0.50)
+
+            if self._cached_infl_obstacle is not None and self._cached_infl_cells is not None:
+                ic = int(self._cached_infl_cells)
+                ir0 = max(0, r_start - ic)
+                ir1 = min(self.n_rows, r_end + ic)
+                ic0 = max(0, c_start - ic)
+                ic1 = min(self.n_cols, c_end + ic)
+                from scipy.ndimage import binary_dilation
+                sub_dil = binary_dilation(self.obstacle[ir0:ir1, ic0:ic1], iterations=ic)
+                self._cached_infl_obstacle[ir0:ir1, ic0:ic1] |= sub_dil
+
+            if is_unknown:
+                sub_unk = self.unknown[r_start:r_end, c_start:c_end]
+                sub_unk[in_infl] = True
 
 
 def compute_path_deviation(old_path: Optional[Path], new_path: Optional[Path]) -> float:

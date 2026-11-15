@@ -1,0 +1,149 @@
+{
+  "benchmarks": [
+    {
+      "grid_dim": 50,
+      "grid_name": "50x50 (2,500 cells)",
+      "cells": 2500,
+      "nodes_explored": 1036,
+      "python": {
+        "mean_ms": 168.0,
+        "p50_ms": 154.95,
+        "p95_ms": 225.71,
+        "max_ms": 234.8
+      },
+      "cpp_scalar": {
+        "mean_ms": 5.98,
+        "p50_ms": 6.02,
+        "p95_ms": 6.82,
+        "max_ms": 6.85
+      },
+      "cpp_simd": {
+        "mean_ms": 6.21,
+        "p50_ms": 6.18,
+        "p95_ms": 7.29,
+        "max_ms": 7.44,
+        "cpp_pure_mean_ms": 0.45
+      },
+      "speedup_factor": 27.1,
+      "pure_cpp_speedup": 371.4,
+      "parity_delta_cost": 0.0,
+      "parity_delta_length_m": 0.0
+    },
+    {
+      "grid_dim": 100,
+      "grid_name": "100x100 (10,000 cells)",
+      "cells": 10000,
+      "nodes_explored": 5514,
+      "python": {
+        "mean_ms": 388.22,
+        "p50_ms": 373.13,
+        "p95_ms": 487.81,
+        "max_ms": 499.3
+      },
+      "cpp_scalar": {
+        "mean_ms": 14.84,
+        "p50_ms": 13.48,
+        "p95_ms": 21.99,
+        "max_ms": 23.22
+      },
+      "cpp_simd": {
+        "mean_ms": 22.91,
+        "p50_ms": 22.8,
+        "p95_ms": 24.09,
+        "max_ms": 24.24,
+        "cpp_pure_mean_ms": 3.18
+      },
+      "speedup_factor": 16.9,
+      "pure_cpp_speedup": 122.3,
+      "parity_delta_cost": 0.0,
+      "parity_delta_length_m": 0.4427699483858678
+    },
+    {
+      "grid_dim": 120,
+      "grid_name": "120x120 (14,400 cells \u2014 M13.11 Replan)",
+      "cells": 14400,
+      "nodes_explored": 7255,
+      "python": {
+        "mean_ms": 669.27,
+        "p50_ms": 738.07,
+        "p95_ms": 743.2,
+        "max_ms": 744.08
+      },
+      "cpp_scalar": {
+        "mean_ms": 18.44,
+        "p50_ms": 14.87,
+        "p95_ms": 28.5,
+        "max_ms": 30.09
+      },
+      "cpp_simd": {
+        "mean_ms": 15.11,
+        "p50_ms": 14.55,
+        "p95_ms": 18.66,
+        "max_ms": 21.51,
+        "cpp_pure_mean_ms": 2.65
+      },
+      "speedup_factor": 44.3,
+      "pure_cpp_speedup": 252.7,
+      "parity_delta_cost": 0.0,
+      "parity_delta_length_m": 0.02427929046217514
+    },
+    {
+      "grid_dim": 200,
+      "grid_name": "200x200 (40,000 cells \u2014 Phase 14.5 Rolling)",
+      "cells": 40000,
+      "nodes_explored": 23503,
+      "python": {
+        "mean_ms": 1151.25,
+        "p50_ms": 1134.79,
+        "p95_ms": 1202.45,
+        "max_ms": 1215.18
+      },
+      "cpp_scalar": {
+        "mean_ms": 30.23,
+        "p50_ms": 30.22,
+        "p95_ms": 32.92,
+        "max_ms": 34.64
+      },
+      "cpp_simd": {
+        "mean_ms": 29.25,
+        "p50_ms": 28.98,
+        "p95_ms": 30.79,
+        "max_ms": 30.95,
+        "cpp_pure_mean_ms": 8.17
+      },
+      "speedup_factor": 39.4,
+      "pure_cpp_speedup": 140.9,
+      "parity_delta_cost": 0.0,
+      "parity_delta_length_m": 1.453161306953632
+    },
+    {
+      "grid_dim": 400,
+      "grid_name": "400x400 (160,000 cells \u2014 Full Outdoor)",
+      "cells": 160000,
+      "nodes_explored": 96086,
+      "python": {
+        "mean_ms": 5382.85,
+        "p50_ms": 5427.87,
+        "p95_ms": 5455.56,
+        "max_ms": 5459.61
+      },
+      "cpp_scalar": {
+        "mean_ms": 88.27,
+        "p50_ms": 87.07,
+        "p95_ms": 93.71,
+        "max_ms": 95.13
+      },
+      "cpp_simd": {
+        "mean_ms": 92.2,
+        "p50_ms": 88.98,
+        "p95_ms": 100.21,
+        "max_ms": 101.08,
+        "cpp_pure_mean_ms": 39.5
+      },
+      "speedup_factor": 58.4,
+      "pure_cpp_speedup": 136.3,
+      "parity_delta_cost": 0.0,
+      "parity_delta_length_m": 0.0
+    }
+  ]
+}

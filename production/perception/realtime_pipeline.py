@@ -37,9 +37,14 @@ logger = logging.getLogger("production.perception.realtime_pipeline")
 
 ONNX_MODEL_CANDIDATES = [
     "outputs/exports/traversability_model_dyn.onnx",
+    "outputs/exports/traversability_model_int8.onnx",
     "outputs/exports/traversability_model.onnx",
     "models/rugd_traversability/outputs/exports/traversability_model.onnx",
     "rellis3d_gpu_ready/checkpoints/traversability_model.onnx",
+]
+
+ONNX_INT8_MODEL_CANDIDATES = [
+    "outputs/exports/traversability_model_int8.onnx",
 ]
 
 
@@ -95,13 +100,18 @@ class RealtimeTraversabilityPipeline:
         import torch
 
         # Device / backend arbitration
-        if self.requested_backend == "PERCEPTION_ONNX_CPU":
+        if self.requested_backend in ("PERCEPTION_ONNX_CPU", "PERCEPTION_ONNX_INT8_CPU"):
             if not has_onnx:
-                raise RuntimeError("PERCEPTION_ONNX_CPU explicitly requested, but onnxruntime is not installed.")
-            if resolved_onnx is None:
-                raise RuntimeError("PERCEPTION_ONNX_CPU explicitly requested, but no ONNX model file found.")
-            self._init_onnx(resolved_onnx)
-            self.active_backend_name = "PERCEPTION_ONNX_CPU"
+                raise RuntimeError(f"{self.requested_backend} explicitly requested, but onnxruntime is not installed.")
+            if self.requested_backend == "PERCEPTION_ONNX_INT8_CPU":
+                int8_cand = next((Path(c) for c in ONNX_INT8_MODEL_CANDIDATES if Path(c).exists()), None)
+                target_onnx = Path(onnx_model) if (onnx_model is not None and Path(onnx_model).exists()) else int8_cand
+            else:
+                target_onnx = resolved_onnx
+            if target_onnx is None:
+                raise RuntimeError(f"{self.requested_backend} explicitly requested, but no ONNX model file found.")
+            self._init_onnx(target_onnx)
+            self.active_backend_name = self.requested_backend
             self.device = "cpu"
         elif self.requested_backend in ("PERCEPTION_CPU", "PERCEPTION_SIMD", "PERCEPTION_CUDA", "PERCEPTION_INTEL_GPU"):
             # Explicit selection through AutoBackendSelector (enforces fail-fast and zero silent fallback)

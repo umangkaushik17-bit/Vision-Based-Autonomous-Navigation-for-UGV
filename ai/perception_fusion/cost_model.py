@@ -23,6 +23,9 @@ class CostModelWeights:
     critical_slope_deg: float = 28.0     # Critical rollover slope threshold (cost forced to 1.0)
     max_step_height_m: float = 0.12      # Maximum vertical step height passable by wheels (meters)
     critical_step_height_m: float = 0.20 # Step height causing high-centering (cost forced to 1.0)
+    ground_clearance_m: float = 0.12     # Undercarriage belly clearance height (meters)
+    max_ditch_depth_m: float = 0.12      # Negative drop-off / ditch depth threshold (meters)
+    critical_ditch_depth_m: float = 0.15 # Critical negative ditch depth (cost forced to 1.0)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> CostModelWeights:
@@ -31,6 +34,7 @@ class CostModelWeights:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
+        veh_cfg = data.get("vehicle_specifications", {})
         slope_cfg = data.get("slope_thresholds", {})
         step_cfg = data.get("step_thresholds", {})
         weights_cfg = data.get("cost_weights", {})
@@ -45,7 +49,8 @@ class CostModelWeights:
             max_safe_slope_deg=float(slope_cfg.get("max_safe_slope_deg", 20.0)),
             critical_slope_deg=float(slope_cfg.get("critical_slope_deg", 28.0)),
             max_step_height_m=float(step_cfg.get("max_step_height_m", 0.12)),
-            critical_step_height_m=float(step_cfg.get("critical_step_height_m", 0.20))
+            critical_step_height_m=float(step_cfg.get("critical_step_height_m", 0.20)),
+            ground_clearance_m=float(veh_cfg.get("ground_clearance_m", 0.12)),
         )
 
 
@@ -66,25 +71,34 @@ class TraversabilityCostModel:
         flatness: float = 0.0,
         height_var_m: float = 0.0,
         has_obstacle: bool = False,
-        is_unknown: bool = False
+        is_unknown: bool = False,
+        ditch_depth_m: float = 0.0,
+        crown_height_m: float = 0.0,
     ) -> float:
         """Compute scalar navigation traversal cost in [0.0, 1.0] for a single grid cell.
 
         0.0 = completely free / flat / safe to drive
-        1.0 = lethal obstacle / impassable rollover slope / step obstacle
+        1.0 = lethal obstacle / impassable rollover slope / step / ditch / belly crown obstacle
         """
         if is_unknown:
             return float(self.weights.unknown_cost)
 
-        # Immediate hard vehicle physical failure cutoffs
-        if has_obstacle or slope_deg >= self.weights.critical_slope_deg or height_var_m >= self.weights.critical_step_height_m:
+        # Immediate hard vehicle physical failure cutoffs (Subphase 15.4)
+        if (
+            has_obstacle
+            or slope_deg >= self.weights.critical_slope_deg
+            or height_var_m >= self.weights.max_step_height_m
+            or ditch_depth_m <= -self.weights.max_ditch_depth_m
+            or crown_height_m >= self.weights.ground_clearance_m
+        ):
             return 1.0
 
         # Component costs in [0.0, 1.0]
         c_learned = 1.0 - float(np.clip(trav_score, 0.0, 1.0))
         c_slope = float(np.clip(slope_deg / self.weights.max_safe_slope_deg, 0.0, 1.0))
         c_flatness = float(np.clip(flatness / 0.10, 0.0, 1.0))  # 0.10 normalized variance cutoff
-        c_height = float(np.clip(height_var_m / self.weights.max_step_height_m, 0.0, 1.0))
+        eff_height = max(height_var_m, abs(ditch_depth_m), crown_height_m)
+        c_height = float(np.clip(eff_height / self.weights.max_step_height_m, 0.0, 1.0))
         c_obs = 1.0 if has_obstacle else 0.0
 
         total = (
@@ -104,9 +118,11 @@ class TraversabilityCostModel:
         slope_grid: Optional[np.ndarray] = None,
         flatness_grid: Optional[np.ndarray] = None,
         height_var_grid: Optional[np.ndarray] = None,
-        obstacle_grid: Optional[np.ndarray] = None
+        obstacle_grid: Optional[np.ndarray] = None,
+        ditch_depth_grid: Optional[np.ndarray] = None,
+        crown_height_grid: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Vectorized cost calculation over an entire 2D BEV grid."""
+        """Vectorized cost calculation over an entire 2D BEV or WorldTerrainMap grid."""
         shape = bev_traversability.shape
         cost = np.zeros(shape, dtype=np.float32)
 
@@ -127,13 +143,27 @@ class TraversabilityCostModel:
         else:
             c_flatness = np.zeros(shape, dtype=np.float32)
 
-        # Height variation cost
+        # Height variation / step cost
         if height_var_grid is not None:
             c_height = np.clip(height_var_grid / self.weights.max_step_height_m, 0.0, 1.0)
-            lethal_height = height_var_grid >= self.weights.critical_step_height_m
+            lethal_height = height_var_grid >= self.weights.max_step_height_m
         else:
             c_height = np.zeros(shape, dtype=np.float32)
             lethal_height = np.zeros(shape, dtype=bool)
+
+        # Negative ditch hazard gate
+        if ditch_depth_grid is not None:
+            lethal_ditch = ditch_depth_grid <= -self.weights.max_ditch_depth_m
+            c_height = np.maximum(c_height, np.clip(np.abs(ditch_depth_grid) / self.weights.max_ditch_depth_m, 0.0, 1.0))
+        else:
+            lethal_ditch = np.zeros(shape, dtype=bool)
+
+        # Undercarriage belly clearance crown gate
+        if crown_height_grid is not None:
+            lethal_crown = crown_height_grid >= self.weights.ground_clearance_m
+            c_height = np.maximum(c_height, np.clip(crown_height_grid / self.weights.ground_clearance_m, 0.0, 1.0))
+        else:
+            lethal_crown = np.zeros(shape, dtype=bool)
 
         # Obstacle cost
         if obstacle_grid is not None:
@@ -155,7 +185,33 @@ class TraversabilityCostModel:
         # Assign unknown cells penalty
         cost[unknown_mask] = self.weights.unknown_cost
 
-        # Hard lethal cutoffs
-        cost[lethal_slope | lethal_height | lethal_obs] = 1.0
+        # Hard lethal cutoffs (slope >= 28 deg, step >= 0.12 m, ditch <= -0.12 m, belly crown >= 0.12 m)
+        cost[lethal_slope | lethal_height | lethal_ditch | lethal_crown | lethal_obs] = 1.0
 
         return np.clip(cost, 0.0, 1.0).astype(np.float32)
+
+    def fuse_world_map_cost(
+        self,
+        world_map: Any,
+        ditch_depth_grid: Optional[np.ndarray] = None,
+        crown_height_grid: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        """Fuse learned semantic drivability on WorldTerrainMap with 2.5D geometric hazards and enforce lethal gates."""
+        fused_cost = self.compute_grid_cost(
+            bev_traversability=world_map.traversability,
+            unknown_mask=world_map.unknown,
+            slope_grid=world_map.slope,
+            flatness_grid=world_map.roughness,
+            height_var_grid=world_map.height_var,
+            obstacle_grid=world_map.obstacle.astype(np.float32),
+            ditch_depth_grid=ditch_depth_grid,
+            crown_height_grid=crown_height_grid,
+        )
+        world_map.cost = np.maximum(world_map.cost, fused_cost)
+        lethal_mask = fused_cost >= 1.0
+        if np.any(lethal_mask):
+            world_map.obstacle[lethal_mask] = True
+            world_map.cost[lethal_mask] = 1.0
+            world_map.hazard[lethal_mask] = 1.0
+            world_map.traversability[lethal_mask] = 0.0
+        return world_map.cost

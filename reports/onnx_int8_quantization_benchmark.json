@@ -1,0 +1,12 @@
+{
+  "fp32_onnx_path": "outputs\\exports\\traversability_model_dyn.onnx",
+  "int8_onnx_path": "outputs\\exports\\traversability_model_int8.onnx",
+  "quant_mode": "mixed_precision_qdq_int8_per_channel",
+  "fp32_size_kb": 4323.0,
+  "int8_size_kb": 3555.0,
+  "pytorch_fp32_mean_ms": 355.46,
+  "onnx_fp32_mean_ms": 65.94,
+  "onnx_int8_mean_ms": 78.87,
+  "mean_drivability_diff": 0.00517,
+  "false_safe_pixel_increases": 0
+}

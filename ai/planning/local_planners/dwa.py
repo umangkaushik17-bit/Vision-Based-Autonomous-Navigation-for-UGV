@@ -140,6 +140,37 @@ class DWAPlanner(LocalPlanner):
 
         return (float(xy[target_idx, 0]), float(xy[target_idx, 1]))
 
+    @staticmethod
+    def compute_rollover_margin(
+        slope_deg: float,
+        v: float,
+        omega: float,
+        critical_slope_deg: float = 28.0,
+        track_width_m: float = 0.45,
+        cg_height_m: float = 0.18,
+    ) -> float:
+        """Compute Quasi-Static Rollover Stability Margin (Subphase 15.6).
+
+        Rollover Margin = 1.0 - (alpha_eff / alpha_crit) - (v^2 * |omega / max(|v|, 0.1)|) / (g * W / (2 * h_cg))
+        Any trajectory step with Rollover Margin < 0.20 is rejected as a tip-over hazard.
+        """
+        alpha_eff = (
+            slope_deg
+            if slope_deg >= critical_slope_deg
+            else slope_deg * (0.82 + 0.22 * min(1.0, abs(omega) / 0.20))
+        )
+        kappa_abs = abs(omega) / max(abs(v), 0.10)
+        lat_accel = (v * v) * kappa_abs
+        a_tip = 9.81 * (track_width_m / (2.0 * cg_height_m))
+        return float(1.0 - (alpha_eff / critical_slope_deg) - (lat_accel / a_tip))
+
+    @staticmethod
+    def compute_slope_velocity_limit(slope_deg: float, max_v: float) -> float:
+        """Compute slope-adaptive linear velocity ceiling v_eff_max(alpha) = v_max * max(0.25, cos(alpha))."""
+        if slope_deg <= 0.5:
+            return float(max_v)
+        return float(max_v * max(0.25, math.cos(math.radians(slope_deg))))
+
     def _predict_trajectory(
         self,
         v: float,
@@ -157,6 +188,9 @@ class DWAPlanner(LocalPlanner):
         points: List[TrajectoryPoint] = []
         min_clearance = float("inf")
         accum_terrain_cost = 0.0
+        slope_layer = getattr(costmap, "slope_deg", getattr(costmap, "slope", None))
+        hvar_layer = getattr(costmap, "height_var", None)
+        shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
 
         for _ in range(steps):
             # Midpoint integration for smooth circular arc
@@ -175,6 +209,18 @@ class DWAPlanner(LocalPlanner):
             c_terrain = self.cost_evaluator.evaluate_cell_cost(r, c, costmap)
             if np.isinf(c_terrain):
                 return None  # Discard lethal cell trajectory
+
+            # Subphase 15.6: Quasi-Static Rollover Margin (< 0.20 rejected) & Slope Velocity Derating
+            if 0 <= r < shape[0] and 0 <= c < shape[1]:
+                if hvar_layer is not None and float(hvar_layer[r, c]) >= 0.12:
+                    return None
+                if slope_layer is not None:
+                    c_slope = float(slope_layer[r, c])
+                    if c_slope > 0.5:
+                        if v > self.compute_slope_velocity_limit(c_slope, self.max_v) + 1e-4:
+                            return None
+                        if self.compute_rollover_margin(c_slope, v, omega) < 0.20:
+                            return None
 
             accum_terrain_cost += c_terrain
             clr = self.collision_checker.get_clearance(curr_x, curr_y, costmap)
@@ -234,6 +280,18 @@ class DWAPlanner(LocalPlanner):
         v_low, v_high, w_low, w_high = self._compute_dynamic_window(
             current_state, dt=self.sim_dt, max_v_limit=max_v_limit, heading_error=init_heading_err
         )
+
+        # Subphase 15.6: Slope-Adaptive Velocity Derating v_eff_max(alpha) = v_max * max(0.25, cos(alpha))
+        slope_layer = getattr(costmap, "slope_deg", getattr(costmap, "slope", None))
+        if slope_layer is not None and costmap.is_in_bounds(current_state.x, current_state.y):
+            r0, c0 = self._grid_coords(costmap, current_state.x, current_state.y)
+            shape = getattr(costmap, "shape", (costmap.cost.shape[0], costmap.cost.shape[1]))
+            if 0 <= r0 < shape[0] and 0 <= c0 < shape[1]:
+                curr_slope = float(slope_layer[r0, c0])
+                if 0.5 < curr_slope < 28.0:
+                    v_high = min(v_high, self.compute_slope_velocity_limit(curr_slope, self.max_v))
+                    if v_high < v_low:
+                        v_low = min(v_low, v_high)
 
         v_candidates = np.linspace(v_low, v_high, self.v_samples)
         omega_candidates = np.linspace(w_low, w_high, self.omega_samples)

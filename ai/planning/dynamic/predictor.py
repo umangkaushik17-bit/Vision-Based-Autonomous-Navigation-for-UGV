@@ -204,20 +204,12 @@ class MotionPredictor:
         P0: np.ndarray,
         dt: float,
         q_eff: float,
+        omega_radps: float = 0.0,
     ) -> Tuple[np.ndarray, np.ndarray, float]:
         """Compute state, covariance, and uncertainty radius at future offset dt.
 
-        Args:
-            x0: Initial state vector [px, py, vx, vy]^T.
-            P0: Initial 4x4 covariance matrix.
-            dt: Future time offset in seconds (>= 0.0).
-            q_eff: Effective continuous acceleration process noise spectral density.
-
-        Returns:
-            Tuple of:
-            - x_pred: Predicted state vector [px, py, vx, vy]^T.
-            - P_pos: 2x2 position covariance matrix at dt.
-            - r_unc: Positional uncertainty radius in meters.
+        Supports both linear Constant-Velocity (CV, omega_radps == 0) and analytical
+        Coordinated Turn-Rate & Velocity (CTRV, |omega_radps| > 1e-4) propagation.
         """
         if dt < 1e-9:
             # Zero-horizon case: state and covariance are unchanged
@@ -227,14 +219,26 @@ class MotionPredictor:
             r_unc = float(self.config.sigma_scale * math.sqrt(max_eigval))
             return x0.copy(), P_pos, r_unc
 
-        # 1. State transition matrix F(dt)
-        # [px + vx*dt, py + vy*dt, vx, vy]^T
-        F = np.array([
-            [1.0, 0.0, dt,  0.0],
-            [0.0, 1.0, 0.0, dt ],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ], dtype=np.float64)
+        # 1. State transition matrix F(dt, omega): CTRV when turning, exact CV limit when straight
+        if abs(omega_radps) > 1e-4:
+            theta = omega_radps * dt
+            sin_t = math.sin(theta)
+            cos_t = math.cos(theta)
+            c1 = sin_t / omega_radps
+            c2 = (1.0 - cos_t) / omega_radps
+            F = np.array([
+                [1.0, 0.0, c1,    -c2  ],
+                [0.0, 1.0, c2,     c1  ],
+                [0.0, 0.0, cos_t, -sin_t],
+                [0.0, 0.0, sin_t,  cos_t],
+            ], dtype=np.float64)
+        else:
+            F = np.array([
+                [1.0, 0.0, dt,  0.0],
+                [0.0, 1.0, 0.0, dt ],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ], dtype=np.float64)
 
         # 2. State propagation
         x_pred = F @ x0
@@ -268,6 +272,7 @@ class MotionPredictor:
         horizon_s: Optional[float] = None,
         dt_s: Optional[float] = None,
         time_offsets_s: Optional[Sequence[float]] = None,
+        omega_radps: Optional[float] = None,
     ) -> PredictedObstacleTrajectory:
         """Predict future motion trajectory and uncertainty envelope for a single track.
 
@@ -341,15 +346,20 @@ class MotionPredictor:
         if effective_dt <= 0.0:
             effective_dt = float(self.config.default_dt_s)
 
-        # Extract initial state vector and covariance
+        # Extract initial state vector, covariance, and optional CTRV turn rate
         x0 = np.array([track.x, track.y, track.vx, track.vy], dtype=np.float64)
         P0 = track.covariance.copy()
+        omega = float(
+            omega_radps
+            if omega_radps is not None
+            else getattr(track, "omega", getattr(track, "yaw_rate", 0.0))
+        )
 
         waypoints: List[TrajectoryWaypoint] = []
         bounding_polygons: List[np.ndarray] = []
 
         for offset in offsets:
-            x_pred, P_pos, r_unc = self._propagate_state_and_cov(x0, P0, offset, q_eff)
+            x_pred, P_pos, r_unc = self._propagate_state_and_cov(x0, P0, offset, q_eff, omega_radps=omega)
             t_wp = float(track.timestamp + offset)
 
             wp = TrajectoryWaypoint(
@@ -364,11 +374,12 @@ class MotionPredictor:
             )
             waypoints.append(wp)
 
-            # Generate bounding polygon expanded by uncertainty radius
+            # Generate bounding polygon expanded by uncertainty radius and CTRV heading rotation
+            wp_yaw = float(track.bbox_yaw + omega * offset)
             poly = compute_obb_corners(
                 (wp.x, wp.y),
                 track.bbox_size,
-                track.bbox_yaw,
+                wp_yaw,
                 margin_m=wp.uncertainty_radius,
             )
             bounding_polygons.append(poly)

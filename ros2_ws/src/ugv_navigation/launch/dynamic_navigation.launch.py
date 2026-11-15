@@ -37,19 +37,35 @@ def generate_launch_description():
         description="Use simulation (Gazebo) clock if true",
     )
 
+    use_intra_process_arg = DeclareLaunchArgument(
+        "use_intra_process_comms",
+        default_value="true",
+        description="Enable zero-copy intra-process communication across nodes",
+    )
+
     params_file = LaunchConfiguration("params_file")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
+
+    common_params = [
+        params_file,
+        {
+            "use_sim_time": use_sim_time,
+            "use_intra_process_comms": use_intra_process_comms,
+        },
+    ]
 
     return LaunchDescription([
         param_file_arg,
         use_sim_time_arg,
+        use_intra_process_arg,
 
         # 1. Static TF Broadcaster (odom -> base_link -> camera_link -> camera_optical)
         Node(
             package="ugv_navigation",
             executable="static_tf_node",
             name="static_tf_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -58,7 +74,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="localization_node",
             name="localization_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -67,7 +83,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="spatial_fusion_node",
             name="spatial_fusion_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -76,7 +92,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="dynamic_detector_node",
             name="dynamic_detector_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -85,7 +101,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="dynamic_tracker_node",
             name="dynamic_tracker_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -94,7 +110,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="dynamic_predictor_node",
             name="dynamic_predictor_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -103,7 +119,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="dynamic_occupancy_node",
             name="dynamic_occupancy_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
 
@@ -112,7 +128,7 @@ def generate_launch_description():
             package="ugv_navigation",
             executable="dynamic_planner_node",
             name="dynamic_planner_node",
-            parameters=[params_file, {"use_sim_time": use_sim_time}],
+            parameters=common_params,
             output="screen",
         ),
     ])

@@ -182,3 +182,37 @@ def test_scenario_12_successful_settle_and_replan_trigger():
     # Test marking replan complete resets to INACTIVE
     rec.mark_replan_completed()
     assert rec.state == RecoveryState.INACTIVE
+
+
+def test_scenario_13_reverse_and_turn_escape_direction():
+    """Scenario 13: Asymmetric obstacle on right side causes reverse-and-turn toward freer left side."""
+    rec = RecoveryController(
+        RecoveryConfig(
+            deadlock_stop_cycles=1,
+            target_reverse_distance_m=0.30,
+            enable_reverse_turn=True,
+            reverse_turn_rate_radps=0.35,
+            enable_turn_in_place_phase=True,
+            target_turn_angle_rad=0.30,
+            settle_duration_s=0.10,
+        )
+    )
+    costmap = _create_test_map()
+    # Obstacle ahead and slightly right (y = -0.35m) -> freer side is LEFT (+1.0)
+    right_obs = [_make_track(5, x=0.80, y=-0.35)]
+
+    v1, w1, state1, _ = rec.step(1.0, (0.0, 0.0, 0.0), is_deadlocked=True, hazards=right_obs, costmap=costmap)
+    assert state1 == RecoveryState.REVERSING
+    assert v1 == -0.15
+    assert w1 > 0.0, "Should steer left (+w) away from right-side obstacle"
+
+    # Complete reverse distance -> enters TURNING phase
+    v2, w2, state2, _ = rec.step(2.0, (-0.35, 0.0, 0.10), is_deadlocked=True, hazards=right_obs, costmap=costmap)
+    assert state2 == RecoveryState.TURNING
+    assert v2 == 0.0
+    assert w2 > 0.0
+
+    # Complete turn angle (yaw reached 0.45 >= 0.30 target) -> SETTLING
+    v3, w3, state3, _ = rec.step(2.5, (-0.35, 0.0, 0.45), is_deadlocked=True, hazards=right_obs, costmap=costmap)
+    assert state3 == RecoveryState.SETTLING
+    assert v3 == 0.0 and w3 == 0.0

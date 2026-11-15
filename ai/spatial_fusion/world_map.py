@@ -63,6 +63,13 @@ class WorldTerrainMap:
         self.slope = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
         self.roughness = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
         self.height_var = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
+        self.elevation = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
+        self.elevation_valid = np.zeros((self.n_rows, self.n_cols), dtype=bool)
+        self.elevation_var = np.ones((self.n_rows, self.n_cols), dtype=np.float32)
+        self.elevation_min = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
+        self.elevation_max = np.zeros((self.n_rows, self.n_cols), dtype=np.float32)
+        self.surface_normal = np.zeros((self.n_rows, self.n_cols, 3), dtype=np.float32)
+        self.surface_normal[:, :, 2] = 1.0
         self.observation_count = np.zeros((self.n_rows, self.n_cols), dtype=np.int32)
         self.last_observed_timestamp = np.zeros((self.n_rows, self.n_cols), dtype=np.float64)
 
@@ -114,6 +121,24 @@ class WorldTerrainMap:
         if not self.is_grid_in_bounds(r, c):
             return default
         return float(self.cost[r, c])
+
+    def get_elevation(self, x_w: float, y_w: float, default: float = 0.0) -> float:
+        """Query metric elevation Z(x, y) at world coordinate if valid, else return default."""
+        if not self.is_in_bounds(x_w, y_w):
+            return default
+        r, c = self.world_to_grid(x_w, y_w)
+        if not self.is_grid_in_bounds(r, c) or not self.elevation_valid[r, c]:
+            return default
+        return float(self.elevation[r, c])
+
+    def is_elevation_valid(self, x_w: float, y_w: float) -> bool:
+        """Check whether elevation Z(x, y) has been validly observed at world coordinate."""
+        if not self.is_in_bounds(x_w, y_w):
+            return False
+        r, c = self.world_to_grid(x_w, y_w)
+        if not self.is_grid_in_bounds(r, c):
+            return False
+        return bool(self.elevation_valid[r, c])
 
     def is_cell_traversable(self, x_w: float, y_w: float, cost_threshold: float = 0.65) -> bool:
         """Query binary traversability safe flag at world metric coordinate."""
@@ -176,6 +201,8 @@ class WorldTerrainMap:
             "hazard_slice": self.hazard[r_min:r_max, c_min:c_max].copy(),
             "confidence_slice": self.confidence[r_min:r_max, c_min:c_max].copy(),
             "unknown_slice": self.unknown[r_min:r_max, c_min:c_max].copy(),
+            "elevation_slice": self.elevation[r_min:r_max, c_min:c_max].copy(),
+            "elevation_valid_slice": self.elevation_valid[r_min:r_max, c_min:c_max].copy(),
         }
 
     def summary_stats(self) -> Dict[str, Any]:
@@ -186,10 +213,12 @@ class WorldTerrainMap:
         obstacle_cells = int(np.sum(self.obstacle))
         hazard_cells = int(np.sum(self.hazard >= 0.40))
         critical_cells = int(np.sum(self.hazard >= 0.70))
+        elevation_cells = int(np.sum(self.elevation_valid))
 
         return {
             "total_cells": total_cells,
             "observed_cells": observed_cells,
+            "elevation_observed_cells": elevation_cells,
             "coverage_pct": float(observed_cells / max(1, total_cells) * 100.0),
             "obstacle_cells": obstacle_cells,
             "hazard_cells": hazard_cells,
